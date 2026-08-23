@@ -4,19 +4,18 @@ import { daysSinceEpoch } from "./date.js";
 // Which matérias get "novo" cards on a given day. Rotation always spans every
 // registered matéria (no need to "activate" each one manually) — with
 // materiasPerDay = N, day 0 gets matérias [0..N-1], day 1 gets [N..2N-1], and
-// so on, wrapping back to the start once every matéria has had its turn.
+// so on, wrapping around the list (not just resetting to the end of it) so
+// every day gets exactly N matérias even when the total isn't a multiple of N.
 export function rotationMateriaIds(materias, settings, iso) {
   if (materias.length === 0) return [];
   const raw = settings?.materiasPerDay || 0;
   const per = raw > 0 ? Math.min(raw, materias.length) : materias.length;
   const dayIdx = daysSinceEpoch(iso);
-  const totalBlocks = Math.ceil(materias.length / per);
-  const block = dayIdx % totalBlocks;
-  const start = block * per;
+  const start = (dayIdx * per) % materias.length;
   const ids = [];
   for (let i = 0; i < per; i++) {
-    const idx = start + i;
-    if (idx < materias.length) ids.push(materias[idx].id);
+    const idx = (start + i) % materias.length;
+    ids.push(materias[idx].id);
   }
   return ids;
 }
