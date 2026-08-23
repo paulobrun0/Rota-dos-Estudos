@@ -1,9 +1,9 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./PlanoDeEstudos.jsx";
+import AuthGate from "./auth/AuthGate.jsx";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <AuthGate />
   </React.StrictMode>,
 );

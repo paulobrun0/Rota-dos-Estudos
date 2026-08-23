@@ -12,8 +12,8 @@ A aplicação organiza matérias e assuntos em ciclos, monta o plano diário aut
 - Revisão quando o assunto reaparece em um novo ciclo.
 - Acompanhamento de sequência, recorde e atividade.
 - Suporte a vários concursos no mesmo aplicativo.
-- Dados salvos localmente no navegador.
-- Deploy preparado para GitHub Pages.
+- Login por usuário, com dados salvos num banco local por conta.
+- Deploy do front-end preparado para GitHub Pages.
 
 ## Funcionalidades
 
@@ -110,25 +110,28 @@ Organize vários objetivos de estudo no mesmo lugar:
 
 ## Tecnologias
 
-- React
-- Vite
-- Lucide React
+**Front-end**
+- React + Vite
+- Lucide React (ícones)
 - JavaScript/JSX
 - CSS inline e estilos locais do componente
-- `localStorage` como persistência padrão do navegador
 
-O componente também é compatível com ambientes que disponibilizam `window.storage`; quando essa API não existe, o aplicativo usa automaticamente o armazenamento local do navegador.
+**Back-end** (local, veja [Autenticação e banco de dados](#autenticação-e-banco-de-dados))
+- Node.js + Express
+- SQLite embutido do Node (`node:sqlite`, sem dependências nativas)
+- Autenticação por sessão: senha com hash (bcrypt) + cookie httpOnly assinado (JWT)
 
 ## Como executar localmente
 
-Pré-requisito: Node.js LTS.
+Pré-requisito: Node.js 22.5+ (usa o módulo `node:sqlite`).
 
 ```bash
 npm install
+cp .env.example .env   # gere um JWT_SECRET próprio antes de usar em produção
 npm run dev
 ```
 
-Abra o endereço exibido pelo Vite, normalmente:
+Isso sobe o front-end e a API juntos. Abra o endereço exibido pelo Vite, normalmente:
 
 ```text
 http://localhost:5173/
@@ -137,9 +140,11 @@ http://localhost:5173/
 ## Scripts disponíveis
 
 ```bash
-npm run dev      # inicia o servidor de desenvolvimento
-npm run build    # gera a versão de produção em dist/
-npm run preview  # serve a versão de produção localmente
+npm run dev         # front-end (Vite) + API (Express), juntos
+npm run dev:client  # só o front-end
+npm run dev:server  # só a API
+npm run build        # gera a versão de produção do front-end em dist/
+npm run preview      # serve a versão de produção do front-end localmente
 ```
 
 ## Publicação no GitHub Pages
@@ -171,25 +176,36 @@ O Vite está configurado com `base: "./"`, permitindo que a aplicação funcione
 
 ```text
 .
-├── .github/workflows/deploy.yml  # deploy automático no GitHub Pages
+├── .github/workflows/deploy.yml  # deploy automático do front-end no GitHub Pages
 ├── index.html                    # documento HTML principal
-├── main.jsx                      # entrada do React
-├── PlanoDeEstudos.jsx            # aplicação e componentes da interface
+├── vite.config.js                # configuração do Vite (inclui proxy de /api para a API local)
 ├── package.json                  # scripts e dependências
-└── vite.config.js                # configuração do Vite
+├── server/                       # API local (Express + SQLite)
+│   ├── index.js                  # rotas: auth (register/login/logout/me) e dados do plano
+│   ├── auth.js                   # emissão/validação do JWT de sessão
+│   └── db.js                     # schema e conexão SQLite
+└── src/                          # aplicação React
+    ├── main.jsx                  # ponto de entrada
+    ├── App.jsx                   # componente raiz: estado do plano, navegação entre abas
+    ├── auth/                     # tela de login/registro e o "gate" de autenticação
+    ├── api/                      # cliente HTTP e chamadas à API do plano
+    ├── views/                    # uma view por aba (dia, semana, edital, metas, concursos, progresso)
+    ├── components/                # componentes pequenos reutilizados entre views
+    ├── lib/                      # funções puras: datas, motor de rotação/ciclos, sequências
+    ├── data/                     # forma dos dados e migração de versões antigas
+    └── styles/                   # paleta de cores e estilos compartilhados
 ```
 
-## Armazenamento dos dados
+## Autenticação e banco de dados
 
-Os dados são mantidos no navegador utilizado para acessar a aplicação. Isso inclui:
+Cada usuário tem seu próprio plano de estudos, protegido por login. A API local (`server/`) guarda:
 
-- Concursos cadastrados.
-- Matérias e assuntos.
-- Metas de estudo.
-- Planos diários.
-- Histórico de atividade.
+- Contas de usuário (email + senha com hash).
+- Um registro por usuário com todo o plano (concursos, matérias, metas, planos diários e histórico de atividade).
 
-Limpar os dados do site ou trocar de navegador pode remover o plano salvo localmente. Faça uma exportação ou backup antes de limpar o armazenamento do navegador.
+O banco (`server/data.sqlite`) e o segredo de sessão (`.env`) não são versionados — cada máquina tem os seus. Essa é uma etapa **local** intencionalmente: antes de hospedar a API em algum serviço externo (ex: Supabase), a ideia é validar o fluxo de login/dados rodando localmente.
+
+Importante: o deploy no GitHub Pages publica só o front-end. Sem a API hospedada em algum lugar, a versão publicada não terá login funcional — isso é o próximo passo, não uma limitação do código atual.
 
 ## Licença
 

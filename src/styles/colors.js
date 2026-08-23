@@ -1,0 +1,18 @@
+export const colors = {
+  bg: "var(--bg)",
+  surface: "var(--surface)",
+  surface2: "var(--surface2)",
+  border: "var(--border)",
+  borderSoft: "var(--border-soft)",
+  text: "var(--text)",
+  textMuted: "var(--text-muted)",
+  textFaint: "var(--text-faint)",
+  amber: "var(--amber)",
+  amberSoft: "var(--amber-soft)",
+  teal: "var(--teal)",
+  tealSoft: "var(--teal-soft)",
+  red: "var(--red)",
+  redSoft: "var(--red-soft)",
+  heat1: "var(--heat-1)",
+  heat2: "var(--heat-2)",
+};
