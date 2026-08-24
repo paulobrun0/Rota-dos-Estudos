@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, Layers, Target } from "lucide-react";
+import { Clock, Coffee, Layers, Target } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -12,6 +12,7 @@ export function MetasView({ concurso, updateSettings }) {
   const materiasPerDay = settings.materiasPerDay || 0;
   const topicsPerDay = settings.topicsPerDay || 0;
   const minutesPerMateria = settings.minutesPerMateria || 0;
+  const restMinutes = settings.restMinutes ?? 5;
   const totalMaterias = concurso.materias.length;
   const effectivePerDay = materiasPerDay > 0 ? Math.min(materiasPerDay, totalMaterias) : totalMaterias;
 
@@ -50,6 +51,14 @@ export function MetasView({ concurso, updateSettings }) {
           hint="tempo total da sessão daquela matéria — dividido entre os assuntos do dia"
           value={minutesPerMateria}
           onChange={(v) => updateSettings("minutesPerMateria", v)}
+          step={5}
+        />
+        <GlobalGoalRow
+          icon={<Coffee size={15} color={colors.amber} />}
+          label="minutos de descanso"
+          hint={restMinutes === 0 ? "sem pausa automática ao concluir uma matéria" : "pausa que começa sozinha assim que você termina os assuntos da matéria"}
+          value={restMinutes}
+          onChange={(v) => updateSettings("restMinutes", v)}
           step={5}
         />
       </div>

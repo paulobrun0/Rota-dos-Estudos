@@ -4,11 +4,11 @@ import { colors } from "../styles/colors.js";
 import { fmtClock } from "../lib/date.js";
 import { iconBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function SessionTimer({ materiaId, totalMinutes, timers, ensureTimer, start, pause, reset }) {
+export function SessionTimer({ materiaId, totalMinutes, segments, timers, ensureTimer, start, pause, reset }) {
   useEffect(() => {
-    ensureTimer(materiaId, totalMinutes);
+    ensureTimer(materiaId, totalMinutes, segments);
     // eslint-disable-next-line
-  }, [materiaId, totalMinutes]);
+  }, [materiaId, totalMinutes, segments]);
 
   const totalSecondsFallback = Math.max(1, Math.round(totalMinutes * 60));
   const timer = timers[materiaId] || { secondsLeft: totalSecondsFallback, totalSeconds: totalSecondsFallback, running: false };

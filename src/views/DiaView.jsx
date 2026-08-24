@@ -5,8 +5,9 @@ import { navBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
 import { Ring } from "../components/Ring.jsx";
 import { SessionTimer } from "../components/SessionTimer.jsx";
+import { RestTimer } from "../components/RestTimer.jsx";
 
-export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers }) {
+export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers, restTimers }) {
   const isToday = selectedDate === todayISO();
   const novos = plan.filter((c) => c.tipo === "novo");
   const revisoes = plan.filter((c) => c.tipo === "revisao");
@@ -74,21 +75,23 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
           topicById={topicById}
           onToggle={(cardId) => toggleCard(selectedDate, cardId)}
           sessionTimers={sessionTimers}
+          restTimers={restTimers}
         />
       ))}
     </div>
   );
 }
 
-function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers }) {
+function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers }) {
   if (!materia) return null;
   const totalMinutes = minutesPerMateria || 0;
   const perTopic = cards.length > 0 && totalMinutes > 0 ? totalMinutes / cards.length : null;
   const doneInGroup = cards.filter((c) => c.feito).length;
   const allDone = doneInGroup === cards.length;
+  const resting = allDone && restTimers.timers[materia.id];
 
   return (
-    <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${materia.color}`, borderRadius: 12, padding: 16, marginBottom: 14, opacity: allDone ? 0.75 : 1 }}>
+    <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${materia.color}`, borderRadius: 12, padding: 16, marginBottom: 14, opacity: allDone && !resting ? 0.75 : 1 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div className="sg" style={{ fontSize: 15, fontWeight: 700, color: materia.color }}>{materia.name}</div>
@@ -99,9 +102,11 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
           </div>
         </div>
         {totalMinutes > 0 && !allDone && (
-          <SessionTimer materiaId={materia.id} totalMinutes={totalMinutes} {...sessionTimers} />
+          <SessionTimer materiaId={materia.id} totalMinutes={totalMinutes} segments={cards.length} {...sessionTimers} />
         )}
       </div>
+
+      {resting && <RestTimer materiaId={materia.id} {...restTimers} />}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {cards.map((card) => {
@@ -114,6 +119,11 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
       {totalMinutes === 0 && (
         <div style={{ fontSize: 11.5, color: colors.textFaint, marginTop: 10 }}>
           defina os minutos por matéria em metas para ativar o cronômetro.
+        </div>
+      )}
+      {totalMinutes > 0 && !allDone && (
+        <div style={{ fontSize: 11.5, color: colors.textFaint, marginTop: 10 }}>
+          conforme o tempo passa, cada assunto é marcado como concluído automaticamente na sua vez — sem o cronômetro reiniciar.
         </div>
       )}
     </div>

@@ -3,15 +3,21 @@ import { daysSinceEpoch } from "./date.js";
 
 // Which matérias get "novo" cards on a given day. Rotation always spans every
 // registered matéria (no need to "activate" each one manually) — with
-// materiasPerDay = N, day 0 gets matérias [0..N-1], day 1 gets [N..2N-1], and
-// so on, wrapping around the list (not just resetting to the end of it) so
-// every day gets exactly N matérias even when the total isn't a multiple of N.
+// materiasPerDay = N, day 0 (settings.rotationAnchor, normally the day the
+// concurso started) gets matérias [0..N-1] in registration order, day 1 gets
+// the next N, and so on, wrapping around the list (not just resetting to the
+// end of it) so every day gets exactly N matérias even when the total isn't
+// a multiple of N. Anchoring to a fixed start date — instead of days since
+// the Unix epoch — is what makes the first matéria in the list actually be
+// the first one studied, rather than landing on an arbitrary offset that
+// depends on which absolute calendar day "today" happens to be.
 export function rotationMateriaIds(materias, settings, iso) {
   if (materias.length === 0) return [];
   const raw = settings?.materiasPerDay || 0;
   const per = raw > 0 ? Math.min(raw, materias.length) : materias.length;
-  const dayIdx = daysSinceEpoch(iso);
-  const start = (dayIdx * per) % materias.length;
+  const anchor = settings?.rotationAnchor || iso;
+  const dayIdx = daysSinceEpoch(iso) - daysSinceEpoch(anchor);
+  const start = (((dayIdx * per) % materias.length) + materias.length) % materias.length;
   const ids = [];
   for (let i = 0; i < per; i++) {
     const idx = (start + i) % materias.length;

@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Plus, Trash2, X } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, topicDrafts, setTopicDrafts }) {
+export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, topicDrafts, setTopicDrafts }) {
   return (
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>edital</div>
       <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 20 }}>
-        matérias e assuntos de <b style={{ color: colors.text }}>{concurso.name}</b>. cadastre manualmente ou importe várias de uma vez.
+        matérias e assuntos de <b style={{ color: colors.text }}>{concurso.name}</b>. cadastre manualmente ou importe várias de uma vez. a ordem das matérias abaixo define a ordem do rodízio diário — use as setas para reorganizar.
       </div>
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 24 }}>
@@ -50,22 +50,25 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
         <div style={{ color: colors.textFaint, fontSize: 14 }}>nenhuma matéria cadastrada ainda.</div>
       )}
 
-      {concurso.materias.map((m) => (
+      {concurso.materias.map((m, index) => (
         <MateriaEditalCard
           key={m.id}
           materia={m}
+          isFirst={index === 0}
+          isLast={index === concurso.materias.length - 1}
           topicDraft={topicDrafts[m.id] || ""}
           setTopicDraft={(v) => setTopicDrafts((d) => ({ ...d, [m.id]: v }))}
           addTopics={addTopics}
           removeMateria={removeMateria}
           removeTopic={removeTopic}
+          moveMateria={moveMateria}
         />
       ))}
     </div>
   );
 }
 
-function MateriaEditalCard({ materia: m, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic }) {
+function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria }) {
   const [collapsed, setCollapsed] = useState(false);
   const pendentes = m.topics.filter((t) => t.status === "pendente").length;
   const estudados = m.topics.length - pendentes;
@@ -94,6 +97,24 @@ function MateriaEditalCard({ materia: m, topicDraft, setTopicDraft, addTopics, r
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span className="mono" style={{ fontSize: 12, color: colors.textMuted }}>{estudados}/{m.topics.length} estudados</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <span
+              role="button"
+              aria-label="mover matéria para cima"
+              onClick={(e) => { e.stopPropagation(); if (!isFirst) moveMateria(m.id, -1); }}
+              style={{ ...iconBtnStyle, opacity: isFirst ? 0.3 : 1, cursor: isFirst ? "default" : "pointer" }}
+            >
+              <ArrowUp size={14} />
+            </span>
+            <span
+              role="button"
+              aria-label="mover matéria para baixo"
+              onClick={(e) => { e.stopPropagation(); if (!isLast) moveMateria(m.id, 1); }}
+              style={{ ...iconBtnStyle, opacity: isLast ? 0.3 : 1, cursor: isLast ? "default" : "pointer" }}
+            >
+              <ArrowDown size={14} />
+            </span>
+          </span>
           <span
             role="button"
             aria-label="excluir matéria"

@@ -10,6 +10,9 @@ import { computeStreaks } from "./lib/streaks.js";
 import { uid } from "./lib/id.js";
 import { useTheme } from "./lib/useTheme.js";
 import { useSessionTimers } from "./lib/useSessionTimers.js";
+import { useRestTimers } from "./lib/useRestTimers.js";
+import { useSoundEnabled } from "./lib/useSoundEnabled.js";
+import { playCompleteSound, playRestOverSound } from "./lib/sound.js";
 import { fetchPlanData, savePlanData } from "./api/planData.js";
 import { NavItem } from "./components/NavItem.jsx";
 import { EmptyConcursoState } from "./components/EmptyConcursoState.jsx";
@@ -32,7 +35,7 @@ export default function App({ user, onLogout }) {
   const [topicDrafts, setTopicDrafts] = useState({});
   const [error, setError] = useState("");
   const [theme, setTheme] = useTheme();
-  const sessionTimers = useSessionTimers();
+  const [soundEnabled, setSoundEnabled] = useSoundEnabled();
   const loaded = useRef(false);
 
   useEffect(() => {
@@ -120,6 +123,20 @@ export default function App({ user, onLogout }) {
   function toggleCard(iso, cardId) {
     if (!activeConcurso) return;
     const activeId = activeConcurso.id;
+    const currentItem = activeConcurso.dailyPlans[iso]?.find((x) => x.id === cardId);
+    const willComplete = currentItem && !currentItem.feito;
+    if (willComplete && soundEnabled) playCompleteSound();
+
+    if (willComplete) {
+      const materiaCards = activeConcurso.dailyPlans[iso]?.filter((c) => c.materiaId === currentItem.materiaId) || [];
+      const isLastPending = materiaCards.every((c) => c.id === cardId || c.feito);
+      const restMinutes = activeConcurso.settings?.restMinutes || 0;
+      if (isLastPending && restMinutes > 0) {
+        restTimers.ensureTimer(currentItem.materiaId, restMinutes);
+        restTimers.start(currentItem.materiaId);
+      }
+    }
+
     setData((prev) => {
       if (!prev) return prev;
       const clone = JSON.parse(JSON.stringify(prev));
@@ -161,6 +178,25 @@ export default function App({ user, onLogout }) {
     });
   }
 
+  // Called when the session timer's clock crosses a topic's slice boundary:
+  // marks the topic currently in progress as concluded, same as a manual
+  // checkbox click.
+  function handleSegmentComplete(materiaId) {
+    if (!activeConcurso) return;
+    const plan = activeConcurso.dailyPlans[selectedDate] || [];
+    const currentCard = plan.find((c) => c.materiaId === materiaId && !c.feito);
+    if (!currentCard) return;
+    toggleCard(selectedDate, currentCard.id);
+  }
+
+  const sessionTimers = useSessionTimers(handleSegmentComplete);
+
+  function handleRestFinished() {
+    if (soundEnabled) playRestOverSound();
+  }
+
+  const restTimers = useRestTimers(handleRestFinished);
+
   function addMateria(name) {
     const trimmed = name.trim();
     if (!trimmed || !activeConcurso) return;
@@ -189,6 +225,19 @@ export default function App({ user, onLogout }) {
 
   function removeMateria(id) {
     updateActive((c) => ({ ...c, materias: c.materias.filter((m) => m.id !== id) }));
+  }
+
+  // Matéria order drives the daily rotation (rotationMateriaIds walks the
+  // array in order), so moving a matéria up/down changes when it's studied.
+  function moveMateria(id, direction) {
+    updateActive((c) => {
+      const idx = c.materias.findIndex((m) => m.id === id);
+      const newIdx = idx + direction;
+      if (idx === -1 || newIdx < 0 || newIdx >= c.materias.length) return c;
+      const materias = [...c.materias];
+      [materias[idx], materias[newIdx]] = [materias[newIdx], materias[idx]];
+      return { ...c, materias };
+    });
   }
 
   function removeTopic(materiaId, topicId) {
@@ -380,7 +429,14 @@ export default function App({ user, onLogout }) {
         {tab === "progresso" && <ProgressoView activity={data.activity || {}} activeConcurso={activeConcurso} />}
 
         {tab === "ajustes" && (
-          <AjustesView theme={theme} setTheme={setTheme} data={data} onImport={importData} />
+          <AjustesView
+            theme={theme}
+            setTheme={setTheme}
+            soundEnabled={soundEnabled}
+            setSoundEnabled={setSoundEnabled}
+            data={data}
+            onImport={importData}
+          />
         )}
 
         {tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && !activeConcurso && (
@@ -402,6 +458,7 @@ export default function App({ user, onLogout }) {
             toggleCard={toggleCard}
             streak={computeStreaks(data.activity || {}).current}
             sessionTimers={sessionTimers}
+            restTimers={restTimers}
           />
         )}
 
@@ -428,6 +485,7 @@ export default function App({ user, onLogout }) {
             addTopics={addTopics}
             removeMateria={removeMateria}
             removeTopic={removeTopic}
+            moveMateria={moveMateria}
             topicDrafts={topicDrafts}
             setTopicDrafts={setTopicDrafts}
           />

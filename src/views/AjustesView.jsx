@@ -1,11 +1,12 @@
 import React, { useRef, useState } from "react";
-import { Download, Moon, Sun, Upload } from "lucide-react";
+import { Download, Moon, Sun, Upload, Volume2, VolumeX } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { todayISO } from "../lib/date.js";
 import { migrate } from "../data/model.js";
+import { playCompleteSound } from "../lib/sound.js";
 
-export function AjustesView({ theme, setTheme, data, onImport }) {
+export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport }) {
   const fileInputRef = useRef(null);
   const [importError, setImportError] = useState("");
   const [importOk, setImportOk] = useState(false);
@@ -66,6 +67,32 @@ export function AjustesView({ theme, setTheme, data, onImport }) {
           >
             <Sun size={14} /> claro
           </button>
+        </div>
+      </div>
+
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>som</div>
+        <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
+          toca um aviso sonoro sempre que um assunto é marcado como concluído.
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setSoundEnabled(true)}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${soundEnabled ? colors.amber : colors.border}`, color: soundEnabled ? colors.amber : colors.text }}
+          >
+            <Volume2 size={14} /> ativado
+          </button>
+          <button
+            onClick={() => setSoundEnabled(false)}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${!soundEnabled ? colors.amber : colors.border}`, color: !soundEnabled ? colors.amber : colors.text }}
+          >
+            <VolumeX size={14} /> desativado
+          </button>
+          {soundEnabled && (
+            <button onClick={playCompleteSound} style={{ ...secondaryBtnStyle, padding: "8px 14px" }}>
+              testar
+            </button>
+          )}
         </div>
       </div>
 
