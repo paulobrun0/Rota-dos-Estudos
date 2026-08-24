@@ -86,7 +86,7 @@ export function ProgressoView({ activity, activeConcurso }) {
 }
 
 function MateriaStatRow({ stat }) {
-  const { name, color, total, done, pct, novoCount, revisaoCount } = stat;
+  const { name, color, total, done, pct, novoCount, revisaoCount, questionsTotal, questionsCorrect, accuracyPct } = stat;
   return (
     <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${color}`, borderRadius: 10, padding: "12px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
@@ -99,6 +99,11 @@ function MateriaStatRow({ stat }) {
       <div style={{ fontSize: 11.5, color: colors.textFaint }}>
         {novoCount} assunto{novoCount !== 1 ? "s" : ""} novo{novoCount !== 1 ? "s" : ""} concluído{novoCount !== 1 ? "s" : ""} · {revisaoCount} revisão{revisaoCount !== 1 ? "ões" : ""} de ciclo
       </div>
+      {accuracyPct !== null && (
+        <div style={{ fontSize: 11.5, color: accuracyPct >= 70 ? colors.teal : colors.red, marginTop: 4 }}>
+          {questionsCorrect}/{questionsTotal} questões certas · {accuracyPct}% de acerto
+        </div>
+      )}
     </div>
   );
 }

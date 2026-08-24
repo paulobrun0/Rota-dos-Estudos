@@ -8,10 +8,11 @@ import { useEffect, useRef, useState } from "react";
 // Each timer is a single countdown over the matéria's full session
 // (totalMinutes), split into `segments` equal slices (one per topic
 // studied that day). As elapsed time crosses each slice boundary — at
-// totalMinutes/segments, 2×that, and so on — the caller's
-// onSegmentComplete(materiaId) fires once to mark that topic done. The
-// clock itself never resets mid-session; it just counts straight down to
-// zero, which coincides with the last topic's boundary.
+// totalMinutes/segments, 2×that, and so on — the clock PAUSES itself and
+// the caller's onSegmentComplete(materiaId) fires once. It stays paused
+// until something outside calls start(materiaId) again — the caller uses
+// that pause to collect info about the topic that just finished (e.g. a
+// question-count prompt) before letting the next slice begin.
 export function useSessionTimers(onSegmentComplete) {
   const [timers, setTimers] = useState({});
   const timersRef = useRef(timers);
@@ -46,15 +47,12 @@ export function useSessionTimers(onSegmentComplete) {
           changed = true;
           const secondsLeft = t.secondsLeft - 1;
           const elapsed = t.totalSeconds - secondsLeft;
-          let completedSegments = t.completedSegments;
-          while (
-            completedSegments < t.segments &&
-            elapsed >= Math.round(((completedSegments + 1) * t.totalSeconds) / t.segments)
-          ) {
-            completedSegments++;
-            crossings.push(id);
-          }
-          next[id] = { ...t, secondsLeft, completedSegments, running: secondsLeft > 0 };
+          const crossedBoundary =
+            t.completedSegments < t.segments &&
+            elapsed >= Math.round(((t.completedSegments + 1) * t.totalSeconds) / t.segments);
+          const completedSegments = crossedBoundary ? t.completedSegments + 1 : t.completedSegments;
+          if (crossedBoundary) crossings.push(id);
+          next[id] = { ...t, secondsLeft, completedSegments, running: crossedBoundary ? false : secondsLeft > 0 };
         } else {
           next[id] = t;
         }

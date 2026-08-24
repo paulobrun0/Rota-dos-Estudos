@@ -3,7 +3,10 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import db from "./db.js";
-import { signToken, authMiddleware, COOKIE_NAME, COOKIE_OPTIONS } from "./auth.js";
+import {
+  signToken, authMiddleware, COOKIE_NAME, COOKIE_OPTIONS,
+  generateRecoveryCode, formatRecoveryCode, normalizeRecoveryInput,
+} from "./auth.js";
 
 const app = express();
 app.use(express.json());
@@ -11,9 +14,10 @@ app.use(cookieParser());
 
 const PORT = process.env.PORT || 4000;
 
-const insertUser = db.prepare("INSERT INTO users (email, password_hash) VALUES (?, ?)");
+const insertUser = db.prepare("INSERT INTO users (email, password_hash, recovery_code_hash) VALUES (?, ?, ?)");
 const findUserByEmail = db.prepare("SELECT * FROM users WHERE email = ?");
 const findUserById = db.prepare("SELECT * FROM users WHERE id = ?");
+const updateCredentials = db.prepare("UPDATE users SET password_hash = ?, recovery_code_hash = ? WHERE id = ?");
 const getData = db.prepare("SELECT value FROM user_data WHERE user_id = ?");
 const upsertData = db.prepare(`
   INSERT INTO user_data (user_id, value, updated_at) VALUES (?, ?, datetime('now'))
@@ -34,10 +38,12 @@ app.post("/api/register", (req, res) => {
     return res.status(409).json({ error: "já existe uma conta com esse email" });
   }
   const passwordHash = bcrypt.hashSync(password, 10);
-  const info = insertUser.run(normalizedEmail, passwordHash);
+  const recoveryCode = generateRecoveryCode();
+  const recoveryHash = bcrypt.hashSync(recoveryCode, 10);
+  const info = insertUser.run(normalizedEmail, passwordHash, recoveryHash);
   const token = signToken(info.lastInsertRowid);
   res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
-  res.json({ email: normalizedEmail });
+  res.json({ email: normalizedEmail, recoveryCode: formatRecoveryCode(recoveryCode) });
 });
 
 app.post("/api/login", (req, res) => {
@@ -50,6 +56,28 @@ app.post("/api/login", (req, res) => {
   const token = signToken(user.id);
   res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
   res.json({ email: user.email });
+});
+
+app.post("/api/reset-password", (req, res) => {
+  const { email, recoveryCode, newPassword } = req.body || {};
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    return res.status(400).json({ error: "a nova senha precisa ter 6+ caracteres" });
+  }
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+  const user = findUserByEmail.get(normalizedEmail);
+  const suppliedCode = normalizeRecoveryInput(recoveryCode);
+  if (!user || !user.recovery_code_hash || !suppliedCode || !bcrypt.compareSync(suppliedCode, user.recovery_code_hash)) {
+    return res.status(401).json({ error: "email ou código de recuperação incorretos" });
+  }
+  // The code is single-use: a fresh one replaces it, so reusing an old one
+  // (e.g. from a leaked note) won't work after this reset.
+  const newRecoveryCode = generateRecoveryCode();
+  const passwordHash = bcrypt.hashSync(newPassword, 10);
+  const recoveryHash = bcrypt.hashSync(newRecoveryCode, 10);
+  updateCredentials.run(passwordHash, recoveryHash, user.id);
+  const token = signToken(user.id);
+  res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
+  res.json({ email: user.email, recoveryCode: formatRecoveryCode(newRecoveryCode) });
 });
 
 app.post("/api/logout", (req, res) => {

@@ -4,7 +4,7 @@ import { colors } from "../styles/colors.js";
 import { fmtClock } from "../lib/date.js";
 import { iconBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function SessionTimer({ materiaId, totalMinutes, segments, timers, ensureTimer, start, pause, reset }) {
+export function SessionTimer({ materiaId, totalMinutes, segments, locked, timers, ensureTimer, start, pause, reset }) {
   useEffect(() => {
     ensureTimer(materiaId, totalMinutes, segments);
     // eslint-disable-next-line
@@ -22,22 +22,28 @@ export function SessionTimer({ materiaId, totalMinutes, segments, timers, ensure
       <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: finished ? colors.teal : colors.text, minWidth: 62 }}>
         {fmtClock(secondsLeft)}
       </div>
-      {!finished && !running && (
-        <button onClick={() => start(materiaId)} style={{ ...primaryBtnStyle, marginTop: 0, padding: "7px 14px" }}>
-          <Play size={13} /> {started ? "continuar" : "iniciar"}
-        </button>
+      {locked ? (
+        <span style={{ fontSize: 12, color: colors.amber }}>responda as questões abaixo pra continuar</span>
+      ) : (
+        <>
+          {!finished && !running && (
+            <button onClick={() => start(materiaId)} style={{ ...primaryBtnStyle, marginTop: 0, padding: "7px 14px" }}>
+              <Play size={13} /> {started ? "continuar" : "iniciar"}
+            </button>
+          )}
+          {running && (
+            <button onClick={() => pause(materiaId)} style={{ ...secondaryBtnStyle, padding: "7px 14px" }}>
+              <Pause size={13} /> pausar
+            </button>
+          )}
+          {started && (
+            <button onClick={() => reset(materiaId)} aria-label="reiniciar cronômetro" style={iconBtnStyle}>
+              <RotateCcw size={14} />
+            </button>
+          )}
+          {finished && <span style={{ fontSize: 12, color: colors.teal }}>tempo esgotado</span>}
+        </>
       )}
-      {running && (
-        <button onClick={() => pause(materiaId)} style={{ ...secondaryBtnStyle, padding: "7px 14px" }}>
-          <Pause size={13} /> pausar
-        </button>
-      )}
-      {started && (
-        <button onClick={() => reset(materiaId)} aria-label="reiniciar cronômetro" style={iconBtnStyle}>
-          <RotateCcw size={14} />
-        </button>
-      )}
-      {finished && <span style={{ fontSize: 12, color: colors.teal }}>tempo esgotado</span>}
     </div>
   );
 }

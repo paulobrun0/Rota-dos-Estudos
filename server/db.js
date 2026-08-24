@@ -19,4 +19,12 @@ db.exec(`
   );
 `);
 
+// Added after the tables above already shipped — guarded so it's a no-op
+// against a database that already has the column.
+try {
+  db.exec("ALTER TABLE users ADD COLUMN recovery_code_hash TEXT");
+} catch {
+  // column already exists
+}
+
 export default db;

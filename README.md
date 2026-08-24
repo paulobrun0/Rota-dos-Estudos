@@ -181,7 +181,7 @@ O Vite está configurado com `base: "./"`, permitindo que a aplicação funcione
 ├── vite.config.js                # configuração do Vite (inclui proxy de /api para a API local)
 ├── package.json                  # scripts e dependências
 ├── server/                       # API local (Express + SQLite)
-│   ├── index.js                  # rotas: auth (register/login/logout/me) e dados do plano
+│   ├── index.js                  # rotas: auth (register/login/logout/me/reset-password) e dados do plano
 │   ├── auth.js                   # emissão/validação do JWT de sessão
 │   └── db.js                     # schema e conexão SQLite
 └── src/                          # aplicação React
@@ -202,6 +202,8 @@ Cada usuário tem seu próprio plano de estudos, protegido por login. A API loca
 
 - Contas de usuário (email + senha com hash).
 - Um registro por usuário com todo o plano (concursos, matérias, metas, planos diários e histórico de atividade).
+
+**Recuperação de senha:** sem servidor de e-mail configurado (etapa local), a recuperação usa um código gerado no cadastro — mostrado uma única vez, na hora, para o usuário guardar por conta própria. Perder o código sem ter salvo a senha significa perder o acesso àquela conta; não há como reenviá-lo. Ao redefinir a senha, um novo código substitui o anterior (uso único). Quando a API for hospedada, esse fluxo pode ser trocado por reset via e-mail.
 
 O banco (`server/data.sqlite`) e o segredo de sessão (`.env`) não são versionados — cada máquina tem os seus. Essa é uma etapa **local** intencionalmente: antes de hospedar a API em algum serviço externo (ex: Supabase), a ideia é validar o fluxo de login/dados rodando localmente.
 

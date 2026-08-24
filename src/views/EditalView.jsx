@@ -134,6 +134,11 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
                 <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13.5, padding: "6px 8px", borderRadius: 6, background: colors.surface2 }}>
                   <span style={{ color: t.status === "estudado" ? colors.textMuted : colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {t.questionsTotal > 0 && (
+                      <span className="mono" style={{ fontSize: 10.5, color: colors.textFaint }}>
+                        {t.questionsCorrect}/{t.questionsTotal} questões
+                      </span>
+                    )}
                     {t.mastered && <span style={{ fontSize: 11, color: colors.teal }}>dominado</span>}
                     <button onClick={() => removeTopic(m.id, t.id)} style={iconBtnStyle}><X size={13} /></button>
                   </div>

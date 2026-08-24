@@ -36,6 +36,9 @@ export default function App({ user, onLogout }) {
   const [error, setError] = useState("");
   const [theme, setTheme] = useTheme();
   const [soundEnabled, setSoundEnabled] = useSoundEnabled();
+  // materiaId -> cardId whose questions prompt the auto-timer is waiting on
+  // before it can move to the next segment.
+  const [pendingQuestions, setPendingQuestions] = useState({});
   const loaded = useRef(false);
 
   useEffect(() => {
@@ -120,7 +123,7 @@ export default function App({ user, onLogout }) {
     // eslint-disable-next-line
   }, [tab, selectedDate, activeConcurso?.id]);
 
-  function toggleCard(iso, cardId) {
+  function toggleCard(iso, cardId, questions) {
     if (!activeConcurso) return;
     const activeId = activeConcurso.id;
     const currentItem = activeConcurso.dailyPlans[iso]?.find((x) => x.id === cardId);
@@ -128,12 +131,26 @@ export default function App({ user, onLogout }) {
     if (willComplete && soundEnabled) playCompleteSound();
 
     if (willComplete) {
-      const materiaCards = activeConcurso.dailyPlans[iso]?.filter((c) => c.materiaId === currentItem.materiaId) || [];
+      const materiaId = currentItem.materiaId;
+      const materiaCards = activeConcurso.dailyPlans[iso]?.filter((c) => c.materiaId === materiaId) || [];
       const isLastPending = materiaCards.every((c) => c.id === cardId || c.feito);
       const restMinutes = activeConcurso.settings?.restMinutes || 0;
       if (isLastPending && restMinutes > 0) {
-        restTimers.ensureTimer(currentItem.materiaId, restMinutes);
-        restTimers.start(currentItem.materiaId);
+        restTimers.ensureTimer(materiaId, restMinutes);
+        restTimers.start(materiaId);
+      }
+
+      // This card was the one the auto-timer paused on to ask about
+      // questions — now that it's resolved (answered or skipped), clear the
+      // prompt and, if the matéria still has more topics today, resume the
+      // clock for the next slice.
+      if (pendingQuestions[materiaId] === cardId) {
+        setPendingQuestions((prev) => {
+          const next = { ...prev };
+          delete next[materiaId];
+          return next;
+        });
+        if (!isLastPending) sessionTimers.start(materiaId);
       }
     }
 
@@ -159,6 +176,10 @@ export default function App({ user, onLogout }) {
           topic.status = "estudado";
           topic.mastered = false;
         }
+        if (questions) {
+          topic.questionsTotal = (topic.questionsTotal || 0) + questions.total;
+          topic.questionsCorrect = (topic.questionsCorrect || 0) + questions.correct;
+        }
         clone.activity = clone.activity || {};
         clone.activity[iso] = (clone.activity[iso] || 0) + 1;
       } else {
@@ -178,15 +199,17 @@ export default function App({ user, onLogout }) {
     });
   }
 
-  // Called when the session timer's clock crosses a topic's slice boundary:
-  // marks the topic currently in progress as concluded, same as a manual
-  // checkbox click.
+  // Called when the session timer's clock crosses a topic's slice boundary.
+  // The timer has already paused itself (see useSessionTimers) — this just
+  // records which card is waiting on a questions prompt. toggleCard is what
+  // actually marks it done and resumes the clock, once the prompt in
+  // TopicRow is answered or skipped.
   function handleSegmentComplete(materiaId) {
     if (!activeConcurso) return;
     const plan = activeConcurso.dailyPlans[selectedDate] || [];
     const currentCard = plan.find((c) => c.materiaId === materiaId && !c.feito);
     if (!currentCard) return;
-    toggleCard(selectedDate, currentCard.id);
+    setPendingQuestions((prev) => ({ ...prev, [materiaId]: currentCard.id }));
   }
 
   const sessionTimers = useSessionTimers(handleSegmentComplete);
@@ -459,6 +482,7 @@ export default function App({ user, onLogout }) {
             streak={computeStreaks(data.activity || {}).current}
             sessionTimers={sessionTimers}
             restTimers={restTimers}
+            pendingQuestions={pendingQuestions}
           />
         )}
 
