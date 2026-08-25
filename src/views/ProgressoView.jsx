@@ -3,7 +3,7 @@ import { Check, Flame, Trophy } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { fromISO } from "../lib/date.js";
 import { buildHeatmapWeeks, computeStreaks, heatLevel } from "../lib/streaks.js";
-import { computeMateriaStats } from "../lib/materiaStats.js";
+import { computeMateriaStats, computeTopicStats } from "../lib/materiaStats.js";
 import { SectionLabel } from "../components/SectionLabel.jsx";
 
 const HEAT_COLORS = [colors.surface2, colors.heat1, colors.heat2, colors.amber];
@@ -11,6 +11,7 @@ const MESES_ABR = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set"
 
 export function ProgressoView({ activity, activeConcurso }) {
   const materiaStats = computeMateriaStats(activeConcurso);
+  const topicStats = computeTopicStats(activeConcurso);
   const { current, longest } = computeStreaks(activity);
   const weeks = buildHeatmapWeeks(activity);
   const totalDias = Object.keys(activity).filter((k) => activity[k] > 0).length;
@@ -74,9 +75,20 @@ export function ProgressoView({ activity, activeConcurso }) {
       {activeConcurso && materiaStats.length > 0 && (
         <>
           <SectionLabel text={`desempenho por matéria · ${activeConcurso.name}`} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 26 }}>
             {materiaStats.map((m) => (
               <MateriaStatRow key={m.id} stat={m} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {activeConcurso && topicStats.length > 0 && (
+        <>
+          <SectionLabel text="desempenho por assunto · do mais fraco pro mais forte" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {topicStats.map((t) => (
+              <TopicStatRow key={t.id} stat={t} />
             ))}
           </div>
         </>
@@ -104,6 +116,29 @@ function MateriaStatRow({ stat }) {
           {questionsCorrect}/{questionsTotal} questões certas · {accuracyPct}% de acerto
         </div>
       )}
+    </div>
+  );
+}
+
+function TopicStatRow({ stat }) {
+  const { name, materiaName, materiaColor, total, correct, accuracyPct } = stat;
+  const good = accuracyPct >= 70;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${materiaColor}`, borderRadius: 8, padding: "9px 14px" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13.5, color: colors.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+        <div style={{ fontSize: 11, color: colors.textFaint, marginTop: 1 }}>{materiaName}</div>
+      </div>
+      <div className="mono" style={{ fontSize: 12, color: colors.textMuted, flexShrink: 0 }}>{correct}/{total}</div>
+      <div
+        className="mono"
+        style={{
+          fontSize: 12.5, fontWeight: 700, flexShrink: 0, width: 48, textAlign: "right",
+          color: good ? colors.teal : colors.red,
+        }}
+      >
+        {accuracyPct}%
+      </div>
     </div>
   );
 }

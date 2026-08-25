@@ -273,6 +273,30 @@ export default function App({ user, onLogout }) {
     });
   }
 
+  function updateTopicNotes(materiaId, topicId, notes) {
+    updateActive((c) => {
+      const clone = JSON.parse(JSON.stringify(c));
+      const m = clone.materias.find((x) => x.id === materiaId);
+      const t = m?.topics.find((x) => x.id === topicId);
+      if (!t) return c;
+      t.notes = notes;
+      return clone;
+    });
+  }
+
+  function setTopicQuestions(materiaId, topicId, total, correct) {
+    updateActive((c) => {
+      const clone = JSON.parse(JSON.stringify(c));
+      const m = clone.materias.find((x) => x.id === materiaId);
+      const t = m?.topics.find((x) => x.id === topicId);
+      if (!t) return c;
+      const safeTotal = Math.max(0, total);
+      t.questionsTotal = safeTotal;
+      t.questionsCorrect = Math.min(safeTotal, Math.max(0, correct));
+      return clone;
+    });
+  }
+
   function updateSettings(field, value) {
     updateActive((c) => ({ ...c, settings: { ...c.settings, [field]: value } }));
   }
@@ -483,6 +507,8 @@ export default function App({ user, onLogout }) {
             sessionTimers={sessionTimers}
             restTimers={restTimers}
             pendingQuestions={pendingQuestions}
+            updateTopicNotes={updateTopicNotes}
+            setTopicQuestions={setTopicQuestions}
           />
         )}
 
@@ -510,6 +536,7 @@ export default function App({ user, onLogout }) {
             removeMateria={removeMateria}
             removeTopic={removeTopic}
             moveMateria={moveMateria}
+            updateTopicNotes={updateTopicNotes}
             topicDrafts={topicDrafts}
             setTopicDrafts={setTopicDrafts}
           />

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Plus, StickyNote, Trash2, X } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, topicDrafts, setTopicDrafts }) {
+export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, topicDrafts, setTopicDrafts }) {
   return (
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>edital</div>
@@ -62,13 +62,14 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
           removeMateria={removeMateria}
           removeTopic={removeTopic}
           moveMateria={moveMateria}
+          updateTopicNotes={updateTopicNotes}
         />
       ))}
     </div>
   );
 }
 
-function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria }) {
+function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes }) {
   const [collapsed, setCollapsed] = useState(false);
   const pendentes = m.topics.filter((t) => t.status === "pendente").length;
   const estudados = m.topics.length - pendentes;
@@ -131,18 +132,7 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
           {m.topics.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
               {m.topics.map((t) => (
-                <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13.5, padding: "6px 8px", borderRadius: 6, background: colors.surface2 }}>
-                  <span style={{ color: t.status === "estudado" ? colors.textMuted : colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {t.questionsTotal > 0 && (
-                      <span className="mono" style={{ fontSize: 10.5, color: colors.textFaint }}>
-                        {t.questionsCorrect}/{t.questionsTotal} questões
-                      </span>
-                    )}
-                    {t.mastered && <span style={{ fontSize: 11, color: colors.teal }}>dominado</span>}
-                    <button onClick={() => removeTopic(m.id, t.id)} style={iconBtnStyle}><X size={13} /></button>
-                  </div>
-                </div>
+                <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} updateTopicNotes={updateTopicNotes} />
               ))}
             </div>
           )}
@@ -160,6 +150,54 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
             </button>
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes }) {
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [draft, setDraft] = useState(t.notes || "");
+  const hasNotes = (t.notes || "").trim().length > 0;
+
+  function saveIfChanged() {
+    if (draft !== (t.notes || "")) updateTopicNotes(materiaId, t.id, draft);
+  }
+
+  return (
+    <div style={{ background: colors.surface2, borderRadius: 6, padding: "6px 8px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13.5 }}>
+        <span style={{ color: t.status === "estudado" ? colors.textMuted : colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {t.questionsTotal > 0 && (
+            <span className="mono" style={{ fontSize: 10.5, color: colors.textFaint }}>
+              {t.questionsCorrect}/{t.questionsTotal} questões
+            </span>
+          )}
+          {t.mastered && <span style={{ fontSize: 11, color: colors.teal }}>dominado</span>}
+          <button
+            onClick={() => setNotesOpen((o) => !o)}
+            aria-label="anotações do assunto"
+            style={{ ...iconBtnStyle, color: hasNotes ? colors.amber : colors.textFaint }}
+          >
+            <StickyNote size={13} />
+          </button>
+          <button onClick={() => removeTopic(materiaId, t.id)} style={iconBtnStyle}><X size={13} /></button>
+        </div>
+      </div>
+
+      {notesOpen && (
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={saveIfChanged}
+          placeholder="observações, pegadinhas, pontos de atenção..."
+          rows={2}
+          style={{
+            width: "100%", marginTop: 6, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 6,
+            color: colors.text, fontSize: 12.5, padding: 8, resize: "vertical", boxSizing: "border-box",
+          }}
+        />
       )}
     </div>
   );

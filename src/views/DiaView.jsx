@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Flame } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flame, Pencil, StickyNote } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -7,7 +7,7 @@ import { Ring } from "../components/Ring.jsx";
 import { SessionTimer } from "../components/SessionTimer.jsx";
 import { RestTimer } from "../components/RestTimer.jsx";
 
-export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers, restTimers, pendingQuestions }) {
+export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, setTopicQuestions }) {
   const isToday = selectedDate === todayISO();
   const novos = plan.filter((c) => c.tipo === "novo");
   const revisoes = plan.filter((c) => c.tipo === "revisao");
@@ -77,13 +77,15 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
           sessionTimers={sessionTimers}
           restTimers={restTimers}
           pendingCardId={pendingQuestions[materiaId]}
+          updateTopicNotes={updateTopicNotes}
+          setTopicQuestions={setTopicQuestions}
         />
       ))}
     </div>
   );
 }
 
-function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId }) {
+function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, setTopicQuestions }) {
   if (!materia) return null;
   const totalMinutes = minutesPerMateria || 0;
   const perTopic = cards.length > 0 && totalMinutes > 0 ? totalMinutes / cards.length : null;
@@ -121,6 +123,9 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
               topic={topic}
               forcedOpen={card.id === pendingCardId}
               onToggle={(questions) => onToggle(card.id, questions)}
+              updateTopicNotes={updateTopicNotes}
+              setTopicQuestions={setTopicQuestions}
+              materiaId={materia.id}
             />
           );
         })}
@@ -140,12 +145,36 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
   );
 }
 
-function TopicRow({ card, topic, onToggle, forcedOpen }) {
+function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, setTopicQuestions, materiaId }) {
   const [asking, setAsking] = useState(false);
   const [feitas, setFeitas] = useState("");
   const [acertos, setAcertos] = useState("");
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(topic.notes || "");
+  const [questionsEditOpen, setQuestionsEditOpen] = useState(false);
+  const [editTotal, setEditTotal] = useState(String(topic.questionsTotal || ""));
+  const [editCorrect, setEditCorrect] = useState(String(topic.questionsCorrect || ""));
   const isRevisao = card.tipo === "revisao";
   const showForm = asking || forcedOpen;
+  const hasNotes = (topic.notes || "").trim().length > 0;
+  const hasQuestions = (topic.questionsTotal || 0) > 0;
+
+  function saveNotesIfChanged() {
+    if (notesDraft !== (topic.notes || "")) updateTopicNotes(materiaId, topic.id, notesDraft);
+  }
+
+  function openQuestionsEdit() {
+    setEditTotal(String(topic.questionsTotal || ""));
+    setEditCorrect(String(topic.questionsCorrect || ""));
+    setQuestionsEditOpen(true);
+  }
+
+  function saveQuestionsEdit() {
+    const total = Math.max(0, parseInt(editTotal, 10) || 0);
+    const correct = Math.min(total, Math.max(0, parseInt(editCorrect, 10) || 0));
+    setTopicQuestions(materiaId, topic.id, total, correct);
+    setQuestionsEditOpen(false);
+  }
 
   function handleCircleClick() {
     if (card.feito) {
@@ -186,7 +215,12 @@ function TopicRow({ card, topic, onToggle, forcedOpen }) {
         >
           {card.feito && <Check size={13} color={colors.bg} strokeWidth={3} />}
         </button>
-        <div style={{ flex: 1, fontSize: 14, textDecoration: card.feito ? "line-through" : "none", color: colors.text }}>{topic.name}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, textDecoration: card.feito ? "line-through" : "none", color: colors.text }}>{topic.name}</div>
+          {hasNotes && !notesOpen && (
+            <div style={{ fontSize: 12, color: colors.textFaint, fontStyle: "italic", marginTop: 2 }}>{topic.notes}</div>
+          )}
+        </div>
         <div
           className="mono"
           style={{
@@ -197,7 +231,63 @@ function TopicRow({ card, topic, onToggle, forcedOpen }) {
         >
           {isRevisao ? "revisão · ciclo" : "novo"}
         </div>
+        <button
+          onClick={openQuestionsEdit}
+          style={{ background: "transparent", border: "none", padding: "4px 2px", display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}
+        >
+          {hasQuestions ? (
+            <span className="mono" style={{ fontSize: 10.5, color: colors.textFaint }}>
+              {topic.questionsCorrect}/{topic.questionsTotal}
+            </span>
+          ) : (
+            <span style={{ fontSize: 10.5, color: colors.textFaint }}>questões</span>
+          )}
+          <Pencil size={10.5} color={colors.textFaint} />
+        </button>
+        <button
+          onClick={() => setNotesOpen((o) => !o)}
+          aria-label="anotações do assunto"
+          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasNotes ? colors.amber : colors.textFaint }}
+        >
+          <StickyNote size={14} />
+        </button>
       </div>
+
+      {questionsEditOpen && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          <span style={{ fontSize: 11.5, color: colors.textMuted }}>total de questões</span>
+          <input
+            type="number" min={0} autoFocus value={editTotal}
+            onChange={(e) => setEditTotal(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") saveQuestionsEdit(); if (e.key === "Escape") setQuestionsEditOpen(false); }}
+            style={{ ...inputStyle, flex: "none", width: 56, padding: "5px 8px", fontSize: 12.5 }}
+          />
+          <span style={{ fontSize: 11.5, color: colors.textMuted }}>acertos</span>
+          <input
+            type="number" min={0} value={editCorrect}
+            onChange={(e) => setEditCorrect(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") saveQuestionsEdit(); if (e.key === "Escape") setQuestionsEditOpen(false); }}
+            style={{ ...inputStyle, flex: "none", width: 56, padding: "5px 8px", fontSize: 12.5 }}
+          />
+          <button onClick={saveQuestionsEdit} style={{ ...primaryBtnStyle, marginTop: 0, padding: "5px 10px", fontSize: 12 }}>salvar</button>
+          <button onClick={() => setQuestionsEditOpen(false)} style={{ ...secondaryBtnStyle, padding: "5px 10px", fontSize: 12 }}>cancelar</button>
+        </div>
+      )}
+
+      {notesOpen && (
+        <textarea
+          value={notesDraft}
+          onChange={(e) => setNotesDraft(e.target.value)}
+          onBlur={saveNotesIfChanged}
+          placeholder="observações, pegadinhas, pontos de atenção..."
+          rows={2}
+          autoFocus
+          style={{
+            width: "100%", marginTop: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 6,
+            color: colors.text, fontSize: 12.5, padding: 8, resize: "vertical", boxSizing: "border-box",
+          }}
+        />
+      )}
 
       {showForm && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.border}` }}>

@@ -37,3 +37,32 @@ export function computeMateriaStats(concurso) {
     };
   });
 }
+
+// Per-topic accuracy, flattened across every matéria in the concurso and
+// limited to topics that actually have questions logged. Sorted weakest
+// first (then by how many questions back that number, as a tiebreaker) so
+// the topics needing the most attention surface immediately instead of
+// being buried inside a matéria-level average.
+export function computeTopicStats(concurso) {
+  if (!concurso) return [];
+
+  const rows = [];
+  concurso.materias.forEach((m) => {
+    m.topics.forEach((t) => {
+      const total = t.questionsTotal || 0;
+      if (total === 0) return;
+      const correct = t.questionsCorrect || 0;
+      rows.push({
+        id: t.id,
+        name: t.name,
+        materiaName: m.name,
+        materiaColor: m.color,
+        total,
+        correct,
+        accuracyPct: Math.round((correct / total) * 100),
+      });
+    });
+  });
+
+  return rows.sort((a, b) => a.accuracyPct - b.accuracyPct || b.total - a.total);
+}

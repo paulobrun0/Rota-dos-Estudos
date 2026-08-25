@@ -5,63 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#12141C" />
     <title>Plano de Estudos</title>
-    <style>
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; height: 100%; }
-      body { background: var(--bg); }
-      #root { min-height: 100vh; }
-
-      :root {
-        --bg: #12141C;
-        --surface: #191D28;
-        --surface2: #212636;
-        --border: #2B3143;
-        --border-soft: #232838;
-        --text: #EDEFF4;
-        --text-muted: #8A93AC;
-        --text-faint: #5D6478;
-        --amber: #E8A33D;
-        --amber-soft: #3A2E1A;
-        --teal: #4FD1C5;
-        --teal-soft: #173330;
-        --red: #E8615F;
-        --red-soft: #3A1E1E;
-        --heat-1: #4A3417;
-        --heat-2: #7A5620;
-      }
-      :root[data-theme="light"] {
-        --bg: #F4F5F9;
-        --surface: #FFFFFF;
-        --surface2: #EEF0F6;
-        --border: #DCE0EA;
-        --border-soft: #E8EAF2;
-        --text: #1B1E27;
-        --text-muted: #5B6274;
-        --text-faint: #8A93AC;
-        --amber: #C97F1E;
-        --amber-soft: #FBEAD0;
-        --teal: #1F8F82;
-        --teal-soft: #DBF2EE;
-        --red: #C63B39;
-        --red-soft: #FBE2E1;
-        --heat-1: #F3DDB0;
-        --heat-2: #EBC176;
-      }
-    </style>
-    <script>
-      (function () {
-        try {
-          var saved = localStorage.getItem("ciclo-estudos-theme");
-          var theme = saved === "light" || saved === "dark"
-            ? saved
-            : (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-          document.documentElement.dataset.theme = theme;
-        } catch (e) {}
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/main.jsx"></script>
   </body>
 </html>
