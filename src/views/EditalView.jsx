@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ExternalLink, Library, L
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHint, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
+export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
   return (
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>edital</div>
@@ -35,10 +35,22 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
           }}
         />
         {error && <div style={{ color: colors.red, fontSize: 12.5, marginTop: 6 }}>{error}</div>}
-        {bulkHint && (
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 6, color: colors.amber, fontSize: 12.5, marginTop: 6 }}>
-            <Library size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span>{bulkHint}</span>
+        {bulkHintMatches && bulkHintMatches.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+            {bulkHintMatches.map((m) => (
+              <div key={m.materiaName} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", color: colors.amber, fontSize: 12.5 }}>
+                <Library size={13} style={{ flexShrink: 0 }} />
+                <span>
+                  o banco tem uma versão mais detalhada de "{m.materiaName}": {m.bankEntry.topics.length} assuntos (o texto colado só deu {m.importedCount}).
+                </span>
+                <button
+                  onClick={() => useContentBankTopicsFor(m.materiaName, m.bankEntry.id)}
+                  style={{ ...secondaryBtnStyle, padding: "3px 10px", fontSize: 12, height: 24, flexShrink: 0 }}
+                >
+                  usar os {m.bankEntry.topics.length} do banco
+                </button>
+              </div>
+            ))}
           </div>
         )}
         <button onClick={parseBulk} style={primaryBtnStyle}><Plus size={14} /> importar</button>

@@ -39,6 +39,32 @@ const UMBRELLA_EXPANSIONS = [
       "Questões Mescladas de Ortografia",
     ],
   },
+  {
+    // Cadernos 09-24 no TecConcursos — "classes de palavras" na prática
+    // cobre cada classe gramatical (artigo, substantivo, adjetivo, verbo,
+    // as seis famílias de pronome, advérbio, preposição, conjunção) como
+    // um assunto próprio, não uma coisa só.
+    match: "emprego das classes de palavras",
+    topics: [
+      "Artigo",
+      "Adjetivo",
+      "Substantivo",
+      "Conjugação. Reconhecimento e Emprego dos Modos e Tempos Verbais",
+      "Correlação Verbal",
+      "Locução Verbal",
+      "Questões Variadas de Verbo",
+      "Pronomes Pessoais",
+      "Pronomes Possessivos",
+      "Pronomes Indefinidos",
+      "Pronomes Demonstrativos",
+      "Pronomes Relativos",
+      "Questões Mescladas sobre Pronomes",
+      "Advérbio",
+      "Preposição",
+      "Conjunção",
+      "Questões Variadas de Classe de Palavras",
+    ],
+  },
 ];
 
 function normalizeForMatch(text) {

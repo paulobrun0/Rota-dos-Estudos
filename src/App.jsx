@@ -29,10 +29,25 @@ import { AdminView } from "./views/AdminView.jsx";
 import { RankingView } from "./views/RankingView.jsx";
 import { ProfileView } from "./views/ProfileView.jsx";
 
+// When the content bank has an entry for `materiaName`, reorders `topics` to
+// follow the bank's order (TecConcursos's real caderno order) instead of
+// whatever order the edital text or user typing produced — topics not found
+// in the bank are left at the end, in their original relative order.
+function sortTopicsByBank(topics, materiaName, contentBank) {
+  const bankEntry = contentBank && contentBank.find((b) => normalizeMateriaName(b.name) === normalizeMateriaName(materiaName));
+  if (!bankEntry) return topics;
+  const rank = new Map(bankEntry.topics.map((t, i) => [t.trim().toLowerCase(), i]));
+  return [...topics].sort((a, b) => {
+    const ra = rank.has(a.name.toLowerCase()) ? rank.get(a.name.toLowerCase()) : Infinity;
+    const rb = rank.has(b.name.toLowerCase()) ? rank.get(b.name.toLowerCase()) : Infinity;
+    return ra - rb;
+  });
+}
+
 // Shared by the free-text bulk importer and the content-bank importer: given
 // {name, topics: [string]} entries, creates/reuses matérias by name and adds
 // any topic not already present (case-insensitive), mutating `clone` in place.
-function mergeMateriaEntries(clone, entries) {
+function mergeMateriaEntries(clone, entries, contentBank) {
   let count = 0;
   entries.forEach(({ name, topics }) => {
     const materiaName = (name || "").trim();
@@ -51,6 +66,7 @@ function mergeMateriaEntries(clone, entries) {
         count++;
       }
     });
+    materia.topics = sortTopicsByBank(materia.topics, materiaName, contentBank);
   });
   return count;
 }
@@ -65,7 +81,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
   const [newConcursoName, setNewConcursoName] = useState("");
   const [topicDrafts, setTopicDrafts] = useState({});
   const [error, setError] = useState("");
-  const [bulkHint, setBulkHint] = useState("");
+  const [bulkHintMatches, setBulkHintMatches] = useState([]);
   const [theme, setTheme] = useTheme();
   const [soundEnabled, setSoundEnabled] = useSoundEnabled();
   // materiaId -> cardId whose questions prompt the auto-timer is waiting on
@@ -284,6 +300,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           existingNames.add(n.toLowerCase());
           m.topics.push({ id: uid(), name: n, status: "pendente", mastered: false });
         });
+      m.topics = sortTopicsByBank(m.topics, m.name, contentBank);
       return clone;
     });
   }
@@ -356,7 +373,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
   function parseBulk() {
     setError("");
-    setBulkHint("");
+    setBulkHintMatches([]);
     if (!activeConcurso) return;
     if (!bulkText.trim()) {
       setError("Cole o edital no formato indicado antes de importar.");
@@ -372,7 +389,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
       setError('Esse texto não tem o nome da matéria. Digite o nome no campo "nome da matéria" (abaixo) e clique em importar de novo.');
       return;
     }
-    const entries = rawEntries || bulkText
+    let entries = rawEntries || bulkText
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean)
@@ -382,6 +399,20 @@ export default function App({ user, onLogout, onUserUpdate }) {
         return { name: line.slice(0, sepIndex), topics: line.slice(sepIndex + 1).split(";") };
       })
       .filter(Boolean);
+    // Texto de edital colado é uma extração mecânica do texto da banca — por
+    // melhor que o parser fique, não tem como bater com a granularidade real
+    // de estudo (itens "guarda-chuva" que o parser não reconhece, redações
+    // diferentes da banca, etc). Quando a matéria já tem uma entrada
+    // validada no banco compartilhado, usamos ela por completo em vez do que
+    // foi extraído do texto — só se aplica ao formato numerado do edital;
+    // o formato manual "Matéria: assunto 1; assunto 2" é curadoria
+    // deliberada do usuário e nunca é substituído.
+    if (rawEntries) {
+      entries = entries.map((entry) => {
+        const bankEntry = contentBank.find((b) => normalizeMateriaName(b.name) === normalizeMateriaName(entry.name));
+        return bankEntry ? { name: entry.name, topics: bankEntry.topics } : entry;
+      });
+    }
     // Counted against a read-only snapshot first, not from inside the
     // updater passed to updateActive: React (in dev/StrictMode) can invoke
     // that updater more than once, and since mergeMateriaEntries is
@@ -389,33 +420,53 @@ export default function App({ user, onLogout, onUserUpdate }) {
     // inside it would reflect only the last run — which often finds nothing
     // new left to add and reports 0 even though the import worked.
     const dryRun = JSON.parse(JSON.stringify(activeConcurso));
-    const count = mergeMateriaEntries(dryRun, entries);
+    const count = mergeMateriaEntries(dryRun, entries, contentBank);
     if (count === 0) {
       setError("Nenhum assunto novo encontrado. Confira o formato: Matéria: assunto 1; assunto 2");
       return;
     }
     updateActive((c) => {
       const clone = JSON.parse(JSON.stringify(c));
-      mergeMateriaEntries(clone, entries);
+      mergeMateriaEntries(clone, entries, contentBank);
       return clone;
     });
     setBulkText("");
 
-    // Texto colado de edital só rende o que a banca resumiu (geralmente bem
-    // menos granular que a prática real). Se a matéria já existe no banco
-    // compartilhado com mais assuntos, avisa em vez de deixar passar batido
-    // um resultado mais raso do que o disponível.
+    // No formato numerado (rawEntries), matérias com match no banco já foram
+    // substituídas acima — não sobra gap pra avisar. Isso só ainda dispara
+    // para o formato manual "Matéria: assunto 1; assunto 2", que é curadoria
+    // deliberada do usuário: aí só avisamos e deixamos a troca por completo
+    // opcional (o botão "usar os N do banco"), sem forçar.
     const richerMatches = entries
       .map((entry) => {
         const normalized = normalizeMateriaName(entry.name);
         const bankEntry = contentBank.find((b) => normalizeMateriaName(b.name) === normalized);
-        return bankEntry && bankEntry.topics.length > entry.topics.length ? { entryName: entry.name, bankEntry } : null;
+        if (!bankEntry || bankEntry.topics.length <= entry.topics.length) return null;
+        return { materiaName: entry.name, importedCount: entry.topics.length, bankEntry };
       })
       .filter(Boolean);
-    if (richerMatches.length > 0) {
-      const parts = richerMatches.map((m) => `"${m.bankEntry.name}" tem ${m.bankEntry.topics.length} assuntos no banco (importei ${entries.find((e) => e.name === m.entryName).topics.length} do texto colado)`);
-      setBulkHint(`o banco de matérias tem uma versão mais detalhada — ${parts.join("; ")}. considere usar "importar do banco de matérias" acima.`);
-    }
+    setBulkHintMatches(richerMatches);
+  }
+
+  // Swaps a matéria's topic list for the shared bank's version of it — used
+  // when the raw-edital parser only produced a shallow reading (banca não
+  // detalhou, ou o item era um "guarda-chuva" que o parser não sabia
+  // expandir) and the bank already has the real, validated granularity.
+  // Any topic whose name still matches keeps its progress (status/mastered);
+  // topics not in the bank list are dropped, new ones start "pendente".
+  function useContentBankTopicsFor(materiaName, bankId) {
+    if (!activeConcurso) return;
+    const bankEntry = contentBank.find((b) => b.id === bankId);
+    if (!bankEntry) return;
+    updateActive((c) => {
+      const clone = JSON.parse(JSON.stringify(c));
+      const materia = clone.materias.find((m) => m.name.toLowerCase() === materiaName.toLowerCase());
+      if (!materia) return clone;
+      const existingByName = new Map(materia.topics.map((t) => [t.name.toLowerCase(), t]));
+      materia.topics = bankEntry.topics.map((name) => existingByName.get(name.toLowerCase()) || { id: uid(), name, status: "pendente", mastered: false });
+      return clone;
+    });
+    setBulkHintMatches((matches) => matches.filter((m) => m.materiaName !== materiaName));
   }
 
   // Imports one or more matérias (with their topics) from the shared content
@@ -425,10 +476,10 @@ export default function App({ user, onLogout, onUserUpdate }) {
     const idSet = new Set(bankIds);
     const entries = contentBank.filter((m) => idSet.has(m.id));
     const dryRun = JSON.parse(JSON.stringify(activeConcurso));
-    const count = mergeMateriaEntries(dryRun, entries);
+    const count = mergeMateriaEntries(dryRun, entries, contentBank);
     updateActive((c) => {
       const clone = JSON.parse(JSON.stringify(c));
-      mergeMateriaEntries(clone, entries);
+      mergeMateriaEntries(clone, entries, contentBank);
       return clone;
     });
     return count;
@@ -648,7 +699,8 @@ export default function App({ user, onLogout, onUserUpdate }) {
             setBulkText={setBulkText}
             parseBulk={parseBulk}
             error={error}
-            bulkHint={bulkHint}
+            bulkHintMatches={bulkHintMatches}
+            useContentBankTopicsFor={useContentBankTopicsFor}
             newMateriaName={newMateriaName}
             setNewMateriaName={setNewMateriaName}
             addMateria={addMateria}
