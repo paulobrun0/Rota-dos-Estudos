@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Settings, Sparkles, Target,
+  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Settings, ShieldCheck, Sparkles, Target, Trophy,
 } from "lucide-react";
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
@@ -23,8 +23,10 @@ import { MetasView } from "./views/MetasView.jsx";
 import { ConcursosView } from "./views/ConcursosView.jsx";
 import { ProgressoView } from "./views/ProgressoView.jsx";
 import { AjustesView } from "./views/AjustesView.jsx";
+import { AdminView } from "./views/AdminView.jsx";
+import { RankingView } from "./views/RankingView.jsx";
 
-export default function App({ user, onLogout }) {
+export default function App({ user, onLogout, onUserUpdate }) {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState("dia");
   const [selectedDate, setSelectedDate] = useState(todayISO());
@@ -437,9 +439,13 @@ export default function App({ user, onLogout }) {
         <NavItem icon={<BookOpen size={16} />} label="edital" active={tab === "edital"} onClick={() => setTab("edital")} />
         <NavItem icon={<Target size={16} />} label="metas" active={tab === "metas"} onClick={() => setTab("metas")} />
         <NavItem icon={<Flame size={16} />} label="progresso" active={tab === "progresso"} onClick={() => setTab("progresso")} />
+        <NavItem icon={<Trophy size={16} />} label="ranking" active={tab === "ranking"} onClick={() => setTab("ranking")} />
         <div style={{ height: 1, background: colors.border, margin: "8px 6px" }} />
         <NavItem icon={<GraduationCap size={16} />} label="concursos" active={tab === "concursos"} onClick={() => setTab("concursos")} />
         <NavItem icon={<Settings size={16} />} label="ajustes" active={tab === "ajustes"} onClick={() => setTab("ajustes")} />
+        {user?.isAdmin && (
+          <NavItem icon={<ShieldCheck size={16} />} label="admin" active={tab === "admin"} onClick={() => setTab("admin")} />
+        )}
 
         <div style={{ flex: 1 }} />
 
@@ -483,10 +489,18 @@ export default function App({ user, onLogout }) {
             setSoundEnabled={setSoundEnabled}
             data={data}
             onImport={importData}
+            user={user}
+            onUserUpdate={onUserUpdate}
           />
         )}
 
-        {tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && !activeConcurso && (
+        {tab === "ranking" && (
+          <RankingView currentDisplayName={user?.email?.split("@")[0]} onGoToSettings={() => setTab("ajustes")} />
+        )}
+
+        {tab === "admin" && user?.isAdmin && <AdminView currentUserEmail={user.email} />}
+
+        {tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && tab !== "admin" && tab !== "ranking" && !activeConcurso && (
           <EmptyConcursoState onGo={() => setTab("concursos")} />
         )}
 

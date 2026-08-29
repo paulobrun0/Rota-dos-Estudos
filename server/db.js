@@ -27,4 +27,28 @@ try {
   // column already exists
 }
 
+try {
+  db.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+} catch {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN is_suspended INTEGER NOT NULL DEFAULT 0");
+} catch {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT");
+} catch {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN show_in_ranking INTEGER NOT NULL DEFAULT 1");
+} catch {
+  // column already exists
+}
+
 export default db;

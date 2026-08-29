@@ -21,6 +21,17 @@ export function formatRecoveryCode(raw) {
   return `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}`;
 }
 
+const PASSWORD_ALPHABET = "abcdefghjkmnpqrstuvwxyzACDEFGHJKMNPQRSTUVWXYZ23456789";
+
+// Used when an admin resets someone else's password — a random string
+// they can hand off, not something the target chose.
+export function generateTempPassword() {
+  const bytes = crypto.randomBytes(14);
+  let raw = "";
+  for (let i = 0; i < 14; i++) raw += PASSWORD_ALPHABET[bytes[i] % PASSWORD_ALPHABET.length];
+  return raw;
+}
+
 // Strips whatever punctuation/whitespace/casing the user typed or pasted
 // back (e.g. with or without dashes) down to the canonical form.
 export function normalizeRecoveryInput(input) {
@@ -47,4 +58,12 @@ export function authMiddleware(req, res, next) {
   } catch {
     res.status(401).json({ error: "sessão inválida" });
   }
+}
+
+export function requireAdmin(findUserById) {
+  return (req, res, next) => {
+    const user = findUserById.get(req.userId);
+    if (!user?.is_admin) return res.status(403).json({ error: "acesso restrito ao administrador" });
+    next();
+  };
 }

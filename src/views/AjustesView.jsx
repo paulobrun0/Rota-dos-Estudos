@@ -1,15 +1,29 @@
 import React, { useRef, useState } from "react";
-import { Download, Moon, Sun, Upload, Volume2, VolumeX } from "lucide-react";
+import { Download, Eye, EyeOff, Moon, Sun, Upload, Volume2, VolumeX } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { todayISO } from "../lib/date.js";
 import { migrate } from "../data/model.js";
 import { playCompleteSound } from "../lib/sound.js";
+import { setRankingVisibility } from "../api/ranking.js";
 
-export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport }) {
+export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport, user, onUserUpdate }) {
   const fileInputRef = useRef(null);
   const [importError, setImportError] = useState("");
   const [importOk, setImportOk] = useState(false);
+  const [rankingBusy, setRankingBusy] = useState(false);
+
+  async function toggleRanking(value) {
+    setRankingBusy(true);
+    try {
+      await setRankingVisibility(value);
+      onUserUpdate((u) => ({ ...u, showInRanking: value }));
+    } catch {
+      // keep current state on failure — the button just won't reflect a change
+    } finally {
+      setRankingBusy(false);
+    }
+  }
 
   function exportData() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -93,6 +107,29 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
               testar
             </button>
           )}
+        </div>
+      </div>
+
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>ranking</div>
+        <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
+          controla se outras pessoas te veem no ranking de assuntos estudados. seus assuntos, anotações e planos nunca ficam visíveis — só a contagem.
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            disabled={rankingBusy}
+            onClick={() => toggleRanking(true)}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${user?.showInRanking ? colors.amber : colors.border}`, color: user?.showInRanking ? colors.amber : colors.text }}
+          >
+            <Eye size={14} /> apareço no ranking
+          </button>
+          <button
+            disabled={rankingBusy}
+            onClick={() => toggleRanking(false)}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${!user?.showInRanking ? colors.amber : colors.border}`, color: !user?.showInRanking ? colors.amber : colors.text }}
+          >
+            <EyeOff size={14} /> fico de fora
+          </button>
         </div>
       </div>
 

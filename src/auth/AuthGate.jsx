@@ -32,5 +32,5 @@ export default function AuthGate() {
     return <LoginForm onAuthed={(u) => { setUser(u); setStatus("authed"); }} />;
   }
 
-  return <App user={user} onLogout={handleLogout} />;
+  return <App user={user} onLogout={handleLogout} onUserUpdate={setUser} />;
 }
