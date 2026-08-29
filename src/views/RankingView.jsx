@@ -1,21 +1,34 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Trophy } from "lucide-react";
+import { ListChecks, Trophy } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { fetchRanking } from "../api/ranking.js";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
+const PERIOD_LABELS = { day: "hoje", week: "7 dias", month: "30 dias" };
 
-function Bar({ label, value, max, highlight }) {
+function Avatar({ src, name, size = 22 }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: colors.surface2,
+      display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.4, fontWeight: 700, color: colors.textFaint,
+    }}>
+      {src ? <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (name || "?").slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
+function Bar({ avatar, label, value, max, highlight, suffix }) {
   const pct = max === 0 ? 0 : Math.round((value / max) * 100);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-      <div style={{ width: 120, fontSize: 12.5, color: highlight ? colors.amber : colors.textMuted, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <Avatar src={avatar} name={label} size={20} />
+      <div style={{ width: 150, fontSize: 12.5, color: highlight ? colors.amber : colors.textMuted, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {label}
       </div>
       <div style={{ flex: 1, background: colors.surface2, borderRadius: 6, height: 10, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, background: highlight ? colors.amber : colors.teal, height: "100%", borderRadius: 6 }} />
       </div>
-      <div className="mono" style={{ width: 28, textAlign: "right", fontSize: 12.5, color: colors.textMuted, flexShrink: 0 }}>{value}</div>
+      <div className="mono" style={{ minWidth: 28, textAlign: "right", fontSize: 12.5, color: colors.textMuted, flexShrink: 0 }}>{value}{suffix || ""}</div>
     </div>
   );
 }
@@ -24,6 +37,7 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [materia, setMateria] = useState("");
+  const [period, setPeriod] = useState("day");
 
   useEffect(() => {
     fetchRanking().then(setData).catch((e) => setError(e.message));
@@ -48,7 +62,10 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
     if (!data || !materia) return [];
     const key = materia.toLowerCase();
     return data.users
-      .map((u) => ({ displayName: u.displayName, estudado: u.materias.find((m) => m.name.toLowerCase() === key)?.estudado || 0 }))
+      .map((u) => {
+        const m = u.materias.find((x) => x.name.toLowerCase() === key);
+        return { displayName: u.displayName, avatar: u.avatar, estudado: m?.estudado || 0, questionsTotal: m?.questionsTotal || 0, questionsCorrect: m?.questionsCorrect || 0 };
+      })
       .filter((u) => u.estudado > 0)
       .sort((a, b) => b.estudado - a.estudado);
   }, [data, materia]);
@@ -62,6 +79,8 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
   }
 
   const maxEstudado = overall[0]?.totalEstudado || 1;
+  const questionRanking = data?.questionPeriods?.[period] || [];
+  const maxQuestions = questionRanking[0]?.total || 1;
 
   return (
     <div>
@@ -91,9 +110,9 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
             const isMe = u.displayName === currentDisplayName;
             return (
               <div key={u.displayName} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${colors.border}` : "none" }}>
-                <div style={{ width: 24, fontSize: 15, textAlign: "center", flexShrink: 0 }}>{MEDALS[i] || i + 1}</div>
+                <div style={{ width: 20, fontSize: 15, textAlign: "center", flexShrink: 0 }}>{MEDALS[i] || i + 1}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <Bar label={isMe ? `${u.displayName} (você)` : u.displayName} value={u.totalEstudado} max={maxEstudado} highlight={isMe} />
+                  <Bar avatar={u.avatar} label={isMe ? `${u.displayName} (você)` : u.displayName} value={u.totalEstudado} max={maxEstudado} highlight={isMe} />
                 </div>
                 {accuracy !== null && (
                   <div className="mono" style={{ fontSize: 11.5, color: colors.textFaint, width: 60, textAlign: "right", flexShrink: 0 }}>{accuracy}% acerto</div>
@@ -103,6 +122,42 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
           })}
         </div>
       )}
+
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <ListChecks size={14} /> questões resolvidas
+          </div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {Object.keys(PERIOD_LABELS).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                style={{
+                  background: period === p ? colors.amberSoft : "transparent", color: period === p ? colors.amber : colors.textMuted,
+                  border: `1px solid ${period === p ? colors.amber : colors.border}`, borderRadius: 8, padding: "5px 10px", fontSize: 12,
+                }}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
+          </div>
+        </div>
+        {questionRanking.length === 0 && <div style={{ color: colors.textFaint, fontSize: 13 }}>ninguém resolveu questões nesse período ainda.</div>}
+        {questionRanking.map((u, i) => {
+          const accuracy = u.total > 0 ? Math.round((u.correct / u.total) * 100) : 0;
+          const isMe = u.displayName === currentDisplayName;
+          return (
+            <div key={u.displayName} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${colors.border}` : "none" }}>
+              <div style={{ width: 20, fontSize: 15, textAlign: "center", flexShrink: 0 }}>{MEDALS[i] || i + 1}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Bar avatar={u.avatar} label={isMe ? `${u.displayName} (você)` : u.displayName} value={u.total} max={maxQuestions} highlight={isMe} />
+              </div>
+              <div className="mono" style={{ fontSize: 11.5, color: colors.textFaint, width: 60, textAlign: "right", flexShrink: 0 }}>{accuracy}% acerto</div>
+            </div>
+          );
+        })}
+      </div>
 
       {materiaNames.length > 0 && (
         <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18 }}>
@@ -117,9 +172,19 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
             </select>
           </div>
           {materiaRanking.length === 0 && <div style={{ color: colors.textFaint, fontSize: 13 }}>ninguém estudou essa matéria ainda.</div>}
-          {materiaRanking.map((u) => (
-            <Bar key={u.displayName} label={u.displayName === currentDisplayName ? `${u.displayName} (você)` : u.displayName} value={u.estudado} max={materiaRanking[0].estudado} highlight={u.displayName === currentDisplayName} />
-          ))}
+          {materiaRanking.map((u) => {
+            const accuracy = u.questionsTotal > 0 ? Math.round((u.questionsCorrect / u.questionsTotal) * 100) : null;
+            return (
+              <div key={u.displayName} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Bar avatar={u.avatar} label={u.displayName === currentDisplayName ? `${u.displayName} (você)` : u.displayName} value={u.estudado} max={materiaRanking[0].estudado} highlight={u.displayName === currentDisplayName} />
+                </div>
+                {accuracy !== null && (
+                  <div className="mono" style={{ fontSize: 11.5, color: colors.textFaint, width: 60, textAlign: "right", flexShrink: 0, marginBottom: 8 }}>{accuracy}% acerto</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -20,6 +20,19 @@ export default function AuthGate() {
     setStatus("anon");
   }
 
+  // The login/register/reset responses only carry {email} — fetch the full
+  // profile (isAdmin, username, avatar, showInRanking) right after, instead
+  // of running with a partial user object until the next page reload.
+  async function handleAuthed() {
+    setStatus("loading");
+    try {
+      setUser(await fetchCurrentUser());
+      setStatus("authed");
+    } catch {
+      setStatus("anon");
+    }
+  }
+
   if (status === "loading") {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: colors.bg, color: colors.textMuted, fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -29,7 +42,7 @@ export default function AuthGate() {
   }
 
   if (status === "anon") {
-    return <LoginForm onAuthed={(u) => { setUser(u); setStatus("authed"); }} />;
+    return <LoginForm onAuthed={handleAuthed} />;
   }
 
   return <App user={user} onLogout={handleLogout} onUserUpdate={setUser} />;

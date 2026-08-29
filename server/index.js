@@ -19,7 +19,7 @@ const app = express();
 // rate limiting keys on the real client IP instead of the tunnel's.
 app.set("trust proxy", 1);
 
-app.use(express.json());
+app.use(express.json({ limit: "3mb" }));
 app.use(cookieParser());
 
 const PORT = process.env.PORT || 4000;
@@ -49,11 +49,15 @@ const deleteUserData = db.prepare("DELETE FROM user_data WHERE user_id = ?");
 const deleteUserById = db.prepare("DELETE FROM users WHERE id = ?");
 const setUserAdminFlag = db.prepare("UPDATE users SET is_admin = ? WHERE id = ?");
 const updateUserEmail = db.prepare("UPDATE users SET email = ? WHERE id = ?");
+const findUserByUsername = db.prepare("SELECT id FROM users WHERE username = ?");
+const updateProfile = db.prepare("UPDATE users SET username = COALESCE(?, username), avatar = COALESCE(?, avatar) WHERE id = ?");
+const clearAvatar = db.prepare("UPDATE users SET avatar = NULL WHERE id = ?");
+const updateOwnPassword = db.prepare("UPDATE users SET password_hash = ? WHERE id = ?");
 const setUserSuspendedFlag = db.prepare("UPDATE users SET is_suspended = ? WHERE id = ?");
 const setLastLogin = db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?");
 const setShowInRanking = db.prepare("UPDATE users SET show_in_ranking = ? WHERE id = ?");
 const listRankingData = db.prepare(`
-  SELECT u.email, d.value
+  SELECT u.email, u.username, u.avatar, d.value
   FROM users u JOIN user_data d ON d.user_id = u.id
   WHERE u.show_in_ranking = 1 AND u.is_suspended = 0
 `);
@@ -132,29 +136,102 @@ app.post("/api/logout", (req, res) => {
 app.get("/api/me", requireAuth, (req, res) => {
   const user = findUserById.get(req.userId);
   if (!user) return res.status(401).json({ error: "não autenticado" });
-  res.json({ email: user.email, isAdmin: !!user.is_admin, showInRanking: !!user.show_in_ranking });
+  res.json({
+    email: user.email, isAdmin: !!user.is_admin, showInRanking: !!user.show_in_ranking,
+    username: user.username || null, avatar: user.avatar || null,
+  });
 });
 
 app.patch("/api/me", requireAuth, (req, res) => {
-  const { showInRanking } = req.body || {};
-  if (typeof showInRanking !== "boolean") return res.status(400).json({ error: "showInRanking deve ser true ou false" });
-  setShowInRanking.run(showInRanking ? 1 : 0, req.userId);
+  const { showInRanking, username, avatar } = req.body || {};
+
+  if (showInRanking !== undefined) {
+    if (typeof showInRanking !== "boolean") return res.status(400).json({ error: "showInRanking deve ser true ou false" });
+    setShowInRanking.run(showInRanking ? 1 : 0, req.userId);
+  }
+
+  if (username !== undefined) {
+    const trimmed = typeof username === "string" ? username.trim() : "";
+    if (trimmed.length < 3 || trimmed.length > 24 || !/^[a-zA-Z0-9_.]+$/.test(trimmed)) {
+      return res.status(400).json({ error: "nome de usuário deve ter 3-24 caracteres (letras, números, _ ou .)" });
+    }
+    const existing = findUserByUsername.get(trimmed);
+    if (existing && existing.id !== req.userId) return res.status(409).json({ error: "esse nome de usuário já está em uso" });
+    updateProfile.run(trimmed, null, req.userId);
+  }
+
+  if (avatar !== undefined) {
+    if (avatar === null) {
+      clearAvatar.run(req.userId);
+    } else {
+      if (typeof avatar !== "string" || !/^data:image\/(png|jpeg|webp);base64,/.test(avatar)) {
+        return res.status(400).json({ error: "avatar deve ser uma imagem PNG, JPEG ou WEBP" });
+      }
+      if (avatar.length > 1_500_000) return res.status(400).json({ error: "imagem muito grande" });
+      updateProfile.run(null, avatar, req.userId);
+    }
+  }
+
   res.json({ ok: true });
 });
 
+app.post("/api/me/change-password", authLimiter, requireAuth, (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  const user = findUserById.get(req.userId);
+  if (!bcrypt.compareSync(currentPassword || "", user.password_hash)) {
+    return res.status(401).json({ error: "senha atual incorreta" });
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    return res.status(400).json({ error: "a nova senha precisa ter 6+ caracteres" });
+  }
+  updateOwnPassword.run(bcrypt.hashSync(newPassword, 10), req.userId);
+  res.json({ ok: true });
+});
+
+app.post("/api/me/change-email", authLimiter, requireAuth, (req, res) => {
+  const { currentPassword, newEmail } = req.body || {};
+  const user = findUserById.get(req.userId);
+  if (!bcrypt.compareSync(currentPassword || "", user.password_hash)) {
+    return res.status(401).json({ error: "senha atual incorreta" });
+  }
+  if (!isValidEmail(newEmail)) return res.status(400).json({ error: "email inválido" });
+  const normalizedEmail = newEmail.trim().toLowerCase();
+  const existing = findUserByEmail.get(normalizedEmail);
+  if (existing && existing.id !== req.userId) return res.status(409).json({ error: "já existe uma conta com esse email" });
+  updateUserEmail.run(normalizedEmail, req.userId);
+  res.json({ email: normalizedEmail });
+});
+
+function isoDaysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
 // Aggregate, read-only view across every opted-in user's plan data: total
-// topics studied and per-matéria counts (matched by lowercased name), so
-// people can see how they compare without exposing notes or plan details.
+// topics studied, per-matéria counts (matched by lowercased name), and
+// questions solved per period — so people can see how they compare without
+// exposing notes or plan details, only aggregate counts.
 app.get("/api/ranking", requireAuth, (req, res) => {
   const rows = listRankingData.all();
-  const users = rows.map((row) => {
-    const displayName = row.email.split("@")[0];
+  const dayCutoff = isoDaysAgo(0);
+  const weekCutoff = isoDaysAgo(6);
+  const monthCutoff = isoDaysAgo(29);
+
+  const users = [];
+  const periodTotals = { day: [], week: [], month: [] };
+
+  for (const row of rows) {
+    const displayName = row.username || row.email.split("@")[0];
+    const avatar = row.avatar || null;
     let parsed;
     try {
       parsed = JSON.parse(row.value);
     } catch {
-      return { displayName, totalEstudado: 0, questionsTotal: 0, questionsCorrect: 0, materias: [] };
+      users.push({ displayName, avatar, totalEstudado: 0, questionsTotal: 0, questionsCorrect: 0, materias: [] });
+      continue;
     }
+
     const materiaMap = new Map();
     let questionsTotal = 0;
     let questionsCorrect = 0;
@@ -162,10 +239,12 @@ app.get("/api/ranking", requireAuth, (req, res) => {
       for (const materia of concurso?.materias || []) {
         const key = (materia.name || "").trim().toLowerCase();
         if (!key) continue;
-        const entry = materiaMap.get(key) || { name: materia.name.trim(), estudado: 0, total: 0 };
+        const entry = materiaMap.get(key) || { name: materia.name.trim(), estudado: 0, total: 0, questionsTotal: 0, questionsCorrect: 0 };
         for (const topic of materia.topics || []) {
           entry.total += 1;
           if (topic.status === "estudado") entry.estudado += 1;
+          entry.questionsTotal += topic.questionsTotal || 0;
+          entry.questionsCorrect += topic.questionsCorrect || 0;
           questionsTotal += topic.questionsTotal || 0;
           questionsCorrect += topic.questionsCorrect || 0;
         }
@@ -174,9 +253,24 @@ app.get("/api/ranking", requireAuth, (req, res) => {
     }
     const materias = [...materiaMap.values()];
     const totalEstudado = materias.reduce((sum, m) => sum + m.estudado, 0);
-    return { displayName, totalEstudado, questionsTotal, questionsCorrect, materias };
-  });
-  res.json({ users, isOptedIn: !!findUserById.get(req.userId)?.show_in_ranking });
+    users.push({ displayName, avatar, totalEstudado, questionsTotal, questionsCorrect, materias });
+
+    const sums = { day: { total: 0, correct: 0 }, week: { total: 0, correct: 0 }, month: { total: 0, correct: 0 } };
+    for (const [iso, entry] of Object.entries(parsed?.questionActivity || {})) {
+      const total = entry?.total || 0;
+      const correct = entry?.correct || 0;
+      if (iso >= dayCutoff) { sums.day.total += total; sums.day.correct += correct; }
+      if (iso >= weekCutoff) { sums.week.total += total; sums.week.correct += correct; }
+      if (iso >= monthCutoff) { sums.month.total += total; sums.month.correct += correct; }
+    }
+    for (const period of ["day", "week", "month"]) {
+      if (sums[period].total > 0) periodTotals[period].push({ displayName, avatar, ...sums[period] });
+    }
+  }
+
+  for (const period of ["day", "week", "month"]) periodTotals[period].sort((a, b) => b.total - a.total);
+
+  res.json({ users, questionPeriods: periodTotals, isOptedIn: !!findUserById.get(req.userId)?.show_in_ranking });
 });
 
 const adminOnly = [...requireAuth, requireAdmin(findUserById)];

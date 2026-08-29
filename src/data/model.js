@@ -18,7 +18,7 @@ export const makeConcurso = (name, colorIndex) => ({
   dailyPlans: {},
 });
 
-export const defaultData = () => ({ concursos: [], activeConcursoId: null, activity: {} });
+export const defaultData = () => ({ concursos: [], activeConcursoId: null, activity: {}, questionActivity: {} });
 
 // Older single-concurso saves get wrapped into one concurso so nothing is lost.
 export function migrate(raw) {
@@ -27,6 +27,7 @@ export function migrate(raw) {
       c.settings = { ...defaultSettings(), ...(c.settings || {}) };
     });
     if (!raw.activity) raw.activity = {};
+    if (!raw.questionActivity) raw.questionActivity = {};
     return raw;
   }
   if (raw && Array.isArray(raw.materias)) {
@@ -38,7 +39,7 @@ export function migrate(raw) {
       settings: { ...defaultSettings(), ...(raw.settings || {}) },
       dailyPlans: raw.dailyPlans || {},
     };
-    return { concursos: [c], activeConcursoId: c.id, activity: {} };
+    return { concursos: [c], activeConcursoId: c.id, activity: {}, questionActivity: {} };
   }
   return defaultData();
 }

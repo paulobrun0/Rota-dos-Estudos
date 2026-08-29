@@ -51,4 +51,20 @@ try {
   // column already exists
 }
 
+try {
+  db.exec("ALTER TABLE users ADD COLUMN username TEXT");
+} catch {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN avatar TEXT");
+} catch {
+  // column already exists
+}
+
+// NULLs are all distinct under a unique index, so this is safe to run
+// before anyone has set a username.
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)");
+
 export default db;

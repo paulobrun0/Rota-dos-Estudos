@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Settings, ShieldCheck, Sparkles, Target, Trophy,
+  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle,
 } from "lucide-react";
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
@@ -25,6 +25,7 @@ import { ProgressoView } from "./views/ProgressoView.jsx";
 import { AjustesView } from "./views/AjustesView.jsx";
 import { AdminView } from "./views/AdminView.jsx";
 import { RankingView } from "./views/RankingView.jsx";
+import { ProfileView } from "./views/ProfileView.jsx";
 
 export default function App({ user, onLogout, onUserUpdate }) {
   const [data, setData] = useState(null);
@@ -181,6 +182,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
         if (questions) {
           topic.questionsTotal = (topic.questionsTotal || 0) + questions.total;
           topic.questionsCorrect = (topic.questionsCorrect || 0) + questions.correct;
+          clone.questionActivity = clone.questionActivity || {};
+          const bucket = clone.questionActivity[iso] || { total: 0, correct: 0 };
+          clone.questionActivity[iso] = { total: bucket.total + questions.total, correct: bucket.correct + questions.correct };
         }
         clone.activity = clone.activity || {};
         clone.activity[iso] = (clone.activity[iso] || 0) + 1;
@@ -442,6 +446,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         <NavItem icon={<Trophy size={16} />} label="ranking" active={tab === "ranking"} onClick={() => setTab("ranking")} />
         <div style={{ height: 1, background: colors.border, margin: "8px 6px" }} />
         <NavItem icon={<GraduationCap size={16} />} label="concursos" active={tab === "concursos"} onClick={() => setTab("concursos")} />
+        <NavItem icon={<UserCircle size={16} />} label="perfil" active={tab === "perfil"} onClick={() => setTab("perfil")} />
         <NavItem icon={<Settings size={16} />} label="ajustes" active={tab === "ajustes"} onClick={() => setTab("ajustes")} />
         {user?.isAdmin && (
           <NavItem icon={<ShieldCheck size={16} />} label="admin" active={tab === "admin"} onClick={() => setTab("admin")} />
@@ -450,9 +455,20 @@ export default function App({ user, onLogout, onUserUpdate }) {
         <div style={{ flex: 1 }} />
 
         <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 10, marginTop: 8 }}>
-          <div style={{ fontSize: 11, color: colors.textFaint, padding: "0 10px 6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {user?.email}
-          </div>
+          <button
+            onClick={() => setTab("perfil")}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none", padding: "0 10px 6px", textAlign: "left" }}
+          >
+            <div style={{
+              width: 22, height: 22, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: colors.surface2,
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 700, color: colors.textFaint,
+            }}>
+              {user?.avatar ? <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (user?.username || user?.email || "?").slice(0, 2).toUpperCase()}
+            </div>
+            <div style={{ fontSize: 11, color: colors.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {user?.username || user?.email}
+            </div>
+          </button>
           <button
             onClick={onLogout}
             style={{
@@ -495,12 +511,14 @@ export default function App({ user, onLogout, onUserUpdate }) {
         )}
 
         {tab === "ranking" && (
-          <RankingView currentDisplayName={user?.email?.split("@")[0]} onGoToSettings={() => setTab("ajustes")} />
+          <RankingView currentDisplayName={user?.username || user?.email?.split("@")[0]} onGoToSettings={() => setTab("ajustes")} />
         )}
+
+        {tab === "perfil" && <ProfileView user={user} onUserUpdate={onUserUpdate} />}
 
         {tab === "admin" && user?.isAdmin && <AdminView currentUserEmail={user.email} />}
 
-        {tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && tab !== "admin" && tab !== "ranking" && !activeConcurso && (
+        {tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && tab !== "admin" && tab !== "ranking" && tab !== "perfil" && !activeConcurso && (
           <EmptyConcursoState onGo={() => setTab("concursos")} />
         )}
 
