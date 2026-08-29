@@ -1,7 +1,7 @@
 import { colors } from "./colors.js";
 
 export const inputStyle = {
-  flex: 1, background: colors.surface2, border: `1px solid ${colors.border}`, borderRadius: 8,
+  flex: 1, minWidth: 0, background: colors.surface2, border: `1px solid ${colors.border}`, borderRadius: 8,
   color: colors.text, fontSize: 14, padding: "9px 12px", boxSizing: "border-box", outline: "none",
 };
 export const primaryBtnStyle = {

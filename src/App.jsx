@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle,
+  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle, X,
 } from "lucide-react";
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
@@ -71,9 +71,23 @@ function mergeMateriaEntries(clone, entries, contentBank) {
   return count;
 }
 
+const TAB_TITLES = {
+  dia: "hoje",
+  semana: "semana",
+  edital: "edital",
+  metas: "metas",
+  progresso: "progresso",
+  ranking: "ranking",
+  concursos: "concursos",
+  perfil: "perfil",
+  ajustes: "ajustes",
+  admin: "admin",
+};
+
 export default function App({ user, onLogout, onUserUpdate }) {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState("dia");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [weekAnchor, setWeekAnchor] = useState(weekStart(todayISO()));
   const [bulkText, setBulkText] = useState("");
@@ -523,6 +537,13 @@ export default function App({ user, onLogout, onUserUpdate }) {
     setTab("dia");
   }
 
+  // Switches tabs and, on mobile, closes the slide-out nav drawer — used by
+  // every nav item so tapping a destination also dismisses the menu.
+  function goTab(t) {
+    setTab(t);
+    setMobileNavOpen(false);
+  }
+
   if (!data) {
     return (
       <div style={{ background: colors.bg, color: colors.textMuted, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, sans-serif" }}>
@@ -550,16 +571,34 @@ export default function App({ user, onLogout, onUserUpdate }) {
         input, textarea { font-family: inherit; }
         ::placeholder { color: ${colors.textFaint}; }
         button { cursor: pointer; }
+        .mobile-topbar, .nav-backdrop { display: none; }
+        @media (max-width: 860px) {
+          .app-nav {
+            position: fixed; top: 0; left: 0; height: 100vh; z-index: 101;
+            background: ${colors.bg}; transform: translateX(-100%); transition: transform 0.2s ease;
+          }
+          .app-nav.open { transform: translateX(0); }
+          .mobile-topbar {
+            display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10;
+            background: ${colors.bg}; border-bottom: 1px solid ${colors.border}; padding: 14px 16px;
+          }
+          .nav-backdrop.open {
+            display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
+          }
+          .app-main { padding: 16px !important; }
+        }
       `}</style>
 
-      <nav style={{ width: 210, minHeight: "100vh", boxSizing: "border-box", flexShrink: 0, borderRight: `1px solid ${colors.border}`, padding: "24px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+      <div className={`nav-backdrop${mobileNavOpen ? " open" : ""}`} onClick={() => setMobileNavOpen(false)} />
+
+      <nav className={`app-nav${mobileNavOpen ? " open" : ""}`} style={{ width: 210, minHeight: "100vh", boxSizing: "border-box", flexShrink: 0, borderRight: `1px solid ${colors.border}`, padding: "24px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
         <div className="sg" style={{ fontSize: 17, fontWeight: 700, padding: "0 10px 16px", color: colors.text, display: "flex", alignItems: "center", gap: 8 }}>
           <Sparkles size={18} color={colors.amber} />
           ciclo de estudos
         </div>
 
         <button
-          onClick={() => setTab("concursos")}
+          onClick={() => goTab("concursos")}
           style={{
             display: "flex", alignItems: "center", gap: 8, background: colors.surface, border: `1px solid ${colors.border}`,
             borderRadius: 8, padding: "9px 10px", marginBottom: 16, textAlign: "left",
@@ -575,25 +614,25 @@ export default function App({ user, onLogout, onUserUpdate }) {
           <ChevronRight size={14} color={colors.textFaint} />
         </button>
 
-        <NavItem icon={<CalendarDays size={16} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); setTab("dia"); }} />
-        <NavItem icon={<ListChecks size={16} />} label="semana" active={tab === "semana"} onClick={() => setTab("semana")} />
-        <NavItem icon={<BookOpen size={16} />} label="edital" active={tab === "edital"} onClick={() => setTab("edital")} />
-        <NavItem icon={<Target size={16} />} label="metas" active={tab === "metas"} onClick={() => setTab("metas")} />
-        <NavItem icon={<Flame size={16} />} label="progresso" active={tab === "progresso"} onClick={() => setTab("progresso")} />
-        <NavItem icon={<Trophy size={16} />} label="ranking" active={tab === "ranking"} onClick={() => setTab("ranking")} />
+        <NavItem icon={<CalendarDays size={16} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); goTab("dia"); }} />
+        <NavItem icon={<ListChecks size={16} />} label="semana" active={tab === "semana"} onClick={() => goTab("semana")} />
+        <NavItem icon={<BookOpen size={16} />} label="edital" active={tab === "edital"} onClick={() => goTab("edital")} />
+        <NavItem icon={<Target size={16} />} label="metas" active={tab === "metas"} onClick={() => goTab("metas")} />
+        <NavItem icon={<Flame size={16} />} label="progresso" active={tab === "progresso"} onClick={() => goTab("progresso")} />
+        <NavItem icon={<Trophy size={16} />} label="ranking" active={tab === "ranking"} onClick={() => goTab("ranking")} />
         <div style={{ height: 1, background: colors.border, margin: "8px 6px" }} />
-        <NavItem icon={<GraduationCap size={16} />} label="concursos" active={tab === "concursos"} onClick={() => setTab("concursos")} />
-        <NavItem icon={<UserCircle size={16} />} label="perfil" active={tab === "perfil"} onClick={() => setTab("perfil")} />
-        <NavItem icon={<Settings size={16} />} label="ajustes" active={tab === "ajustes"} onClick={() => setTab("ajustes")} />
+        <NavItem icon={<GraduationCap size={16} />} label="concursos" active={tab === "concursos"} onClick={() => goTab("concursos")} />
+        <NavItem icon={<UserCircle size={16} />} label="perfil" active={tab === "perfil"} onClick={() => goTab("perfil")} />
+        <NavItem icon={<Settings size={16} />} label="ajustes" active={tab === "ajustes"} onClick={() => goTab("ajustes")} />
         {user?.isAdmin && (
-          <NavItem icon={<ShieldCheck size={16} />} label="admin" active={tab === "admin"} onClick={() => setTab("admin")} />
+          <NavItem icon={<ShieldCheck size={16} />} label="admin" active={tab === "admin"} onClick={() => goTab("admin")} />
         )}
 
         <div style={{ flex: 1 }} />
 
         <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 10, marginTop: 8 }}>
           <button
-            onClick={() => setTab("perfil")}
+            onClick={() => goTab("perfil")}
             style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none", padding: "0 10px 6px", textAlign: "left" }}
           >
             <div style={{
@@ -618,7 +657,15 @@ export default function App({ user, onLogout, onUserUpdate }) {
         </div>
       </nav>
 
-      <main style={{ flex: 1, minWidth: 0, padding: "28px 36px" }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <div className="mobile-topbar">
+          <button onClick={() => setMobileNavOpen(true)} style={{ background: "transparent", border: "none", color: colors.text, display: "flex" }}>
+            <Menu size={20} />
+          </button>
+          <span className="sg" style={{ fontSize: 15, fontWeight: 700 }}>{TAB_TITLES[tab] || "ciclo de estudos"}</span>
+        </div>
+
+        <main className="app-main" style={{ flex: 1, minWidth: 0, padding: "28px 36px" }}>
         {tab === "concursos" && (
           <ConcursosView
             concursos={data.concursos}
@@ -718,7 +765,8 @@ export default function App({ user, onLogout, onUserUpdate }) {
         )}
 
         {tab === "metas" && activeConcurso && <MetasView concurso={activeConcurso} updateSettings={updateSettings} />}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

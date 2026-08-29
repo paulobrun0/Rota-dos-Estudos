@@ -213,7 +213,7 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
 
   return (
     <div style={{ background: colors.surface2, borderRadius: 8, padding: "10px 12px", opacity: card.feito ? 0.55 : 1, border: forcedOpen ? `1px solid ${colors.amber}` : "1px solid transparent" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <button
           onClick={handleCircleClick}
           aria-label={card.feito ? "marcar como não estudado" : "marcar como estudado"}
@@ -224,7 +224,7 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
         >
           {card.feito && <Check size={13} color={colors.bg} strokeWidth={3} />}
         </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: "1 1 140px", minWidth: 0 }}>
           <div style={{ fontSize: 14, textDecoration: card.feito ? "line-through" : "none", color: colors.text }}>{topic.name}</div>
           {hasNotes && !notesOpen && (
             <div style={{ fontSize: 12, color: colors.textFaint, fontStyle: "italic", marginTop: 2 }}>{topic.notes}</div>

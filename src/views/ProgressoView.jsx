@@ -145,7 +145,7 @@ function TopicStatRow({ stat }) {
 
 function StatCard({ icon, label, value, sub }) {
   return (
-    <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "14px 16px" }}>
+    <div style={{ minWidth: 0, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "14px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>{icon}<span style={{ fontSize: 12, color: colors.textMuted }}>{label}</span></div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
       {sub && <div style={{ fontSize: 11.5, color: colors.textFaint, marginTop: 2 }}>{sub}</div>}

@@ -68,7 +68,7 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>aparência</div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => setTheme("dark")}
             style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${theme === "dark" ? colors.amber : colors.border}`, color: theme === "dark" ? colors.amber : colors.text }}
@@ -89,7 +89,7 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
         <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
           toca um aviso sonoro sempre que um assunto é marcado como concluído.
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => setSoundEnabled(true)}
             style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${soundEnabled ? colors.amber : colors.border}`, color: soundEnabled ? colors.amber : colors.text }}
@@ -115,7 +115,7 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
         <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
           controla se outras pessoas te veem no ranking de assuntos estudados. seus assuntos, anotações e planos nunca ficam visíveis — só a contagem.
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             disabled={rankingBusy}
             onClick={() => toggleRanking(true)}
