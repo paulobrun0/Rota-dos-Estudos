@@ -14,6 +14,8 @@ import { useRestTimers } from "./lib/useRestTimers.js";
 import { useSoundEnabled } from "./lib/useSoundEnabled.js";
 import { playCompleteSound, playRestOverSound } from "./lib/sound.js";
 import { fetchPlanData, savePlanData } from "./api/planData.js";
+import { fetchContentBank } from "./api/contentBank.js";
+import { looksLikeNumberedEdital, normalizeMateriaName, parseRawEdital } from "./lib/rawEditalParser.js";
 import { NavItem } from "./components/NavItem.jsx";
 import { EmptyConcursoState } from "./components/EmptyConcursoState.jsx";
 import { DiaView } from "./views/DiaView.jsx";
@@ -27,6 +29,32 @@ import { AdminView } from "./views/AdminView.jsx";
 import { RankingView } from "./views/RankingView.jsx";
 import { ProfileView } from "./views/ProfileView.jsx";
 
+// Shared by the free-text bulk importer and the content-bank importer: given
+// {name, topics: [string]} entries, creates/reuses matérias by name and adds
+// any topic not already present (case-insensitive), mutating `clone` in place.
+function mergeMateriaEntries(clone, entries) {
+  let count = 0;
+  entries.forEach(({ name, topics }) => {
+    const materiaName = (name || "").trim();
+    const topicNames = (topics || []).map((s) => s.trim()).filter(Boolean);
+    if (!materiaName || topicNames.length === 0) return;
+    let materia = clone.materias.find((m) => m.name.toLowerCase() === materiaName.toLowerCase());
+    if (!materia) {
+      materia = { id: uid(), name: materiaName, color: PALETTE[clone.materias.length % PALETTE.length], topics: [] };
+      clone.materias.push(materia);
+    }
+    const existingNames = new Set(materia.topics.map((t) => t.name.toLowerCase()));
+    topicNames.forEach((n) => {
+      if (!existingNames.has(n.toLowerCase())) {
+        existingNames.add(n.toLowerCase());
+        materia.topics.push({ id: uid(), name: n, status: "pendente", mastered: false });
+        count++;
+      }
+    });
+  });
+  return count;
+}
+
 export default function App({ user, onLogout, onUserUpdate }) {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState("dia");
@@ -37,12 +65,20 @@ export default function App({ user, onLogout, onUserUpdate }) {
   const [newConcursoName, setNewConcursoName] = useState("");
   const [topicDrafts, setTopicDrafts] = useState({});
   const [error, setError] = useState("");
+  const [bulkHint, setBulkHint] = useState("");
   const [theme, setTheme] = useTheme();
   const [soundEnabled, setSoundEnabled] = useSoundEnabled();
   // materiaId -> cardId whose questions prompt the auto-timer is waiting on
   // before it can move to the next segment.
   const [pendingQuestions, setPendingQuestions] = useState({});
+  const [contentBank, setContentBank] = useState([]);
   const loaded = useRef(false);
+
+  useEffect(() => {
+    fetchContentBank()
+      .then((res) => setContentBank(res.materias || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -320,43 +356,82 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
   function parseBulk() {
     setError("");
+    setBulkHint("");
     if (!activeConcurso) return;
-    const lines = bulkText.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (lines.length === 0) {
+    if (!bulkText.trim()) {
       setError("Cole o edital no formato indicado antes de importar.");
       return;
     }
-    let count = 0;
-    updateActive((c) => {
-      const clone = JSON.parse(JSON.stringify(c));
-      lines.forEach((line) => {
+    // Accepts either the raw numbered edital text pasted verbatim (e.g.
+    // "LÍNGUA PORTUGUESA: 1 Compreensão... 2 Reconhecimento..."), the same
+    // numbered text with no matéria header at all (uses "nome da matéria"
+    // below as the name), or the plain "Matéria: assunto 1; assunto 2"
+    // format — whichever the pasted text looks like.
+    const rawEntries = parseRawEdital(bulkText, newMateriaName);
+    if (!rawEntries && looksLikeNumberedEdital(bulkText) && !newMateriaName.trim()) {
+      setError('Esse texto não tem o nome da matéria. Digite o nome no campo "nome da matéria" (abaixo) e clique em importar de novo.');
+      return;
+    }
+    const entries = rawEntries || bulkText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((line) => {
         const sepIndex = line.indexOf(":");
-        if (sepIndex === -1) return;
-        const materiaName = line.slice(0, sepIndex).trim();
-        const topicsRaw = line.slice(sepIndex + 1);
-        const topicNames = topicsRaw.split(";").map((s) => s.trim()).filter(Boolean);
-        if (!materiaName || topicNames.length === 0) return;
-        let materia = clone.materias.find((m) => m.name.toLowerCase() === materiaName.toLowerCase());
-        if (!materia) {
-          materia = { id: uid(), name: materiaName, color: PALETTE[clone.materias.length % PALETTE.length], topics: [] };
-          clone.materias.push(materia);
-        }
-        const existingNames = new Set(materia.topics.map((t) => t.name.toLowerCase()));
-        topicNames.forEach((n) => {
-          if (!existingNames.has(n.toLowerCase())) {
-            existingNames.add(n.toLowerCase());
-            materia.topics.push({ id: uid(), name: n, status: "pendente", mastered: false });
-            count++;
-          }
-        });
-      });
-      return clone;
-    });
+        if (sepIndex === -1) return null;
+        return { name: line.slice(0, sepIndex), topics: line.slice(sepIndex + 1).split(";") };
+      })
+      .filter(Boolean);
+    // Counted against a read-only snapshot first, not from inside the
+    // updater passed to updateActive: React (in dev/StrictMode) can invoke
+    // that updater more than once, and since mergeMateriaEntries is
+    // dedupe-safe that's harmless for the data, but a counter read from
+    // inside it would reflect only the last run — which often finds nothing
+    // new left to add and reports 0 even though the import worked.
+    const dryRun = JSON.parse(JSON.stringify(activeConcurso));
+    const count = mergeMateriaEntries(dryRun, entries);
     if (count === 0) {
       setError("Nenhum assunto novo encontrado. Confira o formato: Matéria: assunto 1; assunto 2");
       return;
     }
+    updateActive((c) => {
+      const clone = JSON.parse(JSON.stringify(c));
+      mergeMateriaEntries(clone, entries);
+      return clone;
+    });
     setBulkText("");
+
+    // Texto colado de edital só rende o que a banca resumiu (geralmente bem
+    // menos granular que a prática real). Se a matéria já existe no banco
+    // compartilhado com mais assuntos, avisa em vez de deixar passar batido
+    // um resultado mais raso do que o disponível.
+    const richerMatches = entries
+      .map((entry) => {
+        const normalized = normalizeMateriaName(entry.name);
+        const bankEntry = contentBank.find((b) => normalizeMateriaName(b.name) === normalized);
+        return bankEntry && bankEntry.topics.length > entry.topics.length ? { entryName: entry.name, bankEntry } : null;
+      })
+      .filter(Boolean);
+    if (richerMatches.length > 0) {
+      const parts = richerMatches.map((m) => `"${m.bankEntry.name}" tem ${m.bankEntry.topics.length} assuntos no banco (importei ${entries.find((e) => e.name === m.entryName).topics.length} do texto colado)`);
+      setBulkHint(`o banco de matérias tem uma versão mais detalhada — ${parts.join("; ")}. considere usar "importar do banco de matérias" acima.`);
+    }
+  }
+
+  // Imports one or more matérias (with their topics) from the shared content
+  // bank into the active concurso, merging into existing matérias by name.
+  function importFromBank(bankIds) {
+    if (!activeConcurso || bankIds.length === 0) return 0;
+    const idSet = new Set(bankIds);
+    const entries = contentBank.filter((m) => idSet.has(m.id));
+    const dryRun = JSON.parse(JSON.stringify(activeConcurso));
+    const count = mergeMateriaEntries(dryRun, entries);
+    updateActive((c) => {
+      const clone = JSON.parse(JSON.stringify(c));
+      mergeMateriaEntries(clone, entries);
+      return clone;
+    });
+    return count;
   }
 
   function addConcurso(name) {
@@ -573,6 +648,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             setBulkText={setBulkText}
             parseBulk={parseBulk}
             error={error}
+            bulkHint={bulkHint}
             newMateriaName={newMateriaName}
             setNewMateriaName={setNewMateriaName}
             addMateria={addMateria}
@@ -584,6 +660,8 @@ export default function App({ user, onLogout, onUserUpdate }) {
             updateTopicLink={updateTopicLink}
             topicDrafts={topicDrafts}
             setTopicDrafts={setTopicDrafts}
+            contentBank={contentBank}
+            importFromBank={importFromBank}
           />
         )}
 

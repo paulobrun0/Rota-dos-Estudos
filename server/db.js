@@ -67,4 +67,17 @@ try {
 // before anyone has set a username.
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)");
 
+// Shared catalog of matéria/assunto trees (e.g. extracted from TecConcursos),
+// available to every user so they can import a ready-made structure into
+// their own concurso instead of typing it out or scraping it themselves.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS content_bank_materias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    topics TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
 export default db;

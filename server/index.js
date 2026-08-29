@@ -61,6 +61,12 @@ const listRankingData = db.prepare(`
   FROM users u JOIN user_data d ON d.user_id = u.id
   WHERE u.show_in_ranking = 1 AND u.is_suspended = 0
 `);
+const listBankMaterias = db.prepare("SELECT id, name, topics FROM content_bank_materias ORDER BY name COLLATE NOCASE ASC");
+const upsertBankMateria = db.prepare(`
+  INSERT INTO content_bank_materias (name, topics, updated_at) VALUES (?, ?, datetime('now'))
+  ON CONFLICT(name) DO UPDATE SET topics = excluded.topics, updated_at = excluded.updated_at
+`);
+const deleteBankMateria = db.prepare("DELETE FROM content_bank_materias WHERE id = ?");
 
 function blockSuspended(req, res, next) {
   const user = findUserById.get(req.userId);
@@ -356,6 +362,41 @@ app.delete("/api/admin/users/:id", adminOnly, (req, res) => {
   if (!target) return res.status(404).json({ error: "usuário não encontrado" });
   deleteUserData.run(targetId);
   deleteUserById.run(targetId);
+  res.json({ ok: true });
+});
+
+// Read-only for any logged-in user: the shared catalog they can import
+// matérias/assuntos from into their own concurso.
+app.get("/api/content-bank", requireAuth, (req, res) => {
+  const materias = listBankMaterias.all().map((row) => {
+    let topics = [];
+    try {
+      topics = JSON.parse(row.topics);
+    } catch {
+      topics = [];
+    }
+    return { id: row.id, name: row.name, topics };
+  });
+  res.json({ materias });
+});
+
+// Admin-only: bulk upsert (by matéria name) the shared catalog.
+app.post("/api/admin/content-bank", adminOnly, (req, res) => {
+  const { materias } = req.body || {};
+  if (!Array.isArray(materias)) return res.status(400).json({ error: "materias deve ser uma lista" });
+  let count = 0;
+  for (const m of materias) {
+    const name = typeof m?.name === "string" ? m.name.trim() : "";
+    const topics = Array.isArray(m?.topics) ? m.topics.filter((t) => typeof t === "string" && t.trim()).map((t) => t.trim()) : [];
+    if (!name || topics.length === 0) continue;
+    upsertBankMateria.run(name, JSON.stringify(topics));
+    count++;
+  }
+  res.json({ ok: true, count });
+});
+
+app.delete("/api/admin/content-bank/:id", adminOnly, (req, res) => {
+  deleteBankMateria.run(Number(req.params.id));
   res.json({ ok: true });
 });
 
