@@ -24,6 +24,7 @@
     "vite": "latest"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "concurrently": "^10.0.5",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }
