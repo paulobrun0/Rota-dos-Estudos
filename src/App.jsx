@@ -290,6 +290,17 @@ export default function App({ user, onLogout, onUserUpdate }) {
     });
   }
 
+  function updateTopicLink(materiaId, topicId, link) {
+    updateActive((c) => {
+      const clone = JSON.parse(JSON.stringify(c));
+      const m = clone.materias.find((x) => x.id === materiaId);
+      const t = m?.topics.find((x) => x.id === topicId);
+      if (!t) return c;
+      t.link = link;
+      return clone;
+    });
+  }
+
   function setTopicQuestions(materiaId, topicId, total, correct) {
     updateActive((c) => {
       const clone = JSON.parse(JSON.stringify(c));
@@ -540,6 +551,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             restTimers={restTimers}
             pendingQuestions={pendingQuestions}
             updateTopicNotes={updateTopicNotes}
+            updateTopicLink={updateTopicLink}
             setTopicQuestions={setTopicQuestions}
           />
         )}
@@ -569,6 +581,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             removeTopic={removeTopic}
             moveMateria={moveMateria}
             updateTopicNotes={updateTopicNotes}
+            updateTopicLink={updateTopicLink}
             topicDrafts={topicDrafts}
             setTopicDrafts={setTopicDrafts}
           />

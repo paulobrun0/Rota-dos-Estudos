@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Plus, StickyNote, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ExternalLink, Link2, Plus, StickyNote, Trash2, X } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, topicDrafts, setTopicDrafts }) {
+export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, topicDrafts, setTopicDrafts }) {
   return (
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>edital</div>
@@ -63,13 +63,14 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
           removeTopic={removeTopic}
           moveMateria={moveMateria}
           updateTopicNotes={updateTopicNotes}
+          updateTopicLink={updateTopicLink}
         />
       ))}
     </div>
   );
 }
 
-function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes }) {
+function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink }) {
   const [collapsed, setCollapsed] = useState(false);
   const pendentes = m.topics.filter((t) => t.status === "pendente").length;
   const estudados = m.topics.length - pendentes;
@@ -132,7 +133,7 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
           {m.topics.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
               {m.topics.map((t) => (
-                <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} updateTopicNotes={updateTopicNotes} />
+                <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} updateTopicNotes={updateTopicNotes} updateTopicLink={updateTopicLink} />
               ))}
             </div>
           )}
@@ -155,13 +156,21 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
   );
 }
 
-function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes }) {
+function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [draft, setDraft] = useState(t.notes || "");
   const hasNotes = (t.notes || "").trim().length > 0;
 
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkDraft, setLinkDraft] = useState(t.link || "");
+  const hasLink = (t.link || "").trim().length > 0;
+
   function saveIfChanged() {
     if (draft !== (t.notes || "")) updateTopicNotes(materiaId, t.id, draft);
+  }
+
+  function saveLinkIfChanged() {
+    if (linkDraft !== (t.link || "")) updateTopicLink(materiaId, t.id, linkDraft.trim());
   }
 
   return (
@@ -175,6 +184,18 @@ function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes }) 
             </span>
           )}
           {t.mastered && <span style={{ fontSize: 11, color: colors.teal }}>dominado</span>}
+          {hasLink && (
+            <a href={t.link} target="_blank" rel="noreferrer" aria-label="abrir caderno de questões" style={{ ...iconBtnStyle, color: colors.teal }}>
+              <ExternalLink size={13} />
+            </a>
+          )}
+          <button
+            onClick={() => setLinkOpen((o) => !o)}
+            aria-label="link do caderno de questões"
+            style={{ ...iconBtnStyle, color: hasLink ? colors.teal : colors.textFaint }}
+          >
+            <Link2 size={13} />
+          </button>
           <button
             onClick={() => setNotesOpen((o) => !o)}
             aria-label="anotações do assunto"
@@ -185,6 +206,21 @@ function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes }) 
           <button onClick={() => removeTopic(materiaId, t.id)} style={iconBtnStyle}><X size={13} /></button>
         </div>
       </div>
+
+      {linkOpen && (
+        <input
+          autoFocus
+          value={linkDraft}
+          onChange={(e) => setLinkDraft(e.target.value)}
+          onBlur={saveLinkIfChanged}
+          onKeyDown={(e) => { if (e.key === "Enter") { saveLinkIfChanged(); setLinkOpen(false); } }}
+          placeholder="link do caderno de questões (ex: TecConcursos)"
+          style={{
+            width: "100%", marginTop: 6, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 6,
+            color: colors.text, fontSize: 12.5, padding: "6px 8px", boxSizing: "border-box",
+          }}
+        />
+      )}
 
       {notesOpen && (
         <textarea

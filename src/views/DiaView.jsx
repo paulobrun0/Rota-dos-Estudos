@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Flame, Pencil, StickyNote } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ExternalLink, Flame, Link2, Pencil, StickyNote } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -7,7 +7,7 @@ import { Ring } from "../components/Ring.jsx";
 import { SessionTimer } from "../components/SessionTimer.jsx";
 import { RestTimer } from "../components/RestTimer.jsx";
 
-export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, setTopicQuestions }) {
+export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions }) {
   const isToday = selectedDate === todayISO();
   const novos = plan.filter((c) => c.tipo === "novo");
   const revisoes = plan.filter((c) => c.tipo === "revisao");
@@ -78,6 +78,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
           restTimers={restTimers}
           pendingCardId={pendingQuestions[materiaId]}
           updateTopicNotes={updateTopicNotes}
+          updateTopicLink={updateTopicLink}
           setTopicQuestions={setTopicQuestions}
         />
       ))}
@@ -85,7 +86,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
   );
 }
 
-function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, setTopicQuestions }) {
+function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions }) {
   if (!materia) return null;
   const totalMinutes = minutesPerMateria || 0;
   const perTopic = cards.length > 0 && totalMinutes > 0 ? totalMinutes / cards.length : null;
@@ -124,6 +125,7 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
               forcedOpen={card.id === pendingCardId}
               onToggle={(questions) => onToggle(card.id, questions)}
               updateTopicNotes={updateTopicNotes}
+              updateTopicLink={updateTopicLink}
               setTopicQuestions={setTopicQuestions}
               materiaId={materia.id}
             />
@@ -145,7 +147,7 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
   );
 }
 
-function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, setTopicQuestions, materiaId }) {
+function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, setTopicQuestions, materiaId }) {
   const [asking, setAsking] = useState(false);
   const [feitas, setFeitas] = useState("");
   const [acertos, setAcertos] = useState("");
@@ -154,9 +156,16 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, setTopi
   const [questionsEditOpen, setQuestionsEditOpen] = useState(false);
   const [editTotal, setEditTotal] = useState(String(topic.questionsTotal || ""));
   const [editCorrect, setEditCorrect] = useState(String(topic.questionsCorrect || ""));
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkDraft, setLinkDraft] = useState(topic.link || "");
   const isRevisao = card.tipo === "revisao";
   const showForm = asking || forcedOpen;
   const hasNotes = (topic.notes || "").trim().length > 0;
+  const hasLink = (topic.link || "").trim().length > 0;
+
+  function saveLinkIfChanged() {
+    if (linkDraft !== (topic.link || "")) updateTopicLink(materiaId, topic.id, linkDraft.trim());
+  }
   const hasQuestions = (topic.questionsTotal || 0) > 0;
 
   function saveNotesIfChanged() {
@@ -244,6 +253,21 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, setTopi
           )}
           <Pencil size={10.5} color={colors.textFaint} />
         </button>
+        {hasLink && (
+          <a
+            href={topic.link} target="_blank" rel="noreferrer" aria-label="abrir caderno de questões"
+            style={{ display: "flex", alignItems: "center", padding: 4, color: colors.teal }}
+          >
+            <ExternalLink size={14} />
+          </a>
+        )}
+        <button
+          onClick={() => setLinkOpen((o) => !o)}
+          aria-label="link do caderno de questões"
+          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasLink ? colors.teal : colors.textFaint }}
+        >
+          <Link2 size={14} />
+        </button>
         <button
           onClick={() => setNotesOpen((o) => !o)}
           aria-label="anotações do assunto"
@@ -272,6 +296,21 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, setTopi
           <button onClick={saveQuestionsEdit} style={{ ...primaryBtnStyle, marginTop: 0, padding: "5px 10px", fontSize: 12 }}>salvar</button>
           <button onClick={() => setQuestionsEditOpen(false)} style={{ ...secondaryBtnStyle, padding: "5px 10px", fontSize: 12 }}>cancelar</button>
         </div>
+      )}
+
+      {linkOpen && (
+        <input
+          autoFocus
+          value={linkDraft}
+          onChange={(e) => setLinkDraft(e.target.value)}
+          onBlur={saveLinkIfChanged}
+          onKeyDown={(e) => { if (e.key === "Enter") { saveLinkIfChanged(); setLinkOpen(false); } }}
+          placeholder="link do caderno de questões (ex: TecConcursos)"
+          style={{
+            width: "100%", marginTop: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 6,
+            color: colors.text, fontSize: 12.5, padding: "8px 10px", boxSizing: "border-box",
+          }}
+        />
       )}
 
       {notesOpen && (
