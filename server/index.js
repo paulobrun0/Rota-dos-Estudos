@@ -1,18 +1,34 @@
 import "dotenv/config";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
+import rateLimit from "express-rate-limit";
 import db from "./db.js";
 import {
   signToken, authMiddleware, COOKIE_NAME, COOKIE_OPTIONS,
   generateRecoveryCode, formatRecoveryCode, normalizeRecoveryInput,
 } from "./auth.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// The tunnel/reverse proxy sits in front of us; trust its X-Forwarded-* so
+// rate limiting keys on the real client IP instead of the tunnel's.
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(cookieParser());
 
 const PORT = process.env.PORT || 4000;
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const insertUser = db.prepare("INSERT INTO users (email, password_hash, recovery_code_hash) VALUES (?, ?, ?)");
 const findUserByEmail = db.prepare("SELECT * FROM users WHERE email = ?");
@@ -28,7 +44,7 @@ function isValidEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-app.post("/api/register", (req, res) => {
+app.post("/api/register", authLimiter, (req, res) => {
   const { email, password } = req.body || {};
   if (!isValidEmail(email) || typeof password !== "string" || password.length < 6) {
     return res.status(400).json({ error: "email válido e senha com 6+ caracteres são obrigatórios" });
@@ -46,7 +62,7 @@ app.post("/api/register", (req, res) => {
   res.json({ email: normalizedEmail, recoveryCode: formatRecoveryCode(recoveryCode) });
 });
 
-app.post("/api/login", (req, res) => {
+app.post("/api/login", authLimiter, (req, res) => {
   const { email, password } = req.body || {};
   const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
   const user = findUserByEmail.get(normalizedEmail);
@@ -58,7 +74,7 @@ app.post("/api/login", (req, res) => {
   res.json({ email: user.email });
 });
 
-app.post("/api/reset-password", (req, res) => {
+app.post("/api/reset-password", authLimiter, (req, res) => {
   const { email, recoveryCode, newPassword } = req.body || {};
   if (typeof newPassword !== "string" || newPassword.length < 6) {
     return res.status(400).json({ error: "a nova senha precisa ter 6+ caracteres" });
@@ -101,6 +117,13 @@ app.put("/api/data", authMiddleware, (req, res) => {
   if (typeof value !== "string") return res.status(400).json({ error: "value deve ser uma string JSON" });
   upsertData.run(req.userId, value);
   res.json({ ok: true });
+});
+
+const distDir = path.join(__dirname, "..", "dist");
+app.use(express.static(distDir));
+app.use((req, res, next) => {
+  if (req.method !== "GET" || req.path.startsWith("/api/")) return next();
+  res.sendFile(path.join(distDir, "index.html"));
 });
 
 app.listen(PORT, () => console.log(`API rodando em http://localhost:${PORT}`));
