@@ -32,20 +32,31 @@ export function rotationMateriaIds(materias, settings, iso) {
 export function buildDayPlan(materias, settings, iso, oldPlan, reserved) {
   const kept = [];
   const usedTopicIds = new Set();
+  const rotationIds = new Set(rotationMateriaIds(materias, settings, iso));
 
-  (oldPlan || [])
-    .filter((c) => c.feito)
-    .forEach((c) => {
-      const m = materias.find((x) => x.id === c.materiaId);
-      const t = m?.topics.find((x) => x.id === c.topicId);
-      if (t) {
-        kept.push({ ...c });
-        usedTopicIds.add(c.topicId);
-      }
-    });
+  // Keep every card from the old plan whose topic still exists. This
+  // function reruns on every topic status change anywhere in the concurso
+  // (not just when this specific day is opened), so a not-yet-done card has
+  // to survive that rerun with the same id and stay slotted into this same
+  // day: otherwise completing one card regenerates its siblings with fresh
+  // ids (breaking "mark as done" for whichever card the UI still has a
+  // stale reference to) and unmarking a card can make its topic drop out of
+  // today's plan entirely instead of just flipping back to pending. Done
+  // cards are a record of what was actually studied and are always kept;
+  // not-done cards are only kept if their matéria is still in today's
+  // rotation (e.g. a metas change can legitimately move a matéria to a
+  // different day, and a not-done card shouldn't survive that).
+  (oldPlan || []).forEach((c) => {
+    const m = materias.find((x) => x.id === c.materiaId);
+    const t = m?.topics.find((x) => x.id === c.topicId);
+    if (!t) return;
+    if (!c.feito && !rotationIds.has(c.materiaId)) return;
+    kept.push({ ...c });
+    usedTopicIds.add(c.topicId);
+    reserved?.add(c.topicId);
+  });
 
   const topicsPerDay = settings?.topicsPerDay || 0;
-  const rotationIds = new Set(rotationMateriaIds(materias, settings, iso));
   if (topicsPerDay > 0) {
     materias.forEach((m) => {
       if (!rotationIds.has(m.id)) return;
