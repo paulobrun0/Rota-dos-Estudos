@@ -5,7 +5,7 @@ import {
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
 import { addDaysISO, todayISO, weekStart } from "./lib/date.js";
-import { buildDayPlan } from "./lib/planner.js";
+import { buildCyclePlan } from "./lib/planner.js";
 import { computeStreaks } from "./lib/streaks.js";
 import { uid } from "./lib/id.js";
 import { useTheme } from "./lib/useTheme.js";
@@ -42,6 +42,14 @@ function sortTopicsByBank(topics, materiaName, contentBank) {
     const rb = rank.has(b.name.toLowerCase()) ? rank.get(b.name.toLowerCase()) : Infinity;
     return ra - rb;
   });
+}
+
+// The cycle only ever needs "whatever was left unfinished the last time the
+// concurso had a plan" — this finds that, however many days back it was
+// (the user might not have opened the app yesterday, or at all yet).
+function mostRecentPlanBefore(dailyPlans, iso) {
+  const keys = Object.keys(dailyPlans).filter((k) => k < iso).sort();
+  return keys.length > 0 ? dailyPlans[keys[keys.length - 1]] : null;
 }
 
 // Shared by the free-text bulk importer and the content-bank importer: given
@@ -111,9 +119,19 @@ export default function App({ user, onLogout, onUserUpdate }) {
   }, []);
 
   useEffect(() => {
+    // React 18 StrictMode mounts every effect twice in dev (mount, simulated
+    // unmount, mount again) to surface impure ones — with no cleanup here,
+    // that fired two concurrent fetchPlanData() calls. Harmless on its own,
+    // but the first mount's fetch can resolve AFTER today's plan has
+    // already been rebuilt from it (cycleCursor advanced, a fresh batch
+    // handed out), and applying that stale response would silently wipe the
+    // rebuild back out. `cancelled` makes only the surviving mount's fetch
+    // actually apply.
+    let cancelled = false;
     (async () => {
       try {
         const value = await fetchPlanData();
+        if (cancelled) return;
         let parsed = value ? migrate(JSON.parse(value)) : defaultData();
         if (parsed.concursos.length === 0) {
           const c = makeConcurso("Meu concurso", 0);
@@ -124,11 +142,15 @@ export default function App({ user, onLogout, onUserUpdate }) {
         }
         setData(parsed);
       } catch (e) {
+        if (cancelled) return;
         const c = makeConcurso("Meu concurso", 0);
         setData({ concursos: [c], activeConcursoId: c.id, activity: {} });
       }
-      loaded.current = true;
+      if (!cancelled) loaded.current = true;
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -145,50 +167,45 @@ export default function App({ user, onLogout, onUserUpdate }) {
     });
   }
 
-  function withPlan(iso) {
+  // Today's plan is the only one ever (re)built: past days are frozen
+  // history (whatever they ended up with) and future days aren't knowable
+  // in advance anymore — what's "next" depends on real progress, not the
+  // calendar. Carries over whatever's unfinished from the last day the
+  // concurso had a plan (which might be several days back), and lets
+  // buildCyclePlan advance the cursor / hand out fresh batches as needed.
+  function refreshTodayPlan() {
+    const today = todayISO();
     setData((prev) => {
       if (!prev || !prev.activeConcursoId) return prev;
       return {
         ...prev,
         concursos: prev.concursos.map((c) => {
           if (c.id !== prev.activeConcursoId) return c;
-          const isFrozen = iso < todayISO();
-          if (isFrozen && c.dailyPlans[iso]) return c;
-          const newPlan = buildDayPlan(c.materias, c.settings, iso, c.dailyPlans[iso], new Set());
-          return { ...c, dailyPlans: { ...c.dailyPlans, [iso]: newPlan } };
+          const base = c.dailyPlans[today] || mostRecentPlanBefore(c.dailyPlans, today) || [];
+          const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, base);
+          return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
         }),
       };
     });
   }
 
-  // Whenever the active concurso's matérias or metas change, pre-build the
-  // next 35 days in one pass so future cycles are ready without opening each
-  // day manually.
+  // Re-check today's plan on genuinely structural changes only — a new
+  // matéria, a topic added/removed, matérias reordered, or the daily goals
+  // changing. Deliberately NOT keyed on activeConcurso.materias directly:
+  // that object also changes shape on every topic status flip, and
+  // toggleCard already runs this same rebuild synchronously as part of the
+  // toggle — running it again here afterwards would reuse the
+  // just-advanced cursor to prune the very cards that advance just added.
+  const structuralKey = activeConcurso
+    ? `${activeConcurso.materias.map((m) => `${m.id}:${m.topics.length}`).join(",")}|${activeConcurso.settings?.materiasPerDay}|${activeConcurso.settings?.topicsPerDay}`
+    : "";
   useEffect(() => {
-    if (!activeConcurso) return;
-    const activeId = activeConcurso.id;
-    setData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        concursos: prev.concursos.map((c) => {
-          if (c.id !== activeId) return c;
-          const start = todayISO();
-          const reserved = new Set();
-          const newPlans = { ...c.dailyPlans };
-          for (let i = 0; i < 35; i++) {
-            const iso = addDaysISO(start, i);
-            newPlans[iso] = buildDayPlan(c.materias, c.settings, iso, newPlans[iso], reserved);
-          }
-          return { ...c, dailyPlans: newPlans };
-        }),
-      };
-    });
+    if (activeConcurso) refreshTodayPlan();
     // eslint-disable-next-line
-  }, [activeConcurso?.id, activeConcurso?.materias, activeConcurso?.settings]);
+  }, [activeConcurso?.id, structuralKey]);
 
   useEffect(() => {
-    if (activeConcurso && tab === "dia") withPlan(selectedDate);
+    if (activeConcurso && tab === "dia" && selectedDate === todayISO()) refreshTodayPlan();
     // eslint-disable-next-line
   }, [tab, selectedDate, activeConcurso?.id]);
 
@@ -277,6 +294,15 @@ export default function App({ user, onLogout, onUserUpdate }) {
         clone.activity[iso] = Math.max(0, (clone.activity[iso] || 0) - 1);
         if (clone.activity[iso] === 0) delete clone.activity[iso];
       }
+
+      // Only today's plan drives the live rotation — a retroactive edit to
+      // a past day's history shouldn't reach forward and move the cursor.
+      if (iso === todayISO()) {
+        const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, plan);
+        c.dailyPlans[iso] = cards;
+        c.cycleCursor = cursor;
+      }
+
       return clone;
     });
   }
@@ -333,8 +359,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
     updateActive((c) => ({ ...c, materias: c.materias.filter((m) => m.id !== id) }));
   }
 
-  // Matéria order drives the daily rotation (rotationMateriaIds walks the
-  // array in order), so moving a matéria up/down changes when it's studied.
+  // Matéria order drives the cycle (activeMateriaIds walks the array in
+  // order from the cursor), so moving a matéria up/down changes when it's
+  // studied relative to the others.
   function moveMateria(id, direction) {
     updateActive((c) => {
       const idx = c.materias.findIndex((m) => m.id === id);

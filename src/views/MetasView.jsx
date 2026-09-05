@@ -3,7 +3,7 @@ import { Clock, Coffee, Layers, Target } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
-import { rotationMateriaIds } from "../lib/planner.js";
+import { projectActiveMateriaIds } from "../lib/planner.js";
 import { defaultSettings } from "../data/model.js";
 import { SectionLabel } from "../components/SectionLabel.jsx";
 
@@ -16,9 +16,13 @@ export function MetasView({ concurso, updateSettings }) {
   const totalMaterias = concurso.materias.length;
   const effectivePerDay = materiasPerDay > 0 ? Math.min(materiasPerDay, totalMaterias) : totalMaterias;
 
+  // Day 0 (hoje) is the real, current rotation; days 1-6 are a projection
+  // assuming everything stays on schedule — an unfinished day just means
+  // the real thing keeps showing today's matérias instead of matching this
+  // preview, since the cursor only moves once a matéria is actually done.
   const preview = Array.from({ length: 7 }, (_, i) => {
     const iso = addDaysISO(todayISO(), i);
-    const ids = rotationMateriaIds(concurso.materias, settings, iso);
+    const ids = projectActiveMateriaIds(concurso.materias, settings, concurso.cycleCursor, i);
     const names = ids.map((id) => concurso.materias.find((m) => m.id === id)?.name).filter(Boolean);
     return { iso, names };
   });
@@ -27,7 +31,7 @@ export function MetasView({ concurso, updateSettings }) {
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>metas</div>
       <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 20 }}>
-        três números só, para <b style={{ color: colors.text }}>{concurso.name}</b>. o app decide sozinho quais matérias entram em cada dia, revezando entre todas as cadastradas no edital, e monta a semana inteira automaticamente.
+        três números só, para <b style={{ color: colors.text }}>{concurso.name}</b>. o app decide sozinho quais matérias entram em cada dia, revezando entre todas as cadastradas no edital. o rodízio anda por ciclo, não por calendário: só passa pra próxima matéria quando a atual estiver de fato concluída — um dia mais fraco não te faz perder o que ficou pra trás, você retoma de onde parou.
       </div>
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "18px 20px", marginBottom: 22, display: "flex", flexDirection: "column", gap: 18 }}>
@@ -68,6 +72,9 @@ export function MetasView({ concurso, updateSettings }) {
       ) : (
         <>
           <SectionLabel text="prévia do revezamento" />
+          <div style={{ fontSize: 12, color: colors.textFaint, marginBottom: 10 }}>
+            "hoje" é o real; os outros dias são uma estimativa supondo que tudo seja concluído no ritmo — se um dia render menos, os dias reais seguintes se ajustam sozinhos.
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {preview.map(({ iso, names }, i) => (
               <div key={iso} style={{ display: "flex", gap: 12, alignItems: "baseline", background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "9px 14px" }}>

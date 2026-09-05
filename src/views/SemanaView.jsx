@@ -2,10 +2,12 @@ import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { navBtnStyle } from "../styles/shared.js";
-import { addDaysISO, fromISO, todayISO, weekStart } from "../lib/date.js";
+import { addDaysISO, daysSinceEpoch, fromISO, todayISO, weekStart } from "../lib/date.js";
+import { projectActiveMateriaIds } from "../lib/planner.js";
 
 export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOpenDay }) {
   const today = todayISO();
+  const todayOffset = daysSinceEpoch(today);
   const weeks = Array.from({ length: Math.ceil(weekDays.length / 7) }, (_, index) => weekDays.slice(index * 7, index * 7 + 7));
   return (
     <div>
@@ -35,6 +37,18 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
                 const total = plan ? plan.length : null;
                 const d = fromISO(iso);
                 const diaSemana = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][d.getDay()];
+
+                // Future days aren't real plans yet — what actually happens
+                // depends on how much gets finished between now and then.
+                // This is just a projection assuming everything stays on
+                // schedule, so an off day doesn't throw it off forever.
+                let projectedTotal = null;
+                if (total === null && isFuture) {
+                  const dayOffset = daysSinceEpoch(iso) - todayOffset;
+                  const activeIds = projectActiveMateriaIds(concurso.materias, concurso.settings, concurso.cycleCursor, dayOffset);
+                  projectedTotal = activeIds.length * (concurso.settings?.topicsPerDay || 0);
+                }
+
                 return (
                   <button
                     key={iso}
@@ -50,7 +64,9 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
                       <div className="sg" style={{ fontSize: 16, fontWeight: 700 }}>{d.getDate()}</div>
                     </div>
                     {total === null ? (
-                      <div style={{ fontSize: 11.5, color: colors.textFaint }}>{isFuture ? "a gerar" : "sem plano"}</div>
+                      <div style={{ fontSize: 11.5, color: colors.textFaint }}>
+                        {isFuture ? (projectedTotal > 0 ? `~${projectedTotal} previstos` : "previsão vazia") : "sem plano"}
+                      </div>
                     ) : total === 0 ? (
                       <div style={{ fontSize: 11.5, color: colors.textFaint }}>vazio</div>
                     ) : (
