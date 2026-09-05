@@ -92,5 +92,23 @@ export function useSessionTimers(onSegmentComplete) {
     );
   }
 
-  return { timers, ensureTimer, start, pause, reset };
+  // Marking a card done/undone by hand (checkbox, not the running clock)
+  // doesn't go through the tick loop above, so the countdown otherwise has
+  // no idea a segment's worth of work just happened outside of it. This
+  // jumps the clock to match how many of the matéria's cards are actually
+  // done right now — e.g. finishing 1 of 2 topics without ever starting the
+  // timer takes it straight from the full time down to half. Pauses the
+  // clock at the new boundary, same as a natural segment crossing would.
+  function syncSegments(materiaId, completedSegments) {
+    setTimers((prev) => {
+      const t = prev[materiaId];
+      if (!t) return prev;
+      const clamped = Math.max(0, Math.min(t.segments, completedSegments));
+      if (clamped === t.completedSegments) return prev;
+      const secondsLeft = Math.max(0, t.totalSeconds - Math.round((clamped * t.totalSeconds) / t.segments));
+      return { ...prev, [materiaId]: { ...t, completedSegments: clamped, secondsLeft, running: false } };
+    });
+  }
+
+  return { timers, ensureTimer, start, pause, reset, syncSegments };
 }

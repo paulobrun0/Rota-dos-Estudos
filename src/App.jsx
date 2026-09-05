@@ -199,27 +199,37 @@ export default function App({ user, onLogout, onUserUpdate }) {
     const willComplete = currentItem && !currentItem.feito;
     if (willComplete && soundEnabled) playCompleteSound();
 
-    if (willComplete) {
+    if (currentItem) {
       const materiaId = currentItem.materiaId;
       const materiaCards = activeConcurso.dailyPlans[iso]?.filter((c) => c.materiaId === materiaId) || [];
-      const isLastPending = materiaCards.every((c) => c.id === cardId || c.feito);
-      const restMinutes = activeConcurso.settings?.restMinutes || 0;
-      if (isLastPending && restMinutes > 0) {
-        restTimers.ensureTimer(materiaId, restMinutes);
-        restTimers.start(materiaId);
-      }
 
-      // This card was the one the auto-timer paused on to ask about
-      // questions — now that it's resolved (answered or skipped), clear the
-      // prompt and, if the matéria still has more topics today, resume the
-      // clock for the next slice.
-      if (pendingQuestions[materiaId] === cardId) {
-        setPendingQuestions((prev) => {
-          const next = { ...prev };
-          delete next[materiaId];
-          return next;
-        });
-        if (!isLastPending) sessionTimers.start(materiaId);
+      // Marking a card done/undone by hand — not by letting the running
+      // clock cross into it — still has to move the clock: otherwise
+      // finishing a topic before ever pressing "iniciar" leaves the full
+      // time on the display, as if nothing had happened yet.
+      const doneAfter = materiaCards.filter((c) => (c.id === cardId ? willComplete : c.feito)).length;
+      sessionTimers.syncSegments(materiaId, doneAfter);
+
+      if (willComplete) {
+        const isLastPending = materiaCards.every((c) => c.id === cardId || c.feito);
+        const restMinutes = activeConcurso.settings?.restMinutes || 0;
+        if (isLastPending && restMinutes > 0) {
+          restTimers.ensureTimer(materiaId, restMinutes);
+          restTimers.start(materiaId);
+        }
+
+        // This card was the one the auto-timer paused on to ask about
+        // questions — now that it's resolved (answered or skipped), clear
+        // the prompt and, if the matéria still has more topics today,
+        // resume the clock for the next slice.
+        if (pendingQuestions[materiaId] === cardId) {
+          setPendingQuestions((prev) => {
+            const next = { ...prev };
+            delete next[materiaId];
+            return next;
+          });
+          if (!isLastPending) sessionTimers.start(materiaId);
+        }
       }
     }
 
