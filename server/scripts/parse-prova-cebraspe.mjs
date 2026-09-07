@@ -38,6 +38,11 @@ const FIM_DE_FRASE = /[.?!)”"]\s*$/;
 
 const junta = (arr) => arr.join(" ").replace(/\s+/g, " ").trim();
 
+// Um caderno "_COMJUSTIFICATIVA" imprime a explicação do gabarito colada
+// direto no fim do item, sem quebra estrutural — se isso for para o
+// enunciado, entrega a resposta antes de o usuário tentar responder.
+const CORTA_JUSTIFICATIVA = (s) => s.replace(/\s*JUSTIFICATIVA\s*[-–—]?\s*(CERTO|ERRADO)?\s*[.:].*$/is, "").trim();
+
 // Walks back from the line that closes a command to where that sentence
 // started — the previous line that ended cleanly.
 function inicioDaFrase(linhas, fim) {
@@ -127,7 +132,7 @@ export function parseProva(bruto) {
     const fim = k + 1 < marcos.length ? marcos[k + 1].i : linhas.length;
     const { continuacao, texto, comando } = fatiar(linhas.slice(marco.i + 1, fim));
 
-    itens.push({ numero: marco.numero, comando: comandoAtual, texto: junta([marco.primeiraLinha, ...continuacao]) });
+    itens.push({ numero: marco.numero, comando: comandoAtual, texto: CORTA_JUSTIFICATIVA(junta([marco.primeiraLinha, ...continuacao])) });
 
     if (texto) textos.set(texto.id, texto.conteudo);
     if (comando) comandoAtual = comando;
