@@ -10,11 +10,13 @@ import { pdfParaItensPosicionados } from "./pdf-para-texto.mjs";
 
 const TOLERANCIA_X = 6; // pt — a resposta fica centralizada sob o número
 
-export async function parseGabarito(caminho) {
+// Certo/errado usa C/E/X; provas de múltipla escolha para oficiais usam A-E
+// (mais X para anulada) na mesma disposição de tabela.
+export async function parseGabarito(caminho, { letras = /^[CEX]$/ } = {}) {
   const itens = await pdfParaItensPosicionados(caminho);
 
   const numeros = itens.filter((i) => /^\d{1,3}$/.test(i.str));
-  const respostas = itens.filter((i) => /^[CEX]$/.test(i.str));
+  const respostas = itens.filter((i) => letras.test(i.str));
 
   const gabarito = new Map();
   for (const resp of respostas) {
