@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.5",
+    "pdfjs-dist": "^4.10.38",
     "vite-plugin-pwa": "^1.3.0"
   }
 }

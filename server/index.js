@@ -67,6 +67,15 @@ const upsertBankMateria = db.prepare(`
   ON CONFLICT(name) DO UPDATE SET topics = excluded.topics, updated_at = excluded.updated_at
 `);
 const deleteBankMateria = db.prepare("DELETE FROM content_bank_materias WHERE id = ?");
+const listQuestionsByAssunto = db.prepare(
+  "SELECT * FROM questions WHERE assunto = ? ORDER BY RANDOM() LIMIT ?",
+);
+const listQuestionsByAssuntoBanca = db.prepare(
+  "SELECT * FROM questions WHERE assunto = ? AND banca = ? ORDER BY RANDOM() LIMIT ?",
+);
+const countQuestionsByAssunto = db.prepare(
+  "SELECT assunto, banca, COUNT(*) AS total FROM questions GROUP BY assunto, banca",
+);
 
 function blockSuspended(req, res, next) {
   const user = findUserById.get(req.userId);
@@ -398,6 +407,44 @@ app.post("/api/admin/content-bank", adminOnly, (req, res) => {
 app.delete("/api/admin/content-bank/:id", adminOnly, (req, res) => {
   deleteBankMateria.run(Number(req.params.id));
   res.json({ ok: true });
+});
+
+// Questions for the topic a user is studying. `assunto` is the topic name as
+// it appears in their edital, which is why the matéria trees and the question
+// bank are kept on the same naming.
+app.get("/api/questions", requireAuth, (req, res) => {
+  const assunto = typeof req.query.assunto === "string" ? req.query.assunto.trim() : "";
+  if (!assunto) return res.status(400).json({ error: "assunto é obrigatório" });
+  const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
+  const banca = typeof req.query.banca === "string" ? req.query.banca.trim() : "";
+  const rows = banca
+    ? listQuestionsByAssuntoBanca.all(assunto, banca, limit)
+    : listQuestionsByAssunto.all(assunto, limit);
+  res.json({
+    questions: rows.map((r) => ({
+      id: r.id,
+      fonte: r.fonte,
+      materia: r.materia,
+      assunto: r.assunto,
+      banca: r.banca,
+      orgao: r.orgao,
+      cargo: r.cargo,
+      ano: r.ano,
+      tipo: r.tipo,
+      textoBase: r.texto_base,
+      comando: r.comando,
+      enunciado: r.enunciado,
+      alternativas: JSON.parse(r.alternativas),
+      gabarito: r.gabarito,
+      comentario: r.comentario,
+    })),
+  });
+});
+
+// How many questions exist per topic, so the UI can tell which topics can
+// already be practised and which have nothing yet.
+app.get("/api/questions/counts", requireAuth, (req, res) => {
+  res.json({ counts: countQuestionsByAssunto.all() });
 });
 
 app.get("/api/data", requireAuth, (req, res) => {

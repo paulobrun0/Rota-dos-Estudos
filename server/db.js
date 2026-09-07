@@ -80,4 +80,36 @@ db.exec(`
   );
 `);
 
+// Question bank built from the provas and gabaritos the bancas publish
+// themselves. `fonte` identifies the item in its original prova, so
+// re-importing the same prova updates instead of duplicating, and `assunto`
+// matches a topic name in the matéria trees above — that is how a question
+// reaches the topic a user is studying.
+//
+// Cebraspe items share a base text and a command across a block of items, so
+// both are kept alongside the item's own statement; a multiple-choice question
+// from FCC/FGV simply leaves texto_base null and fills alternativas.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fonte TEXT UNIQUE NOT NULL,
+    materia TEXT NOT NULL,
+    assunto TEXT NOT NULL,
+    banca TEXT NOT NULL,
+    orgao TEXT,
+    cargo TEXT,
+    ano INTEGER,
+    tipo TEXT NOT NULL,
+    texto_base TEXT,
+    comando TEXT,
+    enunciado TEXT NOT NULL,
+    alternativas TEXT NOT NULL,
+    gabarito TEXT NOT NULL,
+    comentario TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_questions_assunto ON questions(materia, assunto);
+  CREATE INDEX IF NOT EXISTS idx_questions_banca ON questions(banca);
+`);
+
 export default db;
