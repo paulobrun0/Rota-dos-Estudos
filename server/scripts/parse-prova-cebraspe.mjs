@@ -70,10 +70,16 @@ function fatiar(regiao) {
   return { continuacao: regiao.slice(0, corte), texto, comando };
 }
 
+// Alguns cadernos certo/errado mais recentes numeram cada item como
+// "Questão 6" em vez de um "6" solto — normaliza para o formato que o resto
+// do parser já entende.
+const LINHA_QUESTAO = /^Questão\s+(\d+)\s*$/i;
+
 export function parseProva(bruto) {
   const linhas = bruto
     .split(/\r?\n/)
     .map((l) => l.trim().replace(CODIGO_CONTROLE, ""))
+    .map((l) => { const m = l.match(LINHA_QUESTAO); return m ? m[1] : l; })
     .filter((l) => l && !RUIDO.some((r) => r.test(l)));
 
   // Items are numbered in an unbroken run, which is the most reliable anchor

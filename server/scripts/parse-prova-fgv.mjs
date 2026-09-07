@@ -37,7 +37,7 @@ const CABECALHOS_CONHECIDOS = [
   "Atualidades", "Conhecimentos Gerais", "Geografia", "História", "Criminologia", "Medicina Legal",
   "Sustentabilidade", "Administração Pública", "Administração Geral", "Gestão de Pessoas", "Ética no Serviço Público",
 ];
-const EH_CABECALHO = new RegExp(`^(Noções de |Legislação de )?(${CABECALHOS_CONHECIDOS.join("|")})$`, "i");
+export const EH_CABECALHO = new RegExp(`^(Noções de |Legislação de )?(${CABECALHOS_CONHECIDOS.join("|")})$`, "i");
 
 export function parseProvaFgv(bruto) {
   const linhas = bruto

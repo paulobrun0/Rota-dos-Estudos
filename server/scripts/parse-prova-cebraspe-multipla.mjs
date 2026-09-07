@@ -9,21 +9,27 @@
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 import { pdfParaTexto } from "./pdf-para-texto.mjs";
+import { EH_CABECALHO as EH_MATERIA_CONHECIDA } from "./parse-prova-fgv.mjs";
 
 const RUIDO = [
   /^CEBRASPE\b/i,
   /^-\s*\d+\s*-$/,
   /^Espaço livre/i,
-  /^PROVA OBJETIVA$/i,
+  /^-{0,2}\s*PROVA OBJETIVA\s*-{0,2}$/i,
   /^-- .* --$/,
+  /^LEIA COM ATENÇÃO/i,
+  /^Texto \d[A-Z]\d(-[IVX]+)?$/i,
 ];
 
 const INICIO_ITEM = /^Questão\s+(\d+)\s*$/i;
 const ALTERNATIVA = /^([A-E])\s+(.*)$/;
-// Um cabeçalho de matéria é uma linha toda em maiúsculas (com acentos),
-// sem dígitos — o que a distingue de uma alternativa (que começa com uma
-// letra solta) ou de uma frase comum do enunciado.
-const EH_CABECALHO_MATERIA = /^[A-ZÀ-Ú][A-ZÀ-Ú\s]{3,60}$/;
+// Um cabeçalho de matéria é uma linha toda em maiúsculas (com acentos), sem
+// dígitos — o que a distingue de uma alternativa (que começa com uma letra
+// solta) ou de uma frase comum do enunciado. Mas alguns cadernos imprimem o
+// nome da matéria em title case ("Língua Portuguesa"), daí também aceitar
+// qualquer nome da lista de matérias conhecidas independente de caixa.
+const EH_CABECALHO_MAIUSCULA = /^[A-ZÀ-Ú][A-ZÀ-Ú\s]{3,60}$/;
+const EH_CABECALHO_MATERIA = { test: (l) => EH_CABECALHO_MAIUSCULA.test(l) || EH_MATERIA_CONHECIDA.test(l) };
 
 export function parseProvaMultipla(bruto) {
   const linhas = bruto
