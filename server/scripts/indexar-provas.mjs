@@ -15,6 +15,7 @@ import { parseProva } from "./parse-prova-cebraspe.mjs";
 import { parseGabarito } from "./parse-gabarito-cebraspe.mjs";
 import { parseProvaFgv } from "./parse-prova-fgv.mjs";
 import { parseGabaritoFgv } from "./parse-gabarito-fgv.mjs";
+import { parseProvaMultipla } from "./parse-prova-cebraspe-multipla.mjs";
 
 // Cebraspe items share a running command across a block and answer certo/
 // errado; FGV/FCC items are self-contained multiple choice (A-E) grouped
@@ -40,7 +41,23 @@ async function processarMultiplaEscolha(caminhoProva, caminhoGabarito, tipo) {
   return { itens, textos: {}, gabarito };
 }
 
-const PROCESSADORES = { cebraspe: processarCebraspe, fgv: processarMultiplaEscolha, fcc: processarMultiplaEscolha };
+// Cebraspe multiple-choice (officer-level) uses the same A-E gabarito table
+// as FGV but its own item parser ("Questão N" + ALL-CAPS matéria headings).
+async function processarCebraspeMultipla(caminhoProva, caminhoGabarito, tipo) {
+  const { texto } = await pdfParaTexto(caminhoProva);
+  const { itens } = parseProvaMultipla(texto);
+  const gabarito = fs.existsSync(caminhoGabarito)
+    ? Object.fromEntries(await parseGabarito(caminhoGabarito, { letras: /^[A-EX]$/ }))
+    : {};
+  return { itens, textos: {}, gabarito };
+}
+
+const PROCESSADORES = {
+  cebraspe: processarCebraspe,
+  "cebraspe-multipla": processarCebraspeMultipla,
+  fgv: processarMultiplaEscolha,
+  fcc: processarMultiplaEscolha,
+};
 
 // nomeDaPasta.json ao lado de <banca>/ pode fixar { "formato": "fgv", "tipo": "1" }
 // por prova, para provas cujo booklet vem embaralhado em variantes.
