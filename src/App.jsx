@@ -15,6 +15,7 @@ import { useSoundEnabled } from "./lib/useSoundEnabled.js";
 import { playCompleteSound, playRestOverSound } from "./lib/sound.js";
 import { fetchPlanData, savePlanData } from "./api/planData.js";
 import { fetchContentBank } from "./api/contentBank.js";
+import { fetchQuestionCounts } from "./api/questions.js";
 import { looksLikeNumberedEdital, normalizeMateriaName, parseRawEdital } from "./lib/rawEditalParser.js";
 import { NavItem } from "./components/NavItem.jsx";
 import { EmptyConcursoState } from "./components/EmptyConcursoState.jsx";
@@ -110,11 +111,27 @@ export default function App({ user, onLogout, onUserUpdate }) {
   // before it can move to the next segment.
   const [pendingQuestions, setPendingQuestions] = useState({});
   const [contentBank, setContentBank] = useState([]);
+  // topic (assunto) name -> total banca-sourced questions available for it,
+  // summed across bancas — lets TopicRow show a "praticar (N)" button only
+  // where the question bank actually has something for that exact topic.
+  const [questionCounts, setQuestionCounts] = useState({});
   const loaded = useRef(false);
 
   useEffect(() => {
     fetchContentBank()
       .then((res) => setContentBank(res.materias || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchQuestionCounts()
+      .then((res) => {
+        const map = {};
+        (res.counts || []).forEach((row) => {
+          map[row.assunto] = (map[row.assunto] || 0) + row.total;
+        });
+        setQuestionCounts(map);
+      })
       .catch(() => {});
   }, []);
 
@@ -414,6 +431,31 @@ export default function App({ user, onLogout, onUserUpdate }) {
       const safeTotal = Math.max(0, total);
       t.questionsTotal = safeTotal;
       t.questionsCorrect = Math.min(safeTotal, Math.max(0, correct));
+      return clone;
+    });
+  }
+
+  // Tallies a round of real practice questions onto a topic without touching
+  // its "estudado"/feito state — unlike setTopicQuestions (an absolute value
+  // from manual editing), this adds to whatever the topic already has, the
+  // same way toggleCard does when a "fez questões?" prompt is answered.
+  function addTopicQuestions(materiaId, topicId, total, correct) {
+    if (!activeConcurso || total <= 0) return;
+    const activeId = activeConcurso.id;
+    const iso = todayISO();
+    setData((prev) => {
+      if (!prev) return prev;
+      const clone = JSON.parse(JSON.stringify(prev));
+      const c = clone.concursos.find((x) => x.id === activeId);
+      if (!c) return prev;
+      const m = c.materias.find((x) => x.id === materiaId);
+      const t = m?.topics.find((x) => x.id === topicId);
+      if (!t) return prev;
+      t.questionsTotal = (t.questionsTotal || 0) + total;
+      t.questionsCorrect = (t.questionsCorrect || 0) + Math.min(total, Math.max(0, correct));
+      clone.questionActivity = clone.questionActivity || {};
+      const bucket = clone.questionActivity[iso] || { total: 0, correct: 0 };
+      clone.questionActivity[iso] = { total: bucket.total + total, correct: bucket.correct + Math.min(total, Math.max(0, correct)) };
       return clone;
     });
   }
@@ -763,6 +805,8 @@ export default function App({ user, onLogout, onUserUpdate }) {
             updateTopicNotes={updateTopicNotes}
             updateTopicLink={updateTopicLink}
             setTopicQuestions={setTopicQuestions}
+            questionCounts={questionCounts}
+            addTopicQuestions={addTopicQuestions}
           />
         )}
 

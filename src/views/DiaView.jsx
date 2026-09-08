@@ -1,13 +1,14 @@
 import React, { useState } from "react";
-import { Check, ChevronLeft, ChevronRight, ExternalLink, Flame, Link2, Pencil, StickyNote } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ExternalLink, Flame, Link2, ListChecks, Pencil, StickyNote } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
 import { Ring } from "../components/Ring.jsx";
 import { SessionTimer } from "../components/SessionTimer.jsx";
 import { RestTimer } from "../components/RestTimer.jsx";
+import { QuizPractice } from "../components/QuizPractice.jsx";
 
-export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions }) {
+export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions }) {
   const isToday = selectedDate === todayISO();
   const novos = plan.filter((c) => c.tipo === "novo");
   const revisoes = plan.filter((c) => c.tipo === "revisao");
@@ -80,13 +81,15 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
           updateTopicNotes={updateTopicNotes}
           updateTopicLink={updateTopicLink}
           setTopicQuestions={setTopicQuestions}
+          questionCounts={questionCounts}
+          addTopicQuestions={addTopicQuestions}
         />
       ))}
     </div>
   );
 }
 
-function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions }) {
+function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions }) {
   if (!materia) return null;
   const totalMinutes = minutesPerMateria || 0;
   const perTopic = cards.length > 0 && totalMinutes > 0 ? totalMinutes / cards.length : null;
@@ -128,6 +131,8 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
               updateTopicLink={updateTopicLink}
               setTopicQuestions={setTopicQuestions}
               materiaId={materia.id}
+              questionsAvailable={questionCounts[topic.name] || 0}
+              addTopicQuestions={addTopicQuestions}
             />
           );
         })}
@@ -147,8 +152,9 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
   );
 }
 
-function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, setTopicQuestions, materiaId }) {
+function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
   const [asking, setAsking] = useState(false);
+  const [practicing, setPracticing] = useState(false);
   const [feitas, setFeitas] = useState("");
   const [acertos, setAcertos] = useState("");
   const [notesOpen, setNotesOpen] = useState(false);
@@ -253,6 +259,18 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
           )}
           <Pencil size={10.5} color={colors.textFaint} />
         </button>
+        {questionsAvailable > 0 && (
+          <button
+            onClick={() => setPracticing((p) => !p)}
+            style={{
+              background: practicing ? colors.tealSoft : "transparent", border: `1px solid ${practicing ? colors.teal : colors.border}`,
+              borderRadius: 20, padding: "3px 9px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
+            }}
+          >
+            <ListChecks size={11} color={colors.teal} />
+            <span className="mono" style={{ fontSize: 10.5, color: colors.teal }}>praticar ({questionsAvailable})</span>
+          </button>
+        )}
         {hasLink && (
           <a
             href={topic.link} target="_blank" rel="noreferrer" aria-label="abrir caderno de questões"
@@ -324,6 +342,16 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
           style={{
             width: "100%", marginTop: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 6,
             color: colors.text, fontSize: 12.5, padding: 8, resize: "vertical", boxSizing: "border-box",
+          }}
+        />
+      )}
+
+      {practicing && (
+        <QuizPractice
+          assunto={topic.name}
+          onFinish={(total, correct) => {
+            if (total > 0) addTopicQuestions(materiaId, topic.id, total, correct);
+            setPracticing(false);
           }}
         />
       )}
