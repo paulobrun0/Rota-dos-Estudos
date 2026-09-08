@@ -64,30 +64,43 @@ export function QuizPractice({ assunto, onFinish }) {
     }
   }
 
-  const boxStyle = { marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.border}` };
+  const overlayStyle = {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 200,
+    display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "5vh 16px", overflowY: "auto",
+  };
+  const cardStyle = {
+    background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 14,
+    padding: 20, width: "100%", maxWidth: 640, boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+  };
 
   if (error) {
     return (
-      <div style={boxStyle}>
-        <div style={{ fontSize: 12.5, color: colors.textMuted }}>{error}</div>
-        <button onClick={() => onFinish(0, 0)} style={{ ...secondaryBtnStyle, marginTop: 8, padding: "6px 12px", fontSize: 12 }}>fechar</button>
+      <div style={overlayStyle} onClick={() => onFinish(0, 0)}>
+        <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
+          <div style={{ fontSize: 13, color: colors.textMuted }}>{error}</div>
+          <button onClick={() => onFinish(0, 0)} style={{ ...secondaryBtnStyle, marginTop: 12, padding: "6px 12px", fontSize: 12 }}>fechar</button>
+        </div>
       </div>
     );
   }
 
   if (!questions) {
     return (
-      <div style={boxStyle}>
-        <div style={{ fontSize: 12.5, color: colors.textFaint }}>carregando questões...</div>
+      <div style={overlayStyle} onClick={() => onFinish(0, 0)}>
+        <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
+          <div style={{ fontSize: 13, color: colors.textFaint }}>carregando questões...</div>
+        </div>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div style={boxStyle}>
-        <div style={{ fontSize: 12.5, color: colors.textMuted }}>nenhuma questão encontrada para este assunto.</div>
-        <button onClick={() => onFinish(0, 0)} style={{ ...secondaryBtnStyle, marginTop: 8, padding: "6px 12px", fontSize: 12 }}>fechar</button>
+      <div style={overlayStyle} onClick={() => onFinish(0, 0)}>
+        <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
+          <div style={{ fontSize: 13, color: colors.textMuted }}>nenhuma questão encontrada para este assunto.</div>
+          <button onClick={() => onFinish(0, 0)} style={{ ...secondaryBtnStyle, marginTop: 12, padding: "6px 12px", fontSize: 12 }}>fechar</button>
+        </div>
       </div>
     );
   }
@@ -98,66 +111,68 @@ export function QuizPractice({ assunto, onFinish }) {
   const isCorrect = answered && norm(selected) === norm(current.gabarito);
 
   return (
-    <div style={boxStyle}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
-        <span className="mono" style={{ fontSize: 11, color: colors.textFaint }}>
-          questão {index + 1} de {questions.length}
-        </span>
-        <span className="mono" style={{ fontSize: 11, color: colors.textFaint }}>
-          {current.banca}{current.orgao ? ` · ${current.orgao}` : ""}{current.ano ? ` · ${current.ano}` : ""}
-        </span>
-        <button onClick={stopEarly} style={{ background: "transparent", border: "none", padding: 0, fontSize: 11, color: colors.textFaint, textDecoration: "underline" }}>
-          encerrar prática
-        </button>
-      </div>
-
-      {current.textoBase && (
-        <div style={{
-          fontSize: 12.5, color: colors.textMuted, background: colors.surface, border: `1px solid ${colors.border}`,
-          borderRadius: 8, padding: 10, marginBottom: 8, maxHeight: 160, overflowY: "auto", whiteSpace: "pre-wrap",
-        }}>
-          {current.textoBase}
-        </div>
-      )}
-
-      {current.comando && (
-        <div style={{ fontSize: 13, color: colors.textMuted, fontStyle: "italic", marginBottom: 6 }}>{current.comando}</div>
-      )}
-
-      <div style={{ fontSize: 14, color: colors.text, marginBottom: 10, whiteSpace: "pre-wrap" }}>{current.enunciado}</div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {current.alternativas.map((alt, i) => {
-          const isThisCorrect = answered && norm(alt) === norm(current.gabarito);
-          const isThisWrongPick = answered && alt === selected && !isThisCorrect;
-          return (
-            <button
-              key={i}
-              onClick={() => pick(alt)}
-              disabled={answered}
-              style={{
-                textAlign: "left", padding: "8px 10px", borderRadius: 8, fontSize: 13, cursor: answered ? "default" : "pointer",
-                border: `1px solid ${isThisCorrect ? colors.teal : isThisWrongPick ? colors.red : colors.border}`,
-                background: isThisCorrect ? colors.tealSoft : isThisWrongPick ? colors.redSoft : colors.surface2,
-                color: colors.text,
-              }}
-            >
-              <b style={{ marginRight: 6 }}>{String.fromCharCode(65 + i)}</b> {alt}
-            </button>
-          );
-        })}
-      </div>
-
-      {answered && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: isCorrect ? colors.teal : colors.red }}>
-            {isCorrect ? "certo!" : `errado — resposta: ${current.gabarito}`}
+    <div style={overlayStyle} onClick={stopEarly}>
+      <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8, flexWrap: "wrap" }}>
+          <span className="mono" style={{ fontSize: 11.5, color: colors.textFaint }}>
+            questão {index + 1} de {questions.length}
           </span>
-          <button onClick={() => next(isLast)} style={{ ...secondaryBtnStyle, padding: "6px 14px", fontSize: 12.5 }}>
-            {isLast ? "concluir" : "próxima"}
+          <span className="mono" style={{ fontSize: 11.5, color: colors.textFaint }}>
+            {current.banca}{current.orgao ? ` · ${current.orgao}` : ""}{current.ano ? ` · ${current.ano}` : ""}
+          </span>
+          <button onClick={stopEarly} style={{ background: "transparent", border: "none", padding: 0, fontSize: 11.5, color: colors.textFaint, textDecoration: "underline" }}>
+            encerrar prática
           </button>
         </div>
-      )}
+
+        {current.textoBase && (
+          <div style={{
+            fontSize: 13.5, lineHeight: 1.55, color: colors.textMuted, background: colors.surface, border: `1px solid ${colors.border}`,
+            borderRadius: 8, padding: 14, marginBottom: 12, whiteSpace: "pre-wrap",
+          }}>
+            {current.textoBase}
+          </div>
+        )}
+
+        {current.comando && (
+          <div style={{ fontSize: 13.5, color: colors.textMuted, fontStyle: "italic", marginBottom: 8 }}>{current.comando}</div>
+        )}
+
+        <div style={{ fontSize: 15, lineHeight: 1.5, color: colors.text, marginBottom: 14, whiteSpace: "pre-wrap" }}>{current.enunciado}</div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {current.alternativas.map((alt, i) => {
+            const isThisCorrect = answered && norm(alt) === norm(current.gabarito);
+            const isThisWrongPick = answered && alt === selected && !isThisCorrect;
+            return (
+              <button
+                key={i}
+                onClick={() => pick(alt)}
+                disabled={answered}
+                style={{
+                  textAlign: "left", padding: "10px 12px", borderRadius: 8, fontSize: 13.5, lineHeight: 1.45, cursor: answered ? "default" : "pointer",
+                  border: `1px solid ${isThisCorrect ? colors.teal : isThisWrongPick ? colors.red : colors.border}`,
+                  background: isThisCorrect ? colors.tealSoft : isThisWrongPick ? colors.redSoft : colors.surface2,
+                  color: colors.text,
+                }}
+              >
+                <b style={{ marginRight: 6 }}>{String.fromCharCode(65 + i)}</b> {alt}
+              </button>
+            );
+          })}
+        </div>
+
+        {answered && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: isCorrect ? colors.teal : colors.red }}>
+              {isCorrect ? "certo!" : `errado — resposta: ${current.gabarito}`}
+            </span>
+            <button onClick={() => next(isLast)} style={{ ...secondaryBtnStyle, padding: "7px 16px", fontSize: 13 }}>
+              {isLast ? "concluir" : "próxima"}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
