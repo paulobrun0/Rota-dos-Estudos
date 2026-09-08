@@ -10,15 +10,20 @@
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 import { pdfParaTexto } from "./pdf-para-texto.mjs";
+import { CABECALHOS_CONHECIDOS } from "./parse-prova-fgv.mjs";
 
 const QUESTAO = /^QUEST[ÃA]O\s+0*(\d{1,3})\b/i;
 const ALTERNATIVA = /^([A-E])\)\s*(.*)$/;
 
-// Bare, all-caps subject headings that separate blocks of questions — the
-// same shape FGV uses, but COPEVE prints them without any known-word list to
-// check against, so anything short, all-caps and accent-letters-only that
-// isn't itself a question/alternative line is treated as a heading.
-const EH_CABECALHO = /^[A-ZÀ-Ú][A-ZÀ-Ú\s]{2,30}$/;
+// COPEVE booklets carry a running page header ("CONCURSO PÚBLICO GUARDA CIVIL
+// MUNICIPAL DE MACEIÓ - 2026") that column-splitting can break across lines
+// ("DE GUARDA CIVIL" landing on its own) — a generic all-caps match would
+// mistake that fragment for a new matéria heading. Reuse FGV's known-subject
+// list instead, extended with the bare "Português" and generic "Conhecimentos
+// Específicos" labels COPEVE prints instead of "Língua Portuguesa" or the
+// specific subject name.
+const CABECALHOS_COPEVE = [...CABECALHOS_CONHECIDOS, "Português", "Conhecimentos Específicos"];
+const EH_CABECALHO = new RegExp(`^(Noções de |Legislação de )?(${CABECALHOS_COPEVE.join("|")})$`, "i");
 
 export function parseProvaCopeve(bruto) {
   const linhas = bruto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);

@@ -25,7 +25,7 @@ const ALTERNATIVA = /^\(([A-E])\)\s*(.*)$/;
 // matéria's name — nothing distinguishes it from ordinary prose structurally,
 // so matching against the standard set of concurso subjects is what makes the
 // detection reliable instead of guessing from capitalization.
-const CABECALHOS_CONHECIDOS = [
+export const CABECALHOS_CONHECIDOS = [
   "Língua Portuguesa", "Redação Oficial", "Literatura",
   "Direito Constitucional", "Direito Administrativo", "Direito Civil", "Direito Processual Civil",
   "Direito Penal", "Direito Processual Penal", "Direito Penal Militar", "Direito Processual Penal Militar",
