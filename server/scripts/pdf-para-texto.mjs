@@ -33,9 +33,23 @@ export async function pdfParaTexto(caminho, { colunas = 2 } = {}) {
         if (!linhas.has(chave)) linhas.set(chave, []);
         linhas.get(chave).push(it);
       }
+      // Some bancas (e.g. COPEVE/UFAL) fake bold by double-striking each text
+      // run a fraction of a point to the side; left uncorrected, every word
+      // comes out glued to a copy of itself ("PROVA TIPOPROVA TIPO"). Drop a
+      // run that exactly repeats the previous one at almost the same x.
+      const semDuplicataDeNegrito = (ordenado) => {
+        const resultado = [];
+        for (const item of ordenado.filter((i) => i.str !== "")) {
+          const anterior = resultado[resultado.length - 1];
+          if (anterior && anterior.str === item.str && Math.abs(item.x - anterior.x) < 3) continue;
+          resultado.push(item);
+        }
+        return resultado;
+      };
+
       const texto = [...linhas.entries()]
         .sort((a, b) => b[0] - a[0])
-        .map(([, arr]) => arr.sort((a, b) => a.x - b.x).map((i) => i.str).join("").replace(/\s+/g, " ").trim())
+        .map(([, arr]) => semDuplicataDeNegrito(arr.sort((a, b) => a.x - b.x)).map((i) => i.str).join("").replace(/\s+/g, " ").trim())
         .filter(Boolean)
         .join("\n");
       if (texto) partes.push(texto);

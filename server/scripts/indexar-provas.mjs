@@ -16,6 +16,8 @@ import { parseGabarito } from "./parse-gabarito-cebraspe.mjs";
 import { parseProvaFgv } from "./parse-prova-fgv.mjs";
 import { parseGabaritoFgv } from "./parse-gabarito-fgv.mjs";
 import { parseProvaMultipla } from "./parse-prova-cebraspe-multipla.mjs";
+import { parseProvaCopeve } from "./parse-prova-copeve.mjs";
+import { parseGabaritoCopeve } from "./parse-gabarito-copeve.mjs";
 
 // Cebraspe items share a running command across a block and answer certo/
 // errado; FGV/FCC items are self-contained multiple choice (A-E) grouped
@@ -52,11 +54,27 @@ async function processarCebraspeMultipla(caminhoProva, caminhoGabarito, tipo) {
   return { itens, textos: {}, gabarito };
 }
 
+// COPEVE/UFAL: same A-E multiple-choice item shape as FGV/FCC, but its own
+// item parser ("QUESTÃO NN" + "A) texto" without parentheses) and its own
+// gabarito table (one Map per prova "tipo", already 1-based via `tipo` meta).
+async function processarCopeve(caminhoProva, caminhoGabarito, tipo) {
+  const { texto } = await pdfParaTexto(caminhoProva);
+  const { itens } = parseProvaCopeve(texto);
+  let gabarito = {};
+  if (fs.existsSync(caminhoGabarito)) {
+    const porTipo = await parseGabaritoCopeve(caminhoGabarito);
+    const mapa = porTipo[tipo ? Number(tipo) - 1 : 0];
+    if (mapa) gabarito = Object.fromEntries(mapa);
+  }
+  return { itens, textos: {}, gabarito };
+}
+
 const PROCESSADORES = {
   cebraspe: processarCebraspe,
   "cebraspe-multipla": processarCebraspeMultipla,
   fgv: processarMultiplaEscolha,
   fcc: processarMultiplaEscolha,
+  copeve: processarCopeve,
 };
 
 // nomeDaPasta.json ao lado de <banca>/ pode fixar { "formato": "fgv", "tipo": "1" }
@@ -68,7 +86,7 @@ function lerMeta(pasta, nome, formatoPadrao) {
 }
 
 export async function indexarPasta(pasta, { formato } = {}) {
-  const bancaPadrao = formato || (/fgv/i.test(pasta) ? "fgv" : /fcc/i.test(pasta) ? "fcc" : "cebraspe");
+  const bancaPadrao = formato || (/fgv/i.test(pasta) ? "fgv" : /fcc/i.test(pasta) ? "fcc" : /copeve/i.test(pasta) ? "copeve" : "cebraspe");
   const provas = fs.readdirSync(pasta).filter((f) => /-prova\.pdf$/i.test(f)).sort();
   const relatorio = [];
 
