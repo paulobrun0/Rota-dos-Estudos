@@ -16,7 +16,8 @@ import { pdfParaTexto } from "./pdf-para-texto.mjs";
 // cargo+tipo combination) — the whole line becomes the block's key either
 // way, so blocks for different cargos never collide even when their answers
 // happen to coincide.
-const CABECALHO_TIPO = /(?:PROVA\s+)?TIPO\s+\d+(?:\s*[-–—]\s*(?:BRANCA|AMARELA|AZUL|VERDE|ROSA|CINZA))?\s*$/i;
+const COR = "BRANCA|AMARELA|AZUL|VERDE|ROSA|CINZA";
+const CABECALHO_TIPO = new RegExp(`(?:PROVA\\s+)?TIPO\\s+\\d+(?:\\s*(?:[-–—]\\s*(?:${COR})|\\((?:${COR})\\)))?\\s*$`, "i");
 
 export async function parseGabaritoFgv(caminho) {
   const { texto } = await pdfParaTexto(caminho, { colunas: 1 });
