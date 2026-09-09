@@ -349,6 +349,7 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
       {practicing && (
         <QuizPractice
           assunto={topic.name}
+          disponivel={questionsAvailable}
           onFinish={(total, correct) => {
             if (total > 0) addTopicQuestions(materiaId, topic.id, total, correct);
             setPracticing(false);

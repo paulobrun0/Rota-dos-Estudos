@@ -5,11 +5,19 @@ import { fetchQuestions } from "../api/questions.js";
 
 const norm = (s) => String(s ?? "").trim().toLowerCase();
 
+// The API caps a single batch at 50 (server/index.js), so "todas" never asks
+// for more than that even when the topic has a bigger bank behind it.
+const LIMITE_MAXIMO = 50;
+const OPCOES_PADRAO = [5, 10, 15, 20];
+
 // Inline practice panel for a topic: pulls real questions from the bank
 // (banca-published provas, not user-generated) for `assunto`, lets the user
 // answer them one at a time with immediate feedback, and reports the final
 // tally back to the caller — which decides how those counts get recorded.
-export function QuizPractice({ assunto, onFinish }) {
+// `disponivel` (the topic's total question count) drives the quantity picker
+// shown before fetching, so the user isn't offered more than actually exists.
+export function QuizPractice({ assunto, disponivel, onFinish }) {
+  const [quantidade, setQuantidade] = useState(null);
   const [questions, setQuestions] = useState(null);
   const [error, setError] = useState("");
   const [index, setIndex] = useState(0);
@@ -17,8 +25,9 @@ export function QuizPractice({ assunto, onFinish }) {
   const [correctCount, setCorrectCount] = useState(0);
 
   useEffect(() => {
+    if (!quantidade) return;
     let cancelled = false;
-    fetchQuestions({ assunto, limit: 10 })
+    fetchQuestions({ assunto, limit: quantidade })
       .then((res) => {
         if (cancelled) return;
         setQuestions(res.questions || []);
@@ -29,7 +38,7 @@ export function QuizPractice({ assunto, onFinish }) {
     return () => {
       cancelled = true;
     };
-  }, [assunto]);
+  }, [assunto, quantidade]);
 
   function finish(finalCorrect, answeredCount) {
     onFinish(answeredCount, finalCorrect);
@@ -72,6 +81,39 @@ export function QuizPractice({ assunto, onFinish }) {
     background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 14,
     padding: 20, width: "100%", maxWidth: 640, boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
   };
+
+  if (!quantidade) {
+    const teto = Math.min(disponivel || LIMITE_MAXIMO, LIMITE_MAXIMO);
+    const opcoes = OPCOES_PADRAO.filter((n) => n < teto);
+    return (
+      <div style={overlayStyle} onClick={() => onFinish(0, 0)}>
+        <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
+          <div style={{ fontSize: 14, color: colors.text, fontWeight: 600, marginBottom: 4 }}>quantas questões?</div>
+          <div style={{ fontSize: 12.5, color: colors.textFaint, marginBottom: 14 }}>{disponivel || 0} disponíveis para este assunto</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {opcoes.map((n) => (
+              <button
+                key={n}
+                onClick={() => setQuantidade(n)}
+                style={{ ...secondaryBtnStyle, padding: "10px 18px", fontSize: 14, fontWeight: 600 }}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              onClick={() => setQuantidade(teto)}
+              style={{ ...secondaryBtnStyle, padding: "10px 18px", fontSize: 14, fontWeight: 600, border: `1px solid ${colors.teal}`, color: colors.teal }}
+            >
+              todas ({teto})
+            </button>
+          </div>
+          <button onClick={() => onFinish(0, 0)} style={{ background: "transparent", border: "none", padding: 0, marginTop: 16, fontSize: 12, color: colors.textFaint, textDecoration: "underline" }}>
+            cancelar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
