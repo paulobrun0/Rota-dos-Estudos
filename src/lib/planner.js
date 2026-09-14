@@ -1,4 +1,5 @@
 import { uid } from "./id.js";
+import { todayISO } from "./date.js";
 
 // Which matérias are being worked on right now — starting at `cursorId` (a
 // matéria id, persisted per concurso as concurso.cycleCursor) and wrapping
@@ -66,7 +67,7 @@ function pickBatch(m, topicsPerDay, usedTopicIds) {
 // current cycle cursor. Advances the cursor past any matéria whose batch is
 // now fully cleared and gives newly-active matérias a fresh batch. Returns
 // { cards, cursor }; the caller persists both onto the concurso.
-export function buildCyclePlan(materias, settings, cursorId, carryOverCards) {
+export function buildCyclePlan(materias, settings, cursorId, carryOverCards, today = todayISO()) {
   const topicsPerDay = settings?.topicsPerDay || 0;
   if (topicsPerDay === 0 || materias.length === 0) return { cards: [], cursor: cursorId };
 
@@ -106,6 +107,13 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards) {
     if (already > 0) return; // already has a batch — carried over, don't top it up mid-batch
     const m = materias.find((x) => x.id === materiaId);
     if (!m) return;
+    // A matéria created today, added after today's session already had some
+    // progress (a card marked done), doesn't jump into today's rotation just
+    // because a slot happened to open up — it waits for tomorrow's rebuild,
+    // same as any matéria would if it were simply next in line. Matérias
+    // created before today, or added before anything was done today (still
+    // mid-setup), are unaffected.
+    if (m.createdAt === today && (carryOverCards || []).some((c) => c.feito)) return;
     const { topics, tipo } = pickBatch(m, topicsPerDay, usedTopicIds);
     topics.forEach((t) => {
       cards.push({ id: uid(), materiaId, topicId: t.id, tipo, feito: false });

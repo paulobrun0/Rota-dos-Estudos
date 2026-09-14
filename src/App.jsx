@@ -64,7 +64,7 @@ function mergeMateriaEntries(clone, entries, contentBank) {
     if (!materiaName || topicNames.length === 0) return;
     let materia = clone.materias.find((m) => m.name.toLowerCase() === materiaName.toLowerCase());
     if (!materia) {
-      materia = { id: uid(), name: materiaName, color: PALETTE[clone.materias.length % PALETTE.length], topics: [] };
+      materia = { id: uid(), name: materiaName, color: PALETTE[clone.materias.length % PALETTE.length], topics: [], createdAt: todayISO() };
       clone.materias.push(materia);
     }
     const existingNames = new Set(materia.topics.map((t) => t.name.toLowerCase()));
@@ -199,7 +199,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         concursos: prev.concursos.map((c) => {
           if (c.id !== prev.activeConcursoId) return c;
           const base = c.dailyPlans[today] || mostRecentPlanBefore(c.dailyPlans, today) || [];
-          const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, base);
+          const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, base, today);
           return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
         }),
       };
@@ -315,7 +315,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
       // Only today's plan drives the live rotation — a retroactive edit to
       // a past day's history shouldn't reach forward and move the cursor.
       if (iso === todayISO()) {
-        const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, plan);
+        const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, plan, iso);
         c.dailyPlans[iso] = cards;
         c.cycleCursor = cursor;
       }
@@ -350,7 +350,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
     if (!trimmed || !activeConcurso) return;
     const exists = activeConcurso.materias.some((m) => m.name.toLowerCase() === trimmed.toLowerCase());
     if (exists) return;
-    const materia = { id: uid(), name: trimmed, color: PALETTE[activeConcurso.materias.length % PALETTE.length], topics: [] };
+    const materia = { id: uid(), name: trimmed, color: PALETTE[activeConcurso.materias.length % PALETTE.length], topics: [], createdAt: todayISO() };
     updateActive((c) => ({ ...c, materias: [...c.materias, materia] }));
   }
 
