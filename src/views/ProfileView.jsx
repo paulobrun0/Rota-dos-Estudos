@@ -200,7 +200,7 @@ export function ProfileView({ user, onUserUpdate }) {
             <KeyRound size={14} color={colors.textFaint} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="senha atual" type="password" style={{ ...inputStyle, paddingLeft: 30, width: "100%" }} />
           </div>
-          <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="nova senha (mín. 6 caracteres)" type="password" style={{ ...inputStyle, width: "100%" }} />
+          <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="nova senha (mín. 8 caracteres)" type="password" style={{ ...inputStyle, width: "100%" }} />
           <input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="confirmar nova senha" type="password" style={{ ...inputStyle, width: "100%" }} />
           <button disabled={passwordBusy || !currentPassword || !newPassword} onClick={savePassword} style={{ ...primaryBtnStyle, marginTop: 0, alignSelf: "flex-start" }}>
             trocar senha

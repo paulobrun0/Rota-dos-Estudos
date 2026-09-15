@@ -20,3 +20,5 @@ export const fetchFeatures = () => apiRequest("/api/admin/features");
 
 export const setFeatureEnabled = (key, enabled) =>
   apiRequest(`/api/admin/features/${key}`, { method: "PATCH", body: JSON.stringify({ enabled }) });
+
+export const fetchAuditLog = () => apiRequest("/api/admin/audit-log");

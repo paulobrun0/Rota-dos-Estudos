@@ -19,6 +19,51 @@ const app = express();
 // rate limiting keys on the real client IP instead of the tunnel's.
 app.set("trust proxy", 1);
 
+// Hash of index.html's inline theme-detection <script> — lets CSP allow
+// exactly that known script without a blanket 'unsafe-inline' for scripts.
+// If that inline script's content ever changes, regenerate with:
+//   node -e "const c=require('fs').readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\r\n/g,'\n');console.log(require('crypto').createHash('sha256').update(c).digest('base64'))"
+// The `.replace(/\r\n/g,'\n')` matters: browsers normalize line endings
+// during HTML parsing before hashing a script's source text, so hashing the
+// raw (possibly CRLF, depending on how the file was checked out) bytes
+// gives a value the browser will never actually produce — hash the
+// LF-normalized text instead, which is what the browser sees regardless of
+// the file's on-disk line endings. A stale/wrong hash just breaks the theme
+// flash-prevention silently (CSP blocks it, no console-visible app crash),
+// not the app itself, but is worth keeping accurate.
+const THEME_SCRIPT_HASH = "'sha256-FTLGSifcjvisP4NXmqpyVK2XYL4H4Vg+psG8E/XjYCw='";
+
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      `script-src 'self' ${THEME_SCRIPT_HASH}`,
+      // React sets element.style directly, which CSP treats the same as an
+      // inline style="" attribute — there's no avoiding 'unsafe-inline' here
+      // short of a CSS-in-JS engine that supports nonces, which this app
+      // doesn't use. Lower severity than an inline-script hole, in any case.
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "font-src 'self'",
+      "connect-src 'self'",
+      "worker-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join("; "),
+  );
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  // Browsers only act on this over an actual HTTPS response, so it's a
+  // no-op (not a foot-gun) on the rare plain-HTTP request that reaches here.
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  next();
+});
+
 app.use(express.json({ limit: "3mb" }));
 app.use(cookieParser());
 
@@ -56,6 +101,13 @@ const updateOwnPassword = db.prepare("UPDATE users SET password_hash = ? WHERE i
 const setUserSuspendedFlag = db.prepare("UPDATE users SET is_suspended = ? WHERE id = ?");
 const setSessionToken = db.prepare("UPDATE users SET session_token = ? WHERE id = ?");
 const setLastLogin = db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?");
+const bumpFailedLogin = db.prepare("UPDATE users SET failed_login_attempts = failed_login_attempts + 1 WHERE id = ?");
+const lockAccount = db.prepare("UPDATE users SET failed_login_attempts = 0, locked_until = ? WHERE id = ?");
+const clearLoginLock = db.prepare("UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?");
+const insertAuditLog = db.prepare(`
+  INSERT INTO admin_audit_log (admin_id, admin_email, action, target_email, details) VALUES (?, ?, ?, ?, ?)
+`);
+const listAuditLog = db.prepare("SELECT * FROM admin_audit_log ORDER BY id DESC LIMIT ?");
 const setShowInRanking = db.prepare("UPDATE users SET show_in_ranking = ? WHERE id = ?");
 const listRankingData = db.prepare(`
   SELECT u.email, u.username, u.avatar, d.value
@@ -142,11 +194,18 @@ function isValidEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+const LOGIN_ATTEMPT_LIMIT = 5;
+const LOGIN_LOCK_MINUTES = 15;
+
+function logAdminAction(req, action, targetEmail, details) {
+  insertAuditLog.run(req.userId, req.user.email, action, targetEmail || null, details || null);
+}
+
 app.post("/api/register", authLimiter, (req, res) => {
   if (!isFeatureEnabled("cadastro")) return res.status(403).json({ error: "novos cadastros estão desativados no momento" });
   const { email, password } = req.body || {};
-  if (!isValidEmail(email) || typeof password !== "string" || password.length < 6) {
-    return res.status(400).json({ error: "email válido e senha com 6+ caracteres são obrigatórios" });
+  if (!isValidEmail(email) || typeof password !== "string" || password.length < 8) {
+    return res.status(400).json({ error: "email válido e senha com 8+ caracteres são obrigatórios" });
   }
   const normalizedEmail = email.trim().toLowerCase();
   if (findUserByEmail.get(normalizedEmail)) {
@@ -164,13 +223,32 @@ app.post("/api/login", authLimiter, (req, res) => {
   const { email, password } = req.body || {};
   const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
   const user = findUserByEmail.get(normalizedEmail);
+
+  // Checked before touching bcrypt at all: a locked account shouldn't pay
+  // (or let an attacker pay) for a password comparison it can't act on
+  // anyway. Distinct from the route's own IP-based rate limiter — that one
+  // resets the moment an attacker switches IPs, this one is tied to the
+  // account itself and doesn't care which IP is asking.
+  if (user?.locked_until && user.locked_until > new Date().toISOString()) {
+    return res.status(429).json({ error: `conta temporariamente bloqueada por muitas tentativas — tente novamente em ${LOGIN_LOCK_MINUTES} minutos` });
+  }
+
   if (!user || !bcrypt.compareSync(password || "", user.password_hash)) {
+    if (user) {
+      const attempts = user.failed_login_attempts + 1;
+      if (attempts >= LOGIN_ATTEMPT_LIMIT) {
+        lockAccount.run(new Date(Date.now() + LOGIN_LOCK_MINUTES * 60_000).toISOString(), user.id);
+      } else {
+        bumpFailedLogin.run(user.id);
+      }
+    }
     return res.status(401).json({ error: "email ou senha incorretos" });
   }
   if (user.is_suspended) return res.status(403).json({ error: "esta conta foi suspensa" });
   if (!user.is_admin && !isFeatureEnabled("manutencao")) {
     return res.status(503).json({ error: "o app está em manutenção no momento — tente novamente em instantes" });
   }
+  clearLoginLock.run(user.id);
   setLastLogin.run(user.id);
   issueSession(res, user.id);
   res.json({ email: user.email });
@@ -178,8 +256,8 @@ app.post("/api/login", authLimiter, (req, res) => {
 
 app.post("/api/reset-password", authLimiter, (req, res) => {
   const { email, recoveryCode, newPassword } = req.body || {};
-  if (typeof newPassword !== "string" || newPassword.length < 6) {
-    return res.status(400).json({ error: "a nova senha precisa ter 6+ caracteres" });
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return res.status(400).json({ error: "a nova senha precisa ter 8+ caracteres" });
   }
   const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
   const user = findUserByEmail.get(normalizedEmail);
@@ -262,8 +340,8 @@ app.post("/api/me/change-password", authLimiter, requireAuth, (req, res) => {
   if (!bcrypt.compareSync(currentPassword || "", user.password_hash)) {
     return res.status(401).json({ error: "senha atual incorreta" });
   }
-  if (typeof newPassword !== "string" || newPassword.length < 6) {
-    return res.status(400).json({ error: "a nova senha precisa ter 6+ caracteres" });
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return res.status(400).json({ error: "a nova senha precisa ter 8+ caracteres" });
   }
   updateOwnPassword.run(bcrypt.hashSync(newPassword, 10), req.userId);
   // If the old password had leaked, changing it should also kick out
@@ -401,6 +479,7 @@ app.patch("/api/admin/users/:id", adminOnly, (req, res) => {
     const existing = findUserByEmail.get(normalizedEmail);
     if (existing && existing.id !== targetId) return res.status(409).json({ error: "já existe uma conta com esse email" });
     updateUserEmail.run(normalizedEmail, targetId);
+    logAdminAction(req, "change_email", target.email, `novo email: ${normalizedEmail}`);
   }
 
   if (isAdmin !== undefined) {
@@ -409,6 +488,7 @@ app.patch("/api/admin/users/:id", adminOnly, (req, res) => {
       return res.status(400).json({ error: "você não pode remover seu próprio acesso de administrador" });
     }
     setUserAdminFlag.run(isAdmin ? 1 : 0, targetId);
+    logAdminAction(req, isAdmin ? "grant_admin" : "revoke_admin", target.email);
   }
 
   if (isSuspended !== undefined) {
@@ -417,6 +497,7 @@ app.patch("/api/admin/users/:id", adminOnly, (req, res) => {
       return res.status(400).json({ error: "você não pode suspender sua própria conta" });
     }
     setUserSuspendedFlag.run(isSuspended ? 1 : 0, targetId);
+    logAdminAction(req, isSuspended ? "suspend_user" : "unsuspend_user", target.email);
   }
 
   res.json({ ok: true });
@@ -436,6 +517,7 @@ app.post("/api/admin/users/:id/reset-password", adminOnly, (req, res) => {
   // change-password route, just without a cookie to re-issue here since
   // it's the admin's browser making this request, not the target's.
   setSessionToken.run(null, targetId);
+  logAdminAction(req, "reset_password", target.email);
   res.json({ email: target.email, newPassword, recoveryCode: formatRecoveryCode(newRecoveryCode) });
 });
 
@@ -446,7 +528,15 @@ app.delete("/api/admin/users/:id", adminOnly, (req, res) => {
   if (!target) return res.status(404).json({ error: "usuário não encontrado" });
   deleteUserData.run(targetId);
   deleteUserById.run(targetId);
+  logAdminAction(req, "delete_user", target.email);
   res.json({ ok: true });
+});
+
+app.get("/api/admin/audit-log", adminOnly, (req, res) => {
+  const rows = listAuditLog.all(200).map((r) => ({
+    id: r.id, adminEmail: r.admin_email, action: r.action, targetEmail: r.target_email, details: r.details, createdAt: r.created_at,
+  }));
+  res.json({ entries: rows });
 });
 
 // Read-only for any logged-in user: the shared catalog they can import
@@ -498,6 +588,7 @@ app.patch("/api/admin/features/:key", adminOnly, (req, res) => {
   if (!FEATURES[key]) return res.status(404).json({ error: "recurso desconhecido" });
   if (typeof enabled !== "boolean") return res.status(400).json({ error: "enabled deve ser true ou false" });
   upsertFeatureFlag.run(key, enabled ? 1 : 0);
+  logAdminAction(req, enabled ? "enable_feature" : "disable_feature", null, key);
   res.json({ ok: true, key, enabled });
 });
 

@@ -140,10 +140,10 @@ export function LoginForm({ onAuthed, noticeMessage }) {
         {mode !== "reset" && (
           <input
             type="password"
-            placeholder="senha (mín. 6 caracteres)"
+            placeholder="senha (mín. 8 caracteres)"
             value={password}
             required
-            minLength={6}
+            minLength={8}
             onChange={(e) => setPassword(e.target.value)}
             style={inputStyle}
           />
@@ -161,10 +161,10 @@ export function LoginForm({ onAuthed, noticeMessage }) {
             />
             <input
               type="password"
-              placeholder="nova senha (mín. 6 caracteres)"
+              placeholder="nova senha (mín. 8 caracteres)"
               value={newPassword}
               required
-              minLength={6}
+              minLength={8}
               onChange={(e) => setNewPassword(e.target.value)}
               style={inputStyle}
             />

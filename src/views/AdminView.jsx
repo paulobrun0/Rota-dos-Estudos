@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Ban, Check, Download, Flame, KeyRound, Pencil, Search, ShieldCheck, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
+import { Ban, Check, Download, Flame, History, KeyRound, Pencil, Search, ShieldCheck, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, secondaryBtnStyle } from "../styles/shared.js";
 import {
   fetchUsers, deleteUser, setUserAdmin, setUserSuspended, setUserEmail, resetUserPassword,
-  fetchFeatures, setFeatureEnabled,
+  fetchFeatures, setFeatureEnabled, fetchAuditLog,
 } from "../api/admin.js";
 
 function formatDate(iso) {
@@ -184,6 +184,67 @@ function FeaturesPanel() {
   );
 }
 
+const ACTION_LABELS = {
+  grant_admin: "tornou admin",
+  revoke_admin: "removeu admin",
+  suspend_user: "suspendeu",
+  unsuspend_user: "reativou",
+  reset_password: "resetou a senha de",
+  delete_user: "excluiu",
+  change_email: "trocou o email de",
+  enable_feature: "ativou o recurso",
+  disable_feature: "desativou o recurso",
+};
+
+function AuditLogPanel() {
+  const [entries, setEntries] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchAuditLog()
+      .then((r) => setEntries(r.entries))
+      .catch((e) => setError(e.message));
+  }, []);
+
+  return (
+    <div>
+      <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 16 }}>
+        últimas 200 ações administrativas — quem fez o quê, e quando.
+      </div>
+
+      {error && (
+        <div style={{ background: colors.redSoft, color: colors.red, borderRadius: 8, padding: "9px 12px", fontSize: 13, marginBottom: 16 }}>
+          {error}
+        </div>
+      )}
+
+      {!entries && !error && <div style={{ fontSize: 13, color: colors.textFaint }}>carregando...</div>}
+      {entries && entries.length === 0 && <div style={{ fontSize: 13, color: colors.textFaint }}>nenhuma ação registrada ainda.</div>}
+
+      {entries && entries.length > 0 && (
+        <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: "hidden" }}>
+          {entries.map((e, i) => (
+            <div
+              key={e.id}
+              style={{
+                display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", padding: "10px 16px", fontSize: 12.5,
+                borderTop: i > 0 ? `1px solid ${colors.border}` : "none",
+              }}
+            >
+              <span style={{ color: colors.textFaint, flexShrink: 0 }}>{formatDate(e.createdAt)}</span>
+              <span style={{ color: colors.text }}>
+                <b>{e.adminEmail}</b> {ACTION_LABELS[e.action] || e.action}
+                {e.targetEmail && <> <b>{e.targetEmail}</b></>}
+                {e.details && <span style={{ color: colors.textMuted }}> · {e.details}</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AdminView({ currentUserEmail }) {
   const [section, setSection] = useState("usuarios");
   const [users, setUsers] = useState(null);
@@ -268,6 +329,7 @@ export function AdminView({ currentUserEmail }) {
         {[
           ["usuarios", "usuários", Users],
           ["recursos", "recursos", SlidersHorizontal],
+          ["auditoria", "auditoria", History],
         ].map(([key, label, Icon]) => (
           <button
             key={key}
@@ -285,6 +347,7 @@ export function AdminView({ currentUserEmail }) {
       </div>
 
       {section === "recursos" && <FeaturesPanel />}
+      {section === "auditoria" && <AuditLogPanel />}
 
       {section === "usuarios" && stats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 18 }}>

@@ -73,6 +73,22 @@ try {
   // column already exists
 }
 
+// Per-account brute-force guard, separate from the IP-based rate limiter on
+// the route itself — that one resets the moment an attacker rotates IPs,
+// this one doesn't. failed_login_attempts resets to 0 on any successful
+// login; locked_until is cleared the same way and otherwise just expires.
+try {
+  db.exec("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER NOT NULL DEFAULT 0");
+} catch {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN locked_until TEXT");
+} catch {
+  // column already exists
+}
+
 // NULLs are all distinct under a unique index, so this is safe to run
 // before anyone has set a username.
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)");
@@ -131,6 +147,23 @@ db.exec(`
     key TEXT PRIMARY KEY,
     enabled INTEGER NOT NULL DEFAULT 1,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+// A record of every account-affecting action an admin takes — who did what
+// to whom, and when — so "who suspended this account?" or "who reset my
+// password?" has an answer. Denormalizes both emails (rather than joining
+// against users.id at read time) so the log stays readable even after the
+// target account is later renamed or deleted.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS admin_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    admin_id INTEGER NOT NULL,
+    admin_email TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target_email TEXT,
+    details TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
 
