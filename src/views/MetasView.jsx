@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, Coffee, Layers, Target } from "lucide-react";
+import { Clock, Coffee, Layers, RotateCw, Target } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -11,6 +11,7 @@ export function MetasView({ concurso, updateSettings }) {
   const settings = concurso.settings || defaultSettings();
   const materiasPerDay = settings.materiasPerDay || 0;
   const topicsPerDay = settings.topicsPerDay || 0;
+  const reviewsPerDay = settings.reviewsPerDay ?? 3;
   const minutesPerMateria = settings.minutesPerMateria || 0;
   const restMinutes = settings.restMinutes ?? 5;
   const totalMaterias = concurso.materias.length;
@@ -31,7 +32,7 @@ export function MetasView({ concurso, updateSettings }) {
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>metas</div>
       <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 20 }}>
-        três números só, para <b style={{ color: colors.text }}>{concurso.name}</b>. o app decide sozinho quais matérias entram em cada dia, revezando entre todas as cadastradas no edital. o rodízio anda por ciclo, não por calendário: só passa pra próxima matéria quando a atual estiver de fato concluída — um dia mais fraco não te faz perder o que ficou pra trás, você retoma de onde parou.
+só alguns números, para <b style={{ color: colors.text }}>{concurso.name}</b>. o app decide sozinho quais matérias entram em cada dia, revezando entre todas as cadastradas no edital. o rodízio anda por ciclo, não por calendário: só passa pra próxima matéria quando a atual estiver de fato concluída — um dia mais fraco não te faz perder o que ficou pra trás, você retoma de onde parou.
       </div>
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "18px 20px", marginBottom: 22, display: "flex", flexDirection: "column", gap: 18 }}>
@@ -48,6 +49,13 @@ export function MetasView({ concurso, updateSettings }) {
           hint="quantos assuntos novos puxar de cada matéria escalada para o dia"
           value={topicsPerDay}
           onChange={(v) => updateSettings("topicsPerDay", v)}
+        />
+        <GlobalGoalRow
+          icon={<RotateCw size={15} color={colors.amber} />}
+          label="revisões por dia"
+          hint={reviewsPerDay === 0 ? "revisão espaçada desligada — assuntos já estudados não voltam sozinhos" : `até ${reviewsPerDay} assuntos já estudados voltam por dia, no intervalo certo (1/3/7/15/30 dias) — vindos de qualquer matéria, não só as do dia`}
+          value={reviewsPerDay}
+          onChange={(v) => updateSettings("reviewsPerDay", v)}
         />
         <GlobalGoalRow
           icon={<Clock size={15} color={colors.amber} />}

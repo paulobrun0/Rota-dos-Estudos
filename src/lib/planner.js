@@ -1,5 +1,56 @@
 import { uid } from "./id.js";
-import { todayISO } from "./date.js";
+import { addDaysISO, todayISO } from "./date.js";
+
+// Days-after-completion before a topic comes back for review, doubling
+// roughly every step (the spacing effect: each successful recall of the
+// same material pushes the next one further out, since it's stuck better
+// than last time). After the last step, a topic stops coming back on its
+// own — five clean passes spread over a month is the point where it's
+// counted as retained, not a schedule bug.
+export const REVIEW_INTERVALS_DAYS = [1, 3, 7, 15, 30];
+
+// Called the first time a topic is completed ("novo"): puts it on the
+// schedule above, due tomorrow.
+export function scheduleFirstReview(topic, today) {
+  topic.reviewStep = 0;
+  topic.nextReviewDate = addDaysISO(today, REVIEW_INTERVALS_DAYS[0]);
+}
+
+// Called when a scheduled review card (tipo "revisao") is completed:
+// advances to the next, longer interval, or — past the last step — takes
+// the topic off the schedule (nextReviewDate null) since it's considered
+// retained at that point.
+export function advanceReview(topic, today) {
+  const nextStep = (topic.reviewStep ?? 0) + 1;
+  topic.reviewStep = nextStep;
+  topic.nextReviewDate = nextStep < REVIEW_INTERVALS_DAYS.length ? addDaysISO(today, REVIEW_INTERVALS_DAYS[nextStep]) : null;
+}
+
+// Which topics are due for a spaced review today, across every matéria in
+// the concurso (not just whichever are in today's rotation window — the
+// whole point is surfacing matérias that would otherwise sit untouched
+// until their turn comes back around). Capped at `reviewsPerDay` and
+// sorted most-overdue-first, so on a day with more due than the cap, the
+// leftover ones simply stay due (their nextReviewDate doesn't move) and
+// surface again tomorrow ahead of anything newly due — spreading a backlog
+// across the next several days instead of dumping it all on one.
+// A topic with no nextReviewDate at all (studied before this feature
+// existed) counts as due, so old progress eventually enters the schedule
+// instead of being invisible to review forever.
+export function pickDueReviews(materias, today, reviewsPerDay, usedTopicIds) {
+  if (reviewsPerDay <= 0) return [];
+  const due = [];
+  for (const m of materias) {
+    for (const t of m.topics) {
+      if (t.status !== "estudado" || usedTopicIds.has(t.id)) continue;
+      if (t.nextReviewDate === undefined || (t.nextReviewDate !== null && t.nextReviewDate <= today)) {
+        due.push({ materiaId: m.id, topicId: t.id, dueDate: t.nextReviewDate || "" });
+      }
+    }
+  }
+  due.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  return due.slice(0, reviewsPerDay);
+}
 
 // Which matérias are being worked on right now — starting at `cursorId` (a
 // matéria id, persisted per concurso as concurso.cycleCursor) and wrapping
@@ -41,25 +92,25 @@ export function projectActiveMateriaIds(materias, settings, cursorId, dayOffset)
   return ids;
 }
 
-// A matéria's current batch — its "novo"/"revisão" cards in `cards` — is
-// cleared once every card in it is done, meaning it's ready to drop out of
-// the active window and let the cursor move past it.
-function isMateriaCleared(materiaId, cards) {
-  const batch = cards.filter((c) => c.materiaId === materiaId && (c.tipo === "novo" || c.tipo === "revisao"));
-  return batch.length > 0 && batch.every((c) => c.feito);
+// A matéria's current "novo" batch in `cards` is cleared once every card in
+// it is done, meaning it's ready to drop out of the active window and let
+// the cursor move past it — same if it never had a batch to begin with
+// because it's already out of pending topics (nothing left for pickBatch to
+// hand out; reviewing what's already studied is the separate, cross-matéria
+// spaced-review pass below, not this rotation).
+function isMateriaCleared(materiaId, cards, m) {
+  const batch = cards.filter((c) => c.materiaId === materiaId && c.tipo === "novo");
+  if (batch.length > 0) return batch.every((c) => c.feito);
+  return !m.topics.some((t) => t.status === "pendente");
 }
 
-// Picks up to `topicsPerDay` topics for a fresh batch: pending topics
-// first; once none are left (every topic in the matéria has been studied
-// at least once), falls back to a revisão pass over the whole matéria.
+// Picks up to `topicsPerDay` pending topics for a fresh "novo" batch. A
+// matéria with nothing pending left contributes nothing here — it's done
+// with new content, and isMateriaCleared above already knows to treat that
+// as cleared rather than stalling the rotation on it.
 export function pickBatch(m, topicsPerDay, usedTopicIds) {
-  let candidates = m.topics.filter((t) => t.status === "pendente" && !usedTopicIds.has(t.id));
-  let tipo = "novo";
-  if (candidates.length === 0 && m.topics.length > 0) {
-    candidates = m.topics.filter((t) => !usedTopicIds.has(t.id));
-    tipo = "revisao";
-  }
-  return { topics: candidates.slice(0, topicsPerDay), tipo };
+  const candidates = m.topics.filter((t) => t.status === "pendente" && !usedTopicIds.has(t.id));
+  return { topics: candidates.slice(0, topicsPerDay), tipo: "novo" };
 }
 
 // Builds "today"'s plan from whatever carried over — cards not yet done,
@@ -94,11 +145,12 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards, tod
 
   // Advance past any matéria that's already fully cleared at the front of
   // the window — e.g. its last card got marked done and nothing has
-  // rebuilt the plan since.
+  // rebuilt the plan since, or it simply has no pending topics left at all.
   for (let guard = 0; guard < materias.length; guard++) {
     const frontId = activeMateriaIds(materias, settings, cursor)[0];
     if (frontId === undefined) break;
-    if (cards.some((c) => c.materiaId === frontId) && isMateriaCleared(frontId, cards)) {
+    const frontMateria = materias.find((m) => m.id === frontId);
+    if (frontMateria && isMateriaCleared(frontId, cards, frontMateria)) {
       const idx = materias.findIndex((m) => m.id === frontId);
       cursor = materias[(idx + 1) % materias.length].id;
     } else {
@@ -107,22 +159,39 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards, tod
   }
 
   activeMateriaIds(materias, settings, cursor).forEach((materiaId) => {
-    const already = cards.filter((c) => c.materiaId === materiaId && (c.tipo === "novo" || c.tipo === "revisao")).length;
+    const already = cards.filter((c) => c.materiaId === materiaId && c.tipo === "novo").length;
     if (already > 0) return; // already has a batch — carried over, don't top it up mid-batch
     const m = materias.find((x) => x.id === materiaId);
     if (!m) return;
-    // A matéria created today, added after today's session already had some
-    // progress (a card marked done), doesn't jump into today's rotation just
-    // because a slot happened to open up — it waits for tomorrow's rebuild,
-    // same as any matéria would if it were simply next in line. Matérias
-    // created before today, or added before anything was done today (still
-    // mid-setup), are unaffected.
-    if (m.createdAt === today && (carryOverCards || []).some((c) => c.feito)) return;
+    // A matéria stamped with a future createdAt — see materiaCreationDate in
+    // App.jsx — was added after today's plan already existed, so it waits
+    // for that date's rebuild instead of jumping into today's rotation the
+    // moment a slot opens up. A matéria created today (or earlier) is
+    // unaffected regardless of whether progress already happened today —
+    // that's the ordinary same-day cascade as the cursor slides through
+    // matérias that were already part of the day's set from the start.
+    if (m.createdAt > today) return;
     const { topics, tipo } = pickBatch(m, topicsPerDay, usedTopicIds);
     topics.forEach((t) => {
       cards.push({ id: uid(), materiaId, topicId: t.id, tipo, feito: false });
       usedTopicIds.add(t.id);
     });
+  });
+
+  // Spaced review runs across the whole concurso, independent of today's
+  // rotation window — see pickDueReviews. Marked manual so a plain rebuild
+  // (e.g. switching tabs) doesn't drop it just for belonging to a matéria
+  // that isn't in today's window. The cap is reduced by review cards this
+  // day's plan already has (from an earlier rebuild today, or carried over
+  // still-pending from a previous day) — without that, rebuilding the same
+  // day's plan more than once (which happens constantly: every toggleCard
+  // call re-runs this) would keep adding more on top each time instead of
+  // topping up to the daily total exactly once.
+  const reviewsPerDay = settings?.reviewsPerDay ?? 0;
+  const reviewsAlready = cards.filter((c) => c.tipo === "revisao").length;
+  pickDueReviews(materias, today, Math.max(0, reviewsPerDay - reviewsAlready), usedTopicIds).forEach(({ materiaId, topicId }) => {
+    cards.push({ id: uid(), materiaId, topicId, tipo: "revisao", feito: false, manual: true });
+    usedTopicIds.add(topicId);
   });
 
   return { cards, cursor };

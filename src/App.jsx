@@ -5,7 +5,7 @@ import {
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
 import { addDaysISO, todayISO, weekStart } from "./lib/date.js";
-import { activeMateriaIds, buildCyclePlan, pickBatch } from "./lib/planner.js";
+import { activeMateriaIds, advanceReview, buildCyclePlan, pickBatch, scheduleFirstReview } from "./lib/planner.js";
 import { computeStreaks } from "./lib/streaks.js";
 import { uid } from "./lib/id.js";
 import { useTheme } from "./lib/useTheme.js";
@@ -53,18 +53,32 @@ function mostRecentPlanBefore(dailyPlans, iso) {
   return keys.length > 0 ? dailyPlans[keys[keys.length - 1]] : null;
 }
 
+// A matéria's createdAt decides (see buildCyclePlan's `m.createdAt > today`
+// guard) whether it can join today's rotation the moment its turn arrives,
+// or has to wait for tomorrow's rebuild. Today's own date is right when
+// nothing has been shown yet today — first-ever setup, or adding a matéria
+// before opening "hoje" at all. But once today's plan already exists, a
+// matéria added now is a genuine addition mid-session, not part of that
+// plan's original set, so it's stamped tomorrow instead — guaranteed
+// deferred regardless of whether a card happens to be done yet today.
+function materiaCreationDate(dailyPlans) {
+  const today = todayISO();
+  return dailyPlans[today] ? addDaysISO(today, 1) : today;
+}
+
 // Shared by the free-text bulk importer and the content-bank importer: given
 // {name, topics: [string]} entries, creates/reuses matérias by name and adds
 // any topic not already present (case-insensitive), mutating `clone` in place.
 function mergeMateriaEntries(clone, entries, contentBank) {
   let count = 0;
+  const createdAt = materiaCreationDate(clone.dailyPlans || {});
   entries.forEach(({ name, topics }) => {
     const materiaName = (name || "").trim();
     const topicNames = (topics || []).map((s) => s.trim()).filter(Boolean);
     if (!materiaName || topicNames.length === 0) return;
     let materia = clone.materias.find((m) => m.name.toLowerCase() === materiaName.toLowerCase());
     if (!materia) {
-      materia = { id: uid(), name: materiaName, color: PALETTE[clone.materias.length % PALETTE.length], topics: [], createdAt: todayISO() };
+      materia = { id: uid(), name: materiaName, color: PALETTE[clone.materias.length % PALETTE.length], topics: [], createdAt };
       clone.materias.push(materia);
     }
     const existingNames = new Set(materia.topics.map((t) => t.name.toLowerCase()));
@@ -198,7 +212,18 @@ export default function App({ user, onLogout, onUserUpdate }) {
         ...prev,
         concursos: prev.concursos.map((c) => {
           if (c.id !== prev.activeConcursoId) return c;
-          const base = c.dailyPlans[today] || mostRecentPlanBefore(c.dailyPlans, today) || [];
+          // A `manual` card (progresso's "+", "puxar próxima matéria", a due
+          // spaced review) is deliberately a same-day-only artifact — it
+          // doesn't ride along into a fresh day the way an unfinished "novo"
+          // card does. Nothing is lost by dropping it here: the topic's own
+          // status/nextReviewDate is the real source of truth, and it'll
+          // naturally resurface through the ordinary mechanism (its
+          // matéria's turn, or pickDueReviews finding it still due) —
+          // that's also what keeps a completed review from padding out
+          // every future day's carryover forever, which would otherwise
+          // eat into reviewsPerDay's daily cap for no reason.
+          const existingToday = c.dailyPlans[today];
+          const base = existingToday || (mostRecentPlanBefore(c.dailyPlans, today) || []).filter((card) => !card.manual);
           const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, base, today);
           return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
         }),
@@ -282,13 +307,15 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
       if (!item.feito) {
         item.feito = true;
-        if (item.tipo === "novo") {
-          topic.status = "estudado";
-          topic.mastered = false;
-        } else {
-          topic.status = "estudado";
-          topic.mastered = false;
-        }
+        topic.status = "estudado";
+        topic.mastered = false;
+        // "novo" puts a topic on the spaced-review schedule for the first
+        // time; a scheduled "revisao" pass advances it to the next, longer
+        // interval. iso (not necessarily today) is the reference date, so
+        // retroactively editing a past day schedules from that day, not from
+        // whenever the edit happens to be made.
+        if (item.tipo === "novo") scheduleFirstReview(topic, iso);
+        else advanceReview(topic, iso);
         if (questions) {
           topic.questionsTotal = (topic.questionsTotal || 0) + questions.total;
           topic.questionsCorrect = (topic.questionsCorrect || 0) + questions.correct;
@@ -313,6 +340,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
           topic.mastered = false;
         }
         if (topic.history?.length) topic.history.pop();
+        // reviewStep/nextReviewDate aren't rolled back here — same as
+        // questionsTotal/questionsCorrect above, undo doesn't try to be a
+        // perfect inverse of every side effect completing a card has.
         clone.activity = clone.activity || {};
         clone.activity[iso] = Math.max(0, (clone.activity[iso] || 0) - 1);
         if (clone.activity[iso] === 0) delete clone.activity[iso];
@@ -408,7 +438,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
     if (!trimmed || !activeConcurso) return;
     const exists = activeConcurso.materias.some((m) => m.name.toLowerCase() === trimmed.toLowerCase());
     if (exists) return;
-    const materia = { id: uid(), name: trimmed, color: PALETTE[activeConcurso.materias.length % PALETTE.length], topics: [], createdAt: todayISO() };
+    const materia = { id: uid(), name: trimmed, color: PALETTE[activeConcurso.materias.length % PALETTE.length], topics: [], createdAt: materiaCreationDate(activeConcurso.dailyPlans || {}) };
     updateActive((c) => ({ ...c, materias: [...c.materias, materia] }));
   }
 
