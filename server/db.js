@@ -112,4 +112,16 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_questions_banca ON questions(banca);
 `);
 
+// Global on/off switches an admin can flip from the app itself — e.g.
+// turning off question practice without a deploy. A key with no row here is
+// treated as enabled (see isFeatureEnabled in index.js): existing behavior
+// stays unchanged until an admin explicitly disables something.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS feature_flags (
+    key TEXT PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
 export default db;

@@ -15,3 +15,8 @@ export const setUserEmail = (id, email) =>
 
 export const resetUserPassword = (id) =>
   apiRequest(`/api/admin/users/${id}/reset-password`, { method: "POST" });
+
+export const fetchFeatures = () => apiRequest("/api/admin/features");
+
+export const setFeatureEnabled = (key, enabled) =>
+  apiRequest(`/api/admin/features/${key}`, { method: "PATCH", body: JSON.stringify({ enabled }) });

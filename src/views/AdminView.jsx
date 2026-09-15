@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Ban, Check, Download, Flame, KeyRound, Pencil, Search, ShieldCheck, Trash2, X } from "lucide-react";
+import { Ban, Check, Download, Flame, KeyRound, Pencil, Search, ShieldCheck, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, secondaryBtnStyle } from "../styles/shared.js";
-import { fetchUsers, deleteUser, setUserAdmin, setUserSuspended, setUserEmail, resetUserPassword } from "../api/admin.js";
+import {
+  fetchUsers, deleteUser, setUserAdmin, setUserSuspended, setUserEmail, resetUserPassword,
+  fetchFeatures, setFeatureEnabled,
+} from "../api/admin.js";
 
 function formatDate(iso) {
   if (!iso) return "nunca";
@@ -93,7 +96,96 @@ function EmailCell({ user, isSelf, onSave }) {
   );
 }
 
+function Switch({ checked, onChange, disabled }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      disabled={disabled}
+      style={{
+        width: 38, height: 22, borderRadius: 20, border: "none", flexShrink: 0, position: "relative",
+        background: checked ? colors.teal : colors.border, opacity: disabled ? 0.5 : 1, transition: "background 0.15s",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute", top: 2, left: checked ? 18 : 2, width: 18, height: 18, borderRadius: "50%",
+          background: colors.bg, transition: "left 0.15s",
+        }}
+      />
+    </button>
+  );
+}
+
+function FeaturesPanel() {
+  const [features, setFeatures] = useState(null);
+  const [error, setError] = useState("");
+  const [busyKey, setBusyKey] = useState(null);
+
+  function load() {
+    fetchFeatures()
+      .then((r) => setFeatures(r.features))
+      .catch((e) => setError(e.message));
+  }
+
+  useEffect(load, []);
+
+  async function toggle(key, enabled) {
+    setError("");
+    setBusyKey(key);
+    setFeatures((prev) => prev.map((f) => (f.key === key ? { ...f, enabled } : f)));
+    try {
+      await setFeatureEnabled(key, enabled);
+    } catch (e) {
+      setError(e.message);
+      setFeatures((prev) => prev.map((f) => (f.key === key ? { ...f, enabled: !enabled } : f)));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 16 }}>
+        ligue ou desligue recursos do app para todo mundo, na hora — sem precisar publicar uma nova versão.
+      </div>
+
+      {error && (
+        <div style={{ background: colors.redSoft, color: colors.red, borderRadius: 8, padding: "9px 12px", fontSize: 13, marginBottom: 16 }}>
+          {error}
+        </div>
+      )}
+
+      {!features && !error && <div style={{ fontSize: 13, color: colors.textFaint }}>carregando...</div>}
+
+      {features && (
+        <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: "hidden" }}>
+          {features.map((f, i) => (
+            <div
+              key={f.key}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px",
+                borderTop: i > 0 ? `1px solid ${colors.border}` : "none", opacity: busyKey === f.key ? 0.6 : 1,
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 13.5, fontWeight: 600, textTransform: "capitalize" }}>{f.label}</div>
+                <div style={{ fontSize: 12, color: colors.textFaint, marginTop: 2 }}>
+                  {f.enabled ? "ativo para todos os usuários" : "desativado para todos os usuários"}
+                </div>
+              </div>
+              <Switch checked={f.enabled} disabled={busyKey === f.key} onChange={(v) => toggle(f.key, v)} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AdminView({ currentUserEmail }) {
+  const [section, setSection] = useState("usuarios");
   const [users, setUsers] = useState(null);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
@@ -162,17 +254,39 @@ export function AdminView({ currentUserEmail }) {
         <div>
           <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>administração</div>
           <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 20 }}>
-            gerencie as contas cadastradas no app.
+            gerencie as contas e os recursos do app.
           </div>
         </div>
-        {users && (
+        {section === "usuarios" && users && (
           <button onClick={() => exportCsv(users)} style={{ ...secondaryBtnStyle, padding: "8px 14px", flexShrink: 0 }}>
             <Download size={14} /> exportar CSV
           </button>
         )}
       </div>
 
-      {stats && (
+      <div style={{ display: "flex", gap: 6, marginBottom: 20, borderBottom: `1px solid ${colors.border}` }}>
+        {[
+          ["usuarios", "usuários", Users],
+          ["recursos", "recursos", SlidersHorizontal],
+        ].map(([key, label, Icon]) => (
+          <button
+            key={key}
+            onClick={() => setSection(key)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: "pointer",
+              padding: "8px 4px 10px", marginRight: 14, fontSize: 13, fontWeight: 600,
+              color: section === key ? colors.text : colors.textFaint,
+              borderBottom: `2px solid ${section === key ? colors.teal : "transparent"}`,
+            }}
+          >
+            <Icon size={14} /> {label}
+          </button>
+        ))}
+      </div>
+
+      {section === "recursos" && <FeaturesPanel />}
+
+      {section === "usuarios" && stats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 18 }}>
           {[
             ["usuários", stats.total],
@@ -188,13 +302,13 @@ export function AdminView({ currentUserEmail }) {
         </div>
       )}
 
-      {error && (
+      {section === "usuarios" && error && (
         <div style={{ background: colors.redSoft, color: colors.red, borderRadius: 8, padding: "9px 12px", fontSize: 13, marginBottom: 16 }}>
           {error}
         </div>
       )}
 
-      {resetResult && (
+      {section === "usuarios" && resetResult && (
         <div style={{ background: colors.surface, border: `1px solid ${colors.amber}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16, position: "relative" }}>
           <button onClick={() => setResetResult(null)} style={{ ...actionBtnStyle(colors.textFaint), position: "absolute", top: 8, right: 8 }}><X size={14} /></button>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>nova senha gerada para {resetResult.email}</div>
@@ -206,7 +320,7 @@ export function AdminView({ currentUserEmail }) {
         </div>
       )}
 
-      {users && (
+      {section === "usuarios" && users && (
         <div style={{ position: "relative", marginBottom: 14, maxWidth: 320 }}>
           <Search size={14} color={colors.textFaint} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
           <input
@@ -218,7 +332,7 @@ export function AdminView({ currentUserEmail }) {
         </div>
       )}
 
-      {filtered && (
+      {section === "usuarios" && filtered && (
         <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: "auto" }}>
           <div style={{ minWidth: 880 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1.6fr 80px 110px 110px 110px 140px", gap: 8, padding: "10px 16px", background: colors.surface2, fontSize: 11, color: colors.textFaint, textTransform: "uppercase", letterSpacing: 0.4 }}>

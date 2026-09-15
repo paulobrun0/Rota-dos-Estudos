@@ -76,6 +76,26 @@ const listQuestionsByAssuntoBanca = db.prepare(
 const countQuestionsByAssunto = db.prepare(
   "SELECT assunto, banca, COUNT(*) AS total FROM questions GROUP BY assunto, banca",
 );
+const getFeatureFlag = db.prepare("SELECT enabled FROM feature_flags WHERE key = ?");
+const listFeatureFlags = db.prepare("SELECT key, enabled FROM feature_flags");
+const upsertFeatureFlag = db.prepare(`
+  INSERT INTO feature_flags (key, enabled, updated_at) VALUES (?, ?, datetime('now'))
+  ON CONFLICT(key) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at
+`);
+
+// Recursos que um admin pode ligar/desligar pelo próprio app — chave -> rótulo
+// exibido na aba de administração. Adicionar um recurso novo é só acrescentar
+// uma linha aqui e checar isFeatureEnabled onde ele precisa ser aplicado.
+const FEATURES = {
+  questoes: "acesso às questões (praticar)",
+};
+
+// No row for `key` means the feature has never been touched — defaults to
+// enabled so existing behavior is unaffected until an admin flips it off.
+function isFeatureEnabled(key) {
+  const row = getFeatureFlag.get(key);
+  return row ? !!row.enabled : true;
+}
 
 function blockSuspended(req, res, next) {
   const user = findUserById.get(req.userId);
@@ -409,10 +429,28 @@ app.delete("/api/admin/content-bank/:id", adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/api/admin/features", adminOnly, (req, res) => {
+  const rows = new Map(listFeatureFlags.all().map((r) => [r.key, !!r.enabled]));
+  const features = Object.keys(FEATURES).map((key) => ({
+    key, label: FEATURES[key], enabled: rows.has(key) ? rows.get(key) : true,
+  }));
+  res.json({ features });
+});
+
+app.patch("/api/admin/features/:key", adminOnly, (req, res) => {
+  const { key } = req.params;
+  const { enabled } = req.body || {};
+  if (!FEATURES[key]) return res.status(404).json({ error: "recurso desconhecido" });
+  if (typeof enabled !== "boolean") return res.status(400).json({ error: "enabled deve ser true ou false" });
+  upsertFeatureFlag.run(key, enabled ? 1 : 0);
+  res.json({ ok: true, key, enabled });
+});
+
 // Questions for the topic a user is studying. `assunto` is the topic name as
 // it appears in their edital, which is why the matéria trees and the question
 // bank are kept on the same naming.
 app.get("/api/questions", requireAuth, (req, res) => {
+  if (!isFeatureEnabled("questoes")) return res.status(403).json({ error: "a prática de questões está desativada no momento" });
   const assunto = typeof req.query.assunto === "string" ? req.query.assunto.trim() : "";
   if (!assunto) return res.status(400).json({ error: "assunto é obrigatório" });
   const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
@@ -444,7 +482,10 @@ app.get("/api/questions", requireAuth, (req, res) => {
 // How many questions exist per topic, so the UI can tell which topics can
 // already be practised and which have nothing yet.
 app.get("/api/questions/counts", requireAuth, (req, res) => {
-  res.json({ counts: countQuestionsByAssunto.all() });
+  // Empty counts, not an error: the UI derives the "praticar (N)" button
+  // straight from this, so an empty list already hides it everywhere without
+  // any extra plumbing — and a disabled feature isn't really an error case.
+  res.json({ counts: isFeatureEnabled("questoes") ? countQuestionsByAssunto.all() : [] });
 });
 
 app.get("/api/data", requireAuth, (req, res) => {
