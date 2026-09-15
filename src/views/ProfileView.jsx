@@ -1,8 +1,8 @@
 import React, { useRef, useState } from "react";
-import { KeyRound, Mail, Trash2, Upload, User } from "lucide-react";
+import { KeyRound, LogOut, Mail, Trash2, Upload, User } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
-import { updateProfile, changePassword, changeEmail, readImageAsDataUrl } from "../api/profile.js";
+import { updateProfile, changePassword, changeEmail, logoutAllDevices, readImageAsDataUrl } from "../api/profile.js";
 
 function Card({ title, description, children }) {
   return (
@@ -39,6 +39,9 @@ export function ProfileView({ user, onUserUpdate }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState({});
+
+  const [logoutAllBusy, setLogoutAllBusy] = useState(false);
+  const [logoutAllMsg, setLogoutAllMsg] = useState({});
 
   async function handleAvatarChange(e) {
     const file = e.target.files?.[0];
@@ -117,6 +120,20 @@ export function ProfileView({ user, onUserUpdate }) {
     }
   }
 
+  async function handleLogoutAll() {
+    if (!window.confirm("isso encerra sua sessão em qualquer outro dispositivo/navegador logado com essa conta. continuar?")) return;
+    setLogoutAllMsg({});
+    setLogoutAllBusy(true);
+    try {
+      await logoutAllDevices();
+      setLogoutAllMsg({ ok: "pronto — qualquer outra sessão foi encerrada. esta continua ativa." });
+    } catch (e) {
+      setLogoutAllMsg({ error: e.message });
+    } finally {
+      setLogoutAllBusy(false);
+    }
+  }
+
   const initials = (user?.username || user?.email || "?").slice(0, 2).toUpperCase();
 
   return (
@@ -190,6 +207,13 @@ export function ProfileView({ user, onUserUpdate }) {
           </button>
         </div>
         <Feedback {...passwordMsg} />
+      </Card>
+
+      <Card title="sessões" description="só uma sessão por conta fica ativa por vez — logar em outro lugar já encerra as demais automaticamente. use o botão abaixo se quiser forçar isso agora, sem esperar.">
+        <button disabled={logoutAllBusy} onClick={handleLogoutAll} style={{ ...secondaryBtnStyle, padding: "8px 14px" }}>
+          <LogOut size={14} /> {logoutAllBusy ? "encerrando..." : "sair de todos os outros dispositivos"}
+        </button>
+        <Feedback {...logoutAllMsg} />
       </Card>
     </div>
   );

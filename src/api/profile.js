@@ -8,6 +8,8 @@ export const changePassword = (currentPassword, newPassword) =>
 export const changeEmail = (currentPassword, newEmail) =>
   apiRequest("/api/me/change-email", { method: "POST", body: JSON.stringify({ currentPassword, newEmail }) });
 
+export const logoutAllDevices = () => apiRequest("/api/me/logout-all", { method: "POST" });
+
 // Downscales + re-encodes client-side so the upload stays small regardless
 // of the source photo's resolution.
 export function readImageAsDataUrl(file, maxSize = 200, quality = 0.85) {

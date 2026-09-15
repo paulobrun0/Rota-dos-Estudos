@@ -247,6 +247,15 @@ app.patch("/api/me", requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// Rotates the session token and re-issues a fresh cookie for THIS request —
+// every other device's cookie still carries the old value, so it stops
+// passing requireCurrentUser's check on its next request, while this one
+// keeps working uninterrupted.
+app.post("/api/me/logout-all", requireAuth, (req, res) => {
+  issueSession(res, req.userId);
+  res.json({ ok: true });
+});
+
 app.post("/api/me/change-password", authLimiter, requireAuth, (req, res) => {
   const { currentPassword, newPassword } = req.body || {};
   const user = findUserById.get(req.userId);
@@ -257,6 +266,9 @@ app.post("/api/me/change-password", authLimiter, requireAuth, (req, res) => {
     return res.status(400).json({ error: "a nova senha precisa ter 6+ caracteres" });
   }
   updateOwnPassword.run(bcrypt.hashSync(newPassword, 10), req.userId);
+  // If the old password had leaked, changing it should also kick out
+  // whoever was using it — same rotate-and-recookie as /api/me/logout-all.
+  issueSession(res, req.userId);
   res.json({ ok: true });
 });
 
