@@ -1,7 +1,7 @@
-import React from "react";
-import { Check, Flame, Trophy } from "lucide-react";
+import React, { useState } from "react";
+import { BookOpen, Check, ChevronDown, Flame, Plus, Trophy } from "lucide-react";
 import { colors } from "../styles/colors.js";
-import { fromISO } from "../lib/date.js";
+import { formatDatePretty, fromISO } from "../lib/date.js";
 import { buildHeatmapWeeks, computeStreaks, heatLevel } from "../lib/streaks.js";
 import { computeMateriaStats, computeTopicStats } from "../lib/materiaStats.js";
 import { SectionLabel } from "../components/SectionLabel.jsx";
@@ -10,13 +10,16 @@ import { StatsChart } from "../components/StatsChart.jsx";
 const HEAT_COLORS = [colors.surface2, colors.heat1, colors.heat2, colors.amber];
 const MESES_ABR = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
-export function ProgressoView({ activity, questionActivity, activeConcurso }) {
+export function ProgressoView({ activity, questionActivity, activeConcurso, addTopicToToday }) {
   const materiaStats = computeMateriaStats(activeConcurso);
   const topicStats = computeTopicStats(activeConcurso);
   const { current, longest } = computeStreaks(activity);
   const weeks = buildHeatmapWeeks(activity);
   const totalDias = Object.keys(activity).filter((k) => activity[k] > 0).length;
   const totalCards = Object.values(activity).reduce((a, b) => a + b, 0);
+  const editalTotal = materiaStats.reduce((sum, m) => sum + m.total, 0);
+  const editalDone = materiaStats.reduce((sum, m) => sum + m.done, 0);
+  const editalPct = editalTotal === 0 ? 0 : Math.round((editalDone / editalTotal) * 100);
 
   // Month labels above the columns where a new month starts.
   const monthLabels = weeks.map((week) => {
@@ -32,10 +35,16 @@ export function ProgressoView({ activity, questionActivity, activeConcurso }) {
         sua constância ao longo do tempo, somando todos os concursos.
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 26 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 26 }}>
         <StatCard icon={<Flame size={16} color={colors.amber} />} label="sequência atual" value={`${current} dia${current !== 1 ? "s" : ""}`} />
         <StatCard icon={<Trophy size={16} color={colors.amber} />} label="recorde" value={`${longest} dia${longest !== 1 ? "s" : ""}`} />
         <StatCard icon={<Check size={16} color={colors.amber} />} label="cards concluídos" value={`${totalCards}`} sub={`em ${totalDias} dia${totalDias !== 1 ? "s" : ""}`} />
+        <StatCard
+          icon={<BookOpen size={16} color={colors.amber} />}
+          label="edital concluído"
+          value={activeConcurso ? `${editalPct}%` : "—"}
+          sub={activeConcurso ? `${editalDone}/${editalTotal} assuntos` : "nenhum concurso ativo"}
+        />
       </div>
 
       <SectionLabel text="últimas 18 semanas" />
@@ -94,7 +103,7 @@ export function ProgressoView({ activity, questionActivity, activeConcurso }) {
           <SectionLabel text="desempenho por assunto · do mais fraco pro mais forte" />
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {topicStats.map((t) => (
-              <TopicStatRow key={t.id} stat={t} />
+              <TopicStatRow key={t.id} stat={t} onAddToToday={() => addTopicToToday(t.materiaId, t.id)} />
             ))}
           </div>
         </>
@@ -126,25 +135,78 @@ function MateriaStatRow({ stat }) {
   );
 }
 
-function TopicStatRow({ stat }) {
-  const { name, materiaName, materiaColor, total, correct, accuracyPct } = stat;
+function TopicStatRow({ stat, onAddToToday }) {
+  const { name, materiaName, materiaColor, total, correct, accuracyPct, passCount, history } = stat;
   const good = accuracyPct >= 70;
+  const [open, setOpen] = useState(false);
+  const [added, setAdded] = useState(false);
+  const hasHistory = history && history.length > 0;
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${materiaColor}`, borderRadius: 8, padding: "9px 14px" }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, color: colors.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
-        <div style={{ fontSize: 11, color: colors.textFaint, marginTop: 1 }}>{materiaName}</div>
-      </div>
-      <div className="mono" style={{ fontSize: 12, color: colors.textMuted, flexShrink: 0 }}>{correct}/{total}</div>
+    <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${materiaColor}`, borderRadius: 8 }}>
       <div
-        className="mono"
+        onClick={() => hasHistory && setOpen((o) => !o)}
         style={{
-          fontSize: 12.5, fontWeight: 700, flexShrink: 0, width: 48, textAlign: "right",
-          color: good ? colors.teal : colors.red,
+          width: "100%", display: "flex", alignItems: "center", gap: 10, background: "transparent",
+          padding: "9px 14px", cursor: hasHistory ? "pointer" : "default", textAlign: "left",
         }}
       >
-        {accuracyPct}%
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, color: colors.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+          <div style={{ fontSize: 11, color: colors.textFaint, marginTop: 1 }}>{materiaName}</div>
+        </div>
+        {passCount > 0 && (
+          <div className="mono" style={{ fontSize: 11, color: colors.textFaint, flexShrink: 0 }}>{passCount}x</div>
+        )}
+        <div className="mono" style={{ fontSize: 12, color: colors.textMuted, flexShrink: 0 }}>{correct}/{total}</div>
+        <div
+          className="mono"
+          style={{
+            fontSize: 12.5, fontWeight: 700, flexShrink: 0, width: 40, textAlign: "right",
+            color: good ? colors.teal : colors.red,
+          }}
+        >
+          {accuracyPct}%
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onAddToToday(); setAdded(true); }}
+          disabled={added}
+          aria-label="adicionar ao dia de hoje"
+          title="estudar esse assunto hoje"
+          style={{
+            flexShrink: 0, display: "flex", alignItems: "center", padding: 4, borderRadius: 6, border: "none",
+            background: added ? colors.tealSoft : "transparent", color: added ? colors.teal : colors.textFaint,
+          }}
+        >
+          {added ? <Check size={14} /> : <Plus size={14} />}
+        </button>
+        {hasHistory && (
+          <ChevronDown size={14} color={colors.textFaint} style={{ flexShrink: 0, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+        )}
       </div>
+
+      {open && hasHistory && (
+        <div style={{ borderTop: `1px solid ${colors.border}`, padding: "8px 14px 10px" }}>
+          {history.map((h, i) => {
+            const passPct = h.questionsTotal > 0 ? Math.round((h.questionsCorrect / h.questionsTotal) * 100) : null;
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0", fontSize: 12 }}>
+                <span style={{ color: colors.textFaint, width: 16, flexShrink: 0 }}>{i + 1}.</span>
+                <span style={{ color: colors.textMuted, flex: 1 }}>
+                  {formatDatePretty(h.date)} · {h.tipo === "revisao" ? "revisão" : "novo"}
+                </span>
+                {passPct !== null ? (
+                  <span className="mono" style={{ color: passPct >= 70 ? colors.teal : colors.red, fontWeight: 600 }}>
+                    {h.questionsCorrect}/{h.questionsTotal} · {passPct}%
+                  </span>
+                ) : (
+                  <span className="mono" style={{ color: colors.textFaint }}>sem questões</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

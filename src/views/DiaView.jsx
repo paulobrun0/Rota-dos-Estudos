@@ -1,15 +1,25 @@
 import React, { useState } from "react";
-import { Check, ChevronLeft, ChevronRight, ExternalLink, Flame, Link2, ListChecks, Pencil, StickyNote } from "lucide-react";
+import { CalendarClock, Check, ChevronLeft, ChevronRight, ExternalLink, Flame, Link2, ListChecks, Pencil, StickyNote } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
+import { examCountdownInfo } from "../lib/examCountdown.js";
 import { Ring } from "../components/Ring.jsx";
 import { SessionTimer } from "../components/SessionTimer.jsx";
 import { RestTimer } from "../components/RestTimer.jsx";
 import { QuizPractice } from "../components/QuizPractice.jsx";
 
-export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions }) {
+const EXAM_BADGE_STYLE = {
+  past: { bg: colors.surface2, fg: colors.textFaint },
+  critical: { bg: colors.redSoft, fg: colors.red },
+  soon: { bg: colors.amberSoft, fg: colors.amber },
+  normal: { bg: colors.surface2, fg: colors.textMuted },
+};
+
+export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
   const isToday = selectedDate === todayISO();
+  const exam = examCountdownInfo(examDate);
+  const examStyle = exam ? EXAM_BADGE_STYLE[exam.level] : null;
   const novos = plan.filter((c) => c.tipo === "novo");
   const revisoes = plan.filter((c) => c.tipo === "revisao");
 
@@ -34,6 +44,11 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
           <button onClick={() => setSelectedDate(addDaysISO(selectedDate, 1))} style={navBtnStyle}><ChevronRight size={16} /></button>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {isToday && exam && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, background: examStyle.bg, color: examStyle.fg, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
+              <CalendarClock size={14} /> {exam.text}
+            </div>
+          )}
           {isToday && streak > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 5, background: colors.amberSoft, color: colors.amber, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
               <Flame size={14} /> {streak} dia{streak !== 1 ? "s" : ""}
@@ -59,6 +74,11 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
               : `${novos.length} assunto${novos.length !== 1 ? "s" : ""} novo${novos.length !== 1 ? "s" : ""} · ${revisoes.length} revisão${revisoes.length !== 1 ? "ões" : ""}`}
           </div>
         </div>
+        {isToday && canPullMore && (
+          <button onClick={pullNextMateria} style={{ ...secondaryBtnStyle, marginLeft: "auto", padding: "8px 14px", fontSize: 13 }}>
+            terminei — puxar próxima matéria
+          </button>
+        )}
       </div>
 
       {plan.length === 0 && (

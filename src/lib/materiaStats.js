@@ -55,11 +55,14 @@ export function computeTopicStats(concurso) {
       rows.push({
         id: t.id,
         name: t.name,
+        materiaId: m.id,
         materiaName: m.name,
         materiaColor: m.color,
         total,
         correct,
         accuracyPct: Math.round((correct / total) * 100),
+        passCount: (t.history || []).length,
+        history: t.history || [],
       });
     });
   });

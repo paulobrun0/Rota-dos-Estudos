@@ -8,6 +8,8 @@ export const makeConcurso = (name, colorIndex) => ({
   id: uid(),
   name,
   color: PALETTE[colorIndex % PALETTE.length],
+  // ISO date (YYYY-MM-DD) or null — drives the "faltam N dias" countdown.
+  examDate: null,
   materias: [],
   settings: defaultSettings(),
   dailyPlans: {},
@@ -27,6 +29,7 @@ export function migrate(raw) {
     raw.concursos.forEach((c) => {
       c.settings = { ...defaultSettings(), ...(c.settings || {}) };
       if (c.cycleCursor === undefined) c.cycleCursor = null;
+      if (c.examDate === undefined) c.examDate = null;
     });
     if (!raw.activity) raw.activity = {};
     if (!raw.questionActivity) raw.questionActivity = {};

@@ -5,7 +5,7 @@ import {
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
 import { addDaysISO, todayISO, weekStart } from "./lib/date.js";
-import { buildCyclePlan } from "./lib/planner.js";
+import { activeMateriaIds, buildCyclePlan, pickBatch } from "./lib/planner.js";
 import { computeStreaks } from "./lib/streaks.js";
 import { uid } from "./lib/id.js";
 import { useTheme } from "./lib/useTheme.js";
@@ -296,6 +296,11 @@ export default function App({ user, onLogout, onUserUpdate }) {
           const bucket = clone.questionActivity[iso] || { total: 0, correct: 0 };
           clone.questionActivity[iso] = { total: bucket.total + questions.total, correct: bucket.correct + questions.correct };
         }
+        // One entry per time this topic gets checked off — "novo" the first
+        // time, "revisão" every time after — so progresso can show not just
+        // the running total but each individual pass's own accuracy.
+        topic.history = topic.history || [];
+        topic.history.push({ date: iso, tipo: item.tipo, questionsTotal: questions?.total || 0, questionsCorrect: questions?.correct || 0 });
         clone.activity = clone.activity || {};
         clone.activity[iso] = (clone.activity[iso] || 0) + 1;
       } else {
@@ -307,6 +312,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           topic.status = "estudado";
           topic.mastered = false;
         }
+        if (topic.history?.length) topic.history.pop();
         clone.activity = clone.activity || {};
         clone.activity[iso] = Math.max(0, (clone.activity[iso] || 0) - 1);
         if (clone.activity[iso] === 0) delete clone.activity[iso];
@@ -321,6 +327,58 @@ export default function App({ user, onLogout, onUserUpdate }) {
       }
 
       return clone;
+    });
+  }
+
+  // Adds one specific topic straight into today's plan, bypassing the
+  // rotation entirely — e.g. a topic the user knows they're weak on, picked
+  // from progresso, that they want to work on today regardless of whose
+  // turn it actually is. A no-op if that topic is already sitting in
+  // today's plan (done or not) so the button can't create duplicates.
+  function addTopicToToday(materiaId, topicId) {
+    if (!activeConcurso) return;
+    const today = todayISO();
+    updateActive((c) => {
+      const clone = JSON.parse(JSON.stringify(c));
+      const materia = clone.materias.find((m) => m.id === materiaId);
+      const topic = materia?.topics.find((t) => t.id === topicId);
+      if (!topic) return c;
+      const plan = clone.dailyPlans[today] || [];
+      if (plan.some((card) => card.topicId === topicId)) return c;
+      plan.push({ id: uid(), materiaId, topicId, tipo: topic.status === "pendente" ? "novo" : "revisao", feito: false, manual: true });
+      clone.dailyPlans[today] = plan;
+      return clone;
+    });
+  }
+
+  // "I finished today's matérias and want to keep going" — hands out a
+  // fresh batch for whichever matéria is next in the rotation after the
+  // ones already active today. Runs an ordinary rebuild first (so stale
+  // cards drop and the cursor advances exactly like any other rebuild),
+  // then — bypassing buildCyclePlan itself — hands the matéria right after
+  // that real window a batch via the same pickBatch it uses internally,
+  // tagged manual so it survives the next ordinary rebuild. Going around
+  // buildCyclePlan matters here: its "a matéria created today doesn't join
+  // after today already had progress" guard exists for a matéria sneaking
+  // into rotation as a side effect of some other change, not for a matéria
+  // the user just explicitly asked for by clicking this.
+  function pullNextMateria() {
+    if (!activeConcurso) return;
+    const today = todayISO();
+    updateActive((c) => {
+      const base = c.dailyPlans[today] || [];
+      const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, base, today);
+      const normalIds = activeMateriaIds(c.materias, c.settings, cursor);
+      if (normalIds.length >= c.materias.length) return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
+      const cursorIdx = c.materias.findIndex((m) => m.id === cursor);
+      const nextMateria = c.materias[(cursorIdx + normalIds.length) % c.materias.length];
+      if (cards.some((card) => card.materiaId === nextMateria.id)) {
+        return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
+      }
+      const usedTopicIds = new Set(cards.map((card) => card.topicId));
+      const { topics, tipo } = pickBatch(nextMateria, c.settings?.topicsPerDay || 0, usedTopicIds);
+      const pulled = topics.map((t) => ({ id: uid(), materiaId: nextMateria.id, topicId: t.id, tipo, feito: false, manual: true }));
+      return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: [...cards, ...pulled] } };
     });
   }
 
@@ -610,6 +668,10 @@ export default function App({ user, onLogout, onUserUpdate }) {
     setData((d) => ({ ...d, concursos: d.concursos.map((c) => (c.id === id ? { ...c, name: trimmed } : c)) }));
   }
 
+  function setExamDate(id, examDate) {
+    setData((d) => ({ ...d, concursos: d.concursos.map((c) => (c.id === id ? { ...c, examDate: examDate || null } : c)) }));
+  }
+
   function importData(imported) {
     setData(imported);
     setSelectedDate(todayISO());
@@ -755,10 +817,18 @@ export default function App({ user, onLogout, onUserUpdate }) {
             selectConcurso={selectConcurso}
             removeConcurso={removeConcurso}
             renameConcurso={renameConcurso}
+            setExamDate={setExamDate}
           />
         )}
 
-        {tab === "progresso" && <ProgressoView activity={data.activity || {}} questionActivity={data.questionActivity || {}} activeConcurso={activeConcurso} />}
+        {tab === "progresso" && (
+          <ProgressoView
+            activity={data.activity || {}}
+            questionActivity={data.questionActivity || {}}
+            activeConcurso={activeConcurso}
+            addTopicToToday={addTopicToToday}
+          />
+        )}
 
         {tab === "ajustes" && (
           <AjustesView
@@ -799,6 +869,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             minutesPerMateria={activeConcurso.settings?.minutesPerMateria || 0}
             toggleCard={toggleCard}
             streak={computeStreaks(data.activity || {}).current}
+            examDate={activeConcurso.examDate}
             sessionTimers={sessionTimers}
             restTimers={restTimers}
             pendingQuestions={pendingQuestions}
@@ -807,6 +878,11 @@ export default function App({ user, onLogout, onUserUpdate }) {
             setTopicQuestions={setTopicQuestions}
             questionCounts={questionCounts}
             addTopicQuestions={addTopicQuestions}
+            pullNextMateria={pullNextMateria}
+            canPullMore={
+              totalCount > 0 && doneCount === totalCount &&
+              activeMateriaIds(activeConcurso.materias, activeConcurso.settings, activeConcurso.cycleCursor).length < activeConcurso.materias.length
+            }
           />
         )}
 

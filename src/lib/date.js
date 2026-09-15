@@ -31,6 +31,12 @@ export function weekStart(iso) {
 export function daysSinceEpoch(iso) {
   return Math.floor(fromISO(iso).getTime() / 86400000);
 }
+// Calendar days from today to `iso` — 0 if it's today, negative if it's
+// already past. Goes through daysSinceEpoch rather than a raw ms diff so a
+// DST transition can't shift the count by a day.
+export function daysUntil(iso) {
+  return daysSinceEpoch(iso) - daysSinceEpoch(todayISO());
+}
 export function fmtClock(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;

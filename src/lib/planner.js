@@ -52,7 +52,7 @@ function isMateriaCleared(materiaId, cards) {
 // Picks up to `topicsPerDay` topics for a fresh batch: pending topics
 // first; once none are left (every topic in the matéria has been studied
 // at least once), falls back to a revisão pass over the whole matéria.
-function pickBatch(m, topicsPerDay, usedTopicIds) {
+export function pickBatch(m, topicsPerDay, usedTopicIds) {
   let candidates = m.topics.filter((t) => t.status === "pendente" && !usedTopicIds.has(t.id));
   let tipo = "novo";
   if (candidates.length === 0 && m.topics.length > 0) {
@@ -78,11 +78,15 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards, tod
   // of rotation) would linger in the plan forever. This is why an unfinished
   // topic reappears tomorrow (its matéria is still the one at the cursor)
   // while a finished matéria's cards fall away once the cursor moves past it.
+  // `manual` cards (added by hand from progresso, or pulled in early via
+  // "puxar próxima matéria") deliberately live outside the rotation's normal
+  // window, so they're kept regardless of activeIdsAtStart — otherwise the
+  // very next rebuild (e.g. just switching tabs) would silently drop them.
   const activeIdsAtStart = new Set(activeMateriaIds(materias, settings, cursorId));
   const cards = (carryOverCards || []).filter((c) => {
     const m = materias.find((x) => x.id === c.materiaId);
     const t = m?.topics.find((x) => x.id === c.topicId);
-    return Boolean(t) && activeIdsAtStart.has(c.materiaId);
+    return Boolean(t) && (c.manual || activeIdsAtStart.has(c.materiaId));
   });
 
   let cursor = cursorId;
