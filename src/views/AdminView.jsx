@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Ban, Check, Download, Flame, History, KeyRound, Pencil, Search, ShieldCheck, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
+import { Ban, Check, DatabaseBackup, Download, Flame, History, KeyRound, Pencil, RefreshCw, Search, ShieldCheck, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, secondaryBtnStyle } from "../styles/shared.js";
 import {
   fetchUsers, deleteUser, setUserAdmin, setUserSuspended, setUserEmail, resetUserPassword,
-  fetchFeatures, setFeatureEnabled, fetchAuditLog,
+  fetchFeatures, setFeatureEnabled, fetchAuditLog, fetchBackups, runBackupNow,
 } from "../api/admin.js";
 
 function formatDate(iso) {
@@ -194,6 +194,7 @@ const ACTION_LABELS = {
   change_email: "trocou o email de",
   enable_feature: "ativou o recurso",
   disable_feature: "desativou o recurso",
+  run_backup: "gerou um backup manual",
 };
 
 function AuditLogPanel() {
@@ -237,6 +238,84 @@ function AuditLogPanel() {
                 {e.targetEmail && <> <b>{e.targetEmail}</b></>}
                 {e.details && <span style={{ color: colors.textMuted }}> · {e.details}</span>}
               </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function formatBytes(n) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function BackupsPanel() {
+  const [backups, setBackups] = useState(null);
+  const [error, setError] = useState("");
+  const [running, setRunning] = useState(false);
+
+  function load() {
+    fetchBackups()
+      .then((r) => setBackups(r.backups))
+      .catch((e) => setError(e.message));
+  }
+
+  useEffect(load, []);
+
+  async function handleRunNow() {
+    setError("");
+    setRunning(true);
+    try {
+      const r = await runBackupNow();
+      setBackups(r.backups);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+        <div style={{ fontSize: 13.5, color: colors.textMuted }}>
+          snapshot completo do banco a cada 12h, direto no servidor — guarda os últimos 14. um backup também roda sempre que o app inicia.
+        </div>
+        <button disabled={running} onClick={handleRunNow} style={{ ...secondaryBtnStyle, padding: "8px 14px", flexShrink: 0 }}>
+          <RefreshCw size={14} /> {running ? "gerando..." : "fazer backup agora"}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ background: colors.redSoft, color: colors.red, borderRadius: 8, padding: "9px 12px", fontSize: 13, marginBottom: 16 }}>
+          {error}
+        </div>
+      )}
+
+      {!backups && !error && <div style={{ fontSize: 13, color: colors.textFaint }}>carregando...</div>}
+      {backups && backups.length === 0 && <div style={{ fontSize: 13, color: colors.textFaint }}>nenhum backup ainda.</div>}
+
+      {backups && backups.length > 0 && (
+        <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: "hidden" }}>
+          {backups.map((b, i) => (
+            <div
+              key={b.name}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", fontSize: 12.5,
+                borderTop: i > 0 ? `1px solid ${colors.border}` : "none",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <DatabaseBackup size={14} color={colors.textFaint} style={{ flexShrink: 0 }} />
+                <span className="mono" style={{ color: colors.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.name}</span>
+              </div>
+              <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
+                <span className="mono" style={{ color: colors.textFaint }}>{formatBytes(b.sizeBytes)}</span>
+                <span style={{ color: colors.textFaint }}>{new Date(b.createdAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -330,6 +409,7 @@ export function AdminView({ currentUserEmail }) {
           ["usuarios", "usuários", Users],
           ["recursos", "recursos", SlidersHorizontal],
           ["auditoria", "auditoria", History],
+          ["backups", "backups", DatabaseBackup],
         ].map(([key, label, Icon]) => (
           <button
             key={key}
@@ -348,6 +428,7 @@ export function AdminView({ currentUserEmail }) {
 
       {section === "recursos" && <FeaturesPanel />}
       {section === "auditoria" && <AuditLogPanel />}
+      {section === "backups" && <BackupsPanel />}
 
       {section === "usuarios" && stats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 18 }}>

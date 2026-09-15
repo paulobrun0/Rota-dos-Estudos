@@ -11,6 +11,7 @@ import {
   generateRecoveryCode, formatRecoveryCode, normalizeRecoveryInput, generateTempPassword, generateSessionToken,
 } from "./auth.js";
 import { computeStreaks } from "../src/lib/streaks.js";
+import { runBackup, listBackups } from "./backup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -592,6 +593,16 @@ app.patch("/api/admin/features/:key", adminOnly, (req, res) => {
   res.json({ ok: true, key, enabled });
 });
 
+app.get("/api/admin/backups", adminOnly, (req, res) => {
+  res.json({ backups: listBackups() });
+});
+
+app.post("/api/admin/backups", adminOnly, (req, res) => {
+  const file = runBackup();
+  logAdminAction(req, "run_backup", null, path.basename(file));
+  res.json({ backups: listBackups() });
+});
+
 // Questions for the topic a user is studying. `assunto` is the topic name as
 // it appears in their edital, which is why the matéria trees and the question
 // bank are kept on the same naming.
@@ -668,5 +679,24 @@ app.use((req, res, next) => {
   if (req.method !== "GET" || req.path.startsWith("/api/")) return next();
   res.sendFile(path.join(distDir, "index.html"));
 });
+
+// One on startup (covers a VM that stays up for weeks without a deploy —
+// otherwise it could go a long time before its first snapshot), then every
+// 12h for the life of the process. Ties the backup schedule to the app's
+// own process rather than an external cron job, so it needs nothing set up
+// on the host beyond the app itself — a `systemctl restart` just resumes it.
+const BACKUP_INTERVAL_MS = 12 * 60 * 60 * 1000;
+try {
+  runBackup();
+} catch (err) {
+  console.error("backup inicial falhou:", err.message);
+}
+setInterval(() => {
+  try {
+    runBackup();
+  } catch (err) {
+    console.error("backup periódico falhou:", err.message);
+  }
+}, BACKUP_INTERVAL_MS);
 
 app.listen(PORT, () => console.log(`API rodando em http://localhost:${PORT}`));
