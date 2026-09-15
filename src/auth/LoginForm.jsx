@@ -64,7 +64,7 @@ function RecoveryCodeReveal({ email, code, freshAccount, onContinue }) {
   );
 }
 
-export function LoginForm({ onAuthed }) {
+export function LoginForm({ onAuthed, noticeMessage }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -120,6 +120,12 @@ export function LoginForm({ onAuthed }) {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: colors.bg, fontFamily: "Inter, system-ui, sans-serif" }}>
       <form onSubmit={submit} style={{ width: 320, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 24, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: colors.text, marginBottom: 4 }}>{TITLES[mode]}</div>
+
+        {noticeMessage && (
+          <div style={{ background: colors.amberSoft, color: colors.amber, borderRadius: 8, padding: "9px 12px", fontSize: 12.5 }}>
+            {noticeMessage}
+          </div>
+        )}
 
         <input
           type="email"

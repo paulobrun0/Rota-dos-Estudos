@@ -8,7 +8,7 @@ import rateLimit from "express-rate-limit";
 import db from "./db.js";
 import {
   signToken, authMiddleware, requireAdmin, COOKIE_NAME, COOKIE_OPTIONS,
-  generateRecoveryCode, formatRecoveryCode, normalizeRecoveryInput, generateTempPassword,
+  generateRecoveryCode, formatRecoveryCode, normalizeRecoveryInput, generateTempPassword, generateSessionToken,
 } from "./auth.js";
 import { computeStreaks } from "../src/lib/streaks.js";
 
@@ -54,6 +54,7 @@ const updateProfile = db.prepare("UPDATE users SET username = COALESCE(?, userna
 const clearAvatar = db.prepare("UPDATE users SET avatar = NULL WHERE id = ?");
 const updateOwnPassword = db.prepare("UPDATE users SET password_hash = ? WHERE id = ?");
 const setUserSuspendedFlag = db.prepare("UPDATE users SET is_suspended = ? WHERE id = ?");
+const setSessionToken = db.prepare("UPDATE users SET session_token = ? WHERE id = ?");
 const setLastLogin = db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?");
 const setShowInRanking = db.prepare("UPDATE users SET show_in_ranking = ? WHERE id = ?");
 const listRankingData = db.prepare(`
@@ -88,6 +89,9 @@ const upsertFeatureFlag = db.prepare(`
 // uma linha aqui e checar isFeatureEnabled onde ele precisa ser aplicado.
 const FEATURES = {
   questoes: "acesso às questões (praticar)",
+  ranking: "ranking entre usuários",
+  cadastro: "cadastro de novas contas",
+  manutencao: "login de usuários comuns (modo manutenção)",
 };
 
 // No row for `key` means the feature has never been touched — defaults to
@@ -97,19 +101,49 @@ function isFeatureEnabled(key) {
   return row ? !!row.enabled : true;
 }
 
-function blockSuspended(req, res, next) {
+// Single DB lookup backing the rest of the chain: blocks a suspended account,
+// and — since only the most recently issued token for an account stays valid
+// (a login elsewhere rotates users.session_token) — rejects a request whose
+// JWT carries an older, superseded session_token.
+function requireCurrentUser(req, res, next) {
   const user = findUserById.get(req.userId);
   if (!user) return res.status(401).json({ error: "não autenticado" });
   if (user.is_suspended) return res.status(403).json({ error: "esta conta foi suspensa" });
+  // Strict, not just "if a session_token is set": after an explicit logout
+  // session_token is cleared to null, and a stale cookie's decoded token
+  // still carries its old (non-null) sessionToken, so a loose falsy-guard
+  // here would let that supposedly-logged-out cookie keep working. A token
+  // issued before this feature shipped has no sessionToken at all (decodes
+  // as undefined) and a fresh account row starts at null — those also
+  // legitimately differ, so everyone re-logs in once when this ships.
+  if (user.session_token !== req.sessionToken) {
+    return res.status(401).json({ error: "sua conta foi acessada em outro lugar — essa sessão foi encerrada", code: "SESSION_SUPERSEDED" });
+  }
+  if (!user.is_admin && !isFeatureEnabled("manutencao")) {
+    return res.status(503).json({ error: "o app está em manutenção no momento", code: "MAINTENANCE" });
+  }
+  req.user = user;
   next();
 }
-const requireAuth = [authMiddleware, blockSuspended];
+const requireAuth = [authMiddleware, requireCurrentUser];
+
+// Rotates the session token, signs a fresh JWT around it, and sets the
+// cookie — every place that logs someone in (register, login, password
+// reset) funnels through here so each is a single "this is now the only
+// valid session" event.
+function issueSession(res, userId) {
+  const sessionToken = generateSessionToken();
+  setSessionToken.run(sessionToken, userId);
+  const token = signToken(userId, sessionToken);
+  res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
+}
 
 function isValidEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 app.post("/api/register", authLimiter, (req, res) => {
+  if (!isFeatureEnabled("cadastro")) return res.status(403).json({ error: "novos cadastros estão desativados no momento" });
   const { email, password } = req.body || {};
   if (!isValidEmail(email) || typeof password !== "string" || password.length < 6) {
     return res.status(400).json({ error: "email válido e senha com 6+ caracteres são obrigatórios" });
@@ -122,8 +156,7 @@ app.post("/api/register", authLimiter, (req, res) => {
   const recoveryCode = generateRecoveryCode();
   const recoveryHash = bcrypt.hashSync(recoveryCode, 10);
   const info = insertUser.run(normalizedEmail, passwordHash, recoveryHash);
-  const token = signToken(info.lastInsertRowid);
-  res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
+  issueSession(res, info.lastInsertRowid);
   res.json({ email: normalizedEmail, recoveryCode: formatRecoveryCode(recoveryCode) });
 });
 
@@ -135,9 +168,11 @@ app.post("/api/login", authLimiter, (req, res) => {
     return res.status(401).json({ error: "email ou senha incorretos" });
   }
   if (user.is_suspended) return res.status(403).json({ error: "esta conta foi suspensa" });
+  if (!user.is_admin && !isFeatureEnabled("manutencao")) {
+    return res.status(503).json({ error: "o app está em manutenção no momento — tente novamente em instantes" });
+  }
   setLastLogin.run(user.id);
-  const token = signToken(user.id);
-  res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
+  issueSession(res, user.id);
   res.json({ email: user.email });
 });
 
@@ -158,19 +193,21 @@ app.post("/api/reset-password", authLimiter, (req, res) => {
   const passwordHash = bcrypt.hashSync(newPassword, 10);
   const recoveryHash = bcrypt.hashSync(newRecoveryCode, 10);
   updateCredentials.run(passwordHash, recoveryHash, user.id);
-  const token = signToken(user.id);
-  res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
+  issueSession(res, user.id);
   res.json({ email: user.email, recoveryCode: formatRecoveryCode(newRecoveryCode) });
 });
 
-app.post("/api/logout", (req, res) => {
+app.post("/api/logout", authMiddleware, (req, res) => {
+  // Clears the server-side session_token too, not just the cookie — so a
+  // copy of the old cookie (already on disk somewhere, say) can't keep
+  // working after an explicit logout.
+  setSessionToken.run(null, req.userId);
   res.clearCookie(COOKIE_NAME);
   res.json({ ok: true });
 });
 
 app.get("/api/me", requireAuth, (req, res) => {
-  const user = findUserById.get(req.userId);
-  if (!user) return res.status(401).json({ error: "não autenticado" });
+  const user = req.user;
   res.json({
     email: user.email, isAdmin: !!user.is_admin, showInRanking: !!user.show_in_ranking,
     username: user.username || null, avatar: user.avatar || null,
@@ -248,6 +285,7 @@ function isoDaysAgo(n) {
 // questions solved per period — so people can see how they compare without
 // exposing notes or plan details, only aggregate counts.
 app.get("/api/ranking", requireAuth, (req, res) => {
+  if (!isFeatureEnabled("ranking")) return res.status(403).json({ error: "o ranking está desativado no momento" });
   const rows = listRankingData.all();
   const dayCutoff = isoDaysAgo(0);
   const weekCutoff = isoDaysAgo(6);

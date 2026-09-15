@@ -4,9 +4,16 @@ import { colors } from "../styles/colors.js";
 import { fetchCurrentUser, logoutUser } from "./api.js";
 import { LoginForm } from "./LoginForm.jsx";
 
+// How often an idle-but-open tab re-checks that its session is still the
+// live one for its account — a second login elsewhere (see server's
+// requireCurrentUser) invalidates this one server-side immediately, but a
+// tab doing nothing wouldn't otherwise notice until its next real API call.
+const SESSION_CHECK_MS = 30_000;
+
 export default function AuthGate() {
   const [status, setStatus] = useState("loading");
   const [user, setUser] = useState(null);
+  const [kickedReason, setKickedReason] = useState("");
 
   useEffect(() => {
     fetchCurrentUser()
@@ -14,8 +21,26 @@ export default function AuthGate() {
       .catch(() => setStatus("anon"));
   }, []);
 
+  useEffect(() => {
+    if (status !== "authed") return;
+    const id = setInterval(() => {
+      fetchCurrentUser().catch((e) => {
+        if (e.code === "SESSION_SUPERSEDED" || e.code === "MAINTENANCE") {
+          setKickedReason(e.message);
+          setUser(null);
+          setStatus("anon");
+        }
+        // Any other failure (e.g. a network blip) is left alone — the next
+        // real API call the user makes will surface it properly instead of
+        // this background check bouncing them out over a fluke.
+      });
+    }, SESSION_CHECK_MS);
+    return () => clearInterval(id);
+  }, [status]);
+
   async function handleLogout() {
     await logoutUser().catch(() => {});
+    setKickedReason("");
     setUser(null);
     setStatus("anon");
   }
@@ -25,6 +50,7 @@ export default function AuthGate() {
   // of running with a partial user object until the next page reload.
   async function handleAuthed() {
     setStatus("loading");
+    setKickedReason("");
     try {
       setUser(await fetchCurrentUser());
       setStatus("authed");
@@ -42,7 +68,7 @@ export default function AuthGate() {
   }
 
   if (status === "anon") {
-    return <LoginForm onAuthed={handleAuthed} />;
+    return <LoginForm onAuthed={handleAuthed} noticeMessage={kickedReason} />;
   }
 
   return <App user={user} onLogout={handleLogout} onUserUpdate={setUser} />;

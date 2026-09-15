@@ -45,15 +45,23 @@ export const COOKIE_OPTIONS = {
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
-export function signToken(userId) {
-  return jwt.sign({ userId }, SECRET, { expiresIn: "30d" });
+export function signToken(userId, sessionToken) {
+  return jwt.sign({ userId, sessionToken }, SECRET, { expiresIn: "30d" });
+}
+
+// A fresh random value to stamp into a newly-issued token and persist on the
+// user row — see requireCurrentSession in index.js for how it's checked.
+export function generateSessionToken() {
+  return crypto.randomBytes(24).toString("hex");
 }
 
 export function authMiddleware(req, res, next) {
   const token = req.cookies?.[COOKIE_NAME];
   if (!token) return res.status(401).json({ error: "não autenticado" });
   try {
-    req.userId = jwt.verify(token, SECRET).userId;
+    const decoded = jwt.verify(token, SECRET);
+    req.userId = decoded.userId;
+    req.sessionToken = decoded.sessionToken;
     next();
   } catch {
     res.status(401).json({ error: "sessão inválida" });

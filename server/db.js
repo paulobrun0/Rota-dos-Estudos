@@ -63,6 +63,16 @@ try {
   // column already exists
 }
 
+// A random value rotated on every login/register/password-reset and baked
+// into that request's JWT — a token whose embedded value no longer matches
+// the row (because a later login overwrote it) is a session that's been
+// superseded, so only the most recent login for an email stays valid.
+try {
+  db.exec("ALTER TABLE users ADD COLUMN session_token TEXT");
+} catch {
+  // column already exists
+}
+
 // NULLs are all distinct under a unique index, so this is safe to run
 // before anyone has set a username.
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)");
