@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>status · Rota dos Estudos</title>
+<style>
+  :root {
+    --bg: #0B0D13;
+    --surface: #151822;
+    --border: #2B3042;
+    --text: #F3F4F8;
+    --text-muted: #A7ADBD;
+    --text-faint: #6D7387;
+    --teal: #46D9C6;
+    --amber: #F2A93B;
+    --red: #F16660;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+  }
+  .card {
+    width: 340px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .title { font-size: 15px; font-weight: 700; color: var(--text-muted); margin-bottom: 18px; }
+  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; background: var(--text-faint); transition: background 0.2s; }
+  .dot.ok { background: var(--teal); box-shadow: 0 0 0 4px rgba(70, 217, 198, 0.15); }
+  .dot.degraded { background: var(--amber); box-shadow: 0 0 0 4px rgba(242, 169, 59, 0.15); }
+  .dot.down { background: var(--red); box-shadow: 0 0 0 4px rgba(241, 102, 96, 0.15); }
+  .label { font-size: 15px; font-weight: 600; }
+  .meta { font-size: 12.5px; color: var(--text-faint); display: flex; justify-content: space-between; margin-top: 3px; }
+  .meta b { color: var(--text-muted); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">rota dos estudos</div>
+    <div class="row">
+      <div class="dot" id="dot"></div>
+      <div class="label" id="label">verificando...</div>
+    </div>
+    <div class="meta"><span>no ar há</span><b id="uptime">—</b></div>
+    <div class="meta"><span>última checagem</span><b id="checked">—</b></div>
+  </div>
+  <script>
+    const dot = document.getElementById("dot");
+    const label = document.getElementById("label");
+    const uptimeEl = document.getElementById("uptime");
+    const checkedEl = document.getElementById("checked");
+
+    function fmtUptime(seconds) {
+      const d = Math.floor(seconds / 86400);
+      const h = Math.floor((seconds % 86400) / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const parts = [];
+      if (d > 0) parts.push(d + "d");
+      if (h > 0 || d > 0) parts.push(h + "h");
+      parts.push(m + "min");
+      return parts.join(" ");
+    }
+
+    async function check() {
+      try {
+        const res = await fetch("/api/health", { cache: "no-store" });
+        const body = await res.json();
+        if (!res.ok || body.status !== "ok") throw new Error("degraded");
+        dot.className = "dot ok";
+        label.textContent = "operacional";
+        uptimeEl.textContent = fmtUptime(body.uptimeSeconds);
+      } catch {
+        dot.className = "dot down";
+        label.textContent = "fora do ar";
+        uptimeEl.textContent = "—";
+      }
+      checkedEl.textContent = new Date().toLocaleTimeString("pt-BR");
+    }
+
+    check();
+    setInterval(check, 15000);
+  </script>
+</body>
+</html>

@@ -431,6 +431,11 @@ app.post("/api/admin/users/:id/reset-password", adminOnly, (req, res) => {
   const passwordHash = bcrypt.hashSync(newPassword, 10);
   const recoveryHash = bcrypt.hashSync(newRecoveryCode, 10);
   updateCredentials.run(passwordHash, recoveryHash, targetId);
+  // The old password (whatever anyone still had it) shouldn't keep a
+  // session alive after this — same reasoning as the user's own
+  // change-password route, just without a cookie to re-issue here since
+  // it's the admin's browser making this request, not the target's.
+  setSessionToken.run(null, targetId);
   res.json({ email: target.email, newPassword, recoveryCode: formatRecoveryCode(newRecoveryCode) });
 });
 
@@ -548,6 +553,22 @@ app.put("/api/data", requireAuth, (req, res) => {
   if (typeof value !== "string") return res.status(400).json({ error: "value deve ser uma string JSON" });
   upsertData.run(req.userId, value);
   res.json({ ok: true });
+});
+
+// Public, unauthenticated — just enough for a simple status page to show
+// the app is up, with no account or usage data exposed.
+app.get("/api/health", (req, res) => {
+  let dbOk = true;
+  try {
+    db.prepare("SELECT 1").get();
+  } catch {
+    dbOk = false;
+  }
+  res.json({ status: dbOk ? "ok" : "degraded", uptimeSeconds: Math.floor(process.uptime()), serverTime: new Date().toISOString() });
+});
+
+app.get("/status", (req, res) => {
+  res.sendFile("status.html", { root: __dirname });
 });
 
 const distDir = path.join(__dirname, "..", "dist");
