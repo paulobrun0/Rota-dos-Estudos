@@ -672,6 +672,36 @@ export default function App({ user, onLogout, onUserUpdate }) {
     setData((d) => ({ ...d, concursos: d.concursos.map((c) => (c.id === id ? { ...c, examDate: examDate || null } : c)) }));
   }
 
+  // Puts a concurso's cycle back at square one: every topic back to
+  // "pendente", the rotation cursor cleared, and every day's plan wiped
+  // (old cards would otherwise reference topics that no longer say
+  // they're done, which is exactly what a restart means to undo).
+  // `keepHistory` decides whether each topic's past passes/accuracy
+  // (topic.history, questionsTotal, questionsCorrect) survive the reset —
+  // useful for someone who finished the whole edital and wants a clean
+  // second lap without losing how the first one went.
+  function resetCycle(id, keepHistory) {
+    setData((d) => ({
+      ...d,
+      concursos: d.concursos.map((c) => {
+        if (c.id !== id) return c;
+        const materias = c.materias.map((m) => ({
+          ...m,
+          topics: m.topics.map((t) => {
+            const reset = { ...t, status: "pendente", mastered: false };
+            if (!keepHistory) {
+              delete reset.history;
+              delete reset.questionsTotal;
+              delete reset.questionsCorrect;
+            }
+            return reset;
+          }),
+        }));
+        return { ...c, materias, dailyPlans: {}, cycleCursor: null };
+      }),
+    }));
+  }
+
   function importData(imported) {
     setData(imported);
     setSelectedDate(todayISO());
@@ -818,6 +848,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             removeConcurso={removeConcurso}
             renameConcurso={renameConcurso}
             setExamDate={setExamDate}
+            resetCycle={resetCycle}
           />
         )}
 
