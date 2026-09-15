@@ -5,11 +5,12 @@ import { fromISO } from "../lib/date.js";
 import { buildHeatmapWeeks, computeStreaks, heatLevel } from "../lib/streaks.js";
 import { computeMateriaStats, computeTopicStats } from "../lib/materiaStats.js";
 import { SectionLabel } from "../components/SectionLabel.jsx";
+import { StatsChart } from "../components/StatsChart.jsx";
 
 const HEAT_COLORS = [colors.surface2, colors.heat1, colors.heat2, colors.amber];
 const MESES_ABR = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
-export function ProgressoView({ activity, activeConcurso }) {
+export function ProgressoView({ activity, questionActivity, activeConcurso }) {
   const materiaStats = computeMateriaStats(activeConcurso);
   const topicStats = computeTopicStats(activeConcurso);
   const { current, longest } = computeStreaks(activity);
@@ -70,6 +71,11 @@ export function ProgressoView({ activity, activeConcurso }) {
             <span style={{ fontSize: 11, color: colors.textFaint }}>mais</span>
           </div>
         </div>
+      </div>
+
+      <SectionLabel text="desempenho ao longo do tempo" />
+      <div style={{ marginBottom: 26 }}>
+        <StatsChart activity={activity} questionActivity={questionActivity} />
       </div>
 
       {activeConcurso && materiaStats.length > 0 && (

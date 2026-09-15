@@ -152,7 +152,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         let parsed = value ? migrate(JSON.parse(value)) : defaultData();
         if (parsed.concursos.length === 0) {
           const c = makeConcurso("Meu concurso", 0);
-          parsed = { concursos: [c], activeConcursoId: c.id, activity: parsed.activity || {} };
+          parsed = { concursos: [c], activeConcursoId: c.id, activity: parsed.activity || {}, questionActivity: parsed.questionActivity || {} };
         }
         if (!parsed.concursos.some((c) => c.id === parsed.activeConcursoId)) {
           parsed.activeConcursoId = parsed.concursos[0].id;
@@ -758,7 +758,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           />
         )}
 
-        {tab === "progresso" && <ProgressoView activity={data.activity || {}} activeConcurso={activeConcurso} />}
+        {tab === "progresso" && <ProgressoView activity={data.activity || {}} questionActivity={data.questionActivity || {}} activeConcurso={activeConcurso} />}
 
         {tab === "ajustes" && (
           <AjustesView
