@@ -8,6 +8,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      // Custom service worker (src/sw.js) instead of the auto-generated one
+      // — needed for the push/notificationclick handlers, which
+      // generateSW's config alone can't add. injectManifest still gives us
+      // workbox precaching (self.__WB_MANIFEST is filled in at build time);
+      // we just also get to add our own event listeners around it.
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.js",
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,png,svg,webmanifest}"],
+      },
       includeAssets: ["favicon.png", "apple-touch-icon.png"],
       manifest: {
         name: "Rota dos Estudos",
@@ -25,12 +36,10 @@ export default defineConfig({
           { src: "icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
-      // "Só instalável": não faz cache de nada da API nem de dados de usuário,
-      // só pré-cacheia os assets estáticos do build (JS/CSS/HTML) — o app
-      // continua exigindo conexão pra funcionar de verdade.
-      workbox: {
-        navigateFallbackDenylist: [/^\/api\//],
-      },
+      // "Só instalável": src/sw.js only precaches static build assets (via
+      // precacheAndRoute) and doesn't register any navigation fallback, so
+      // there's nothing that could intercept /api/* while offline — the app
+      // still requires a real connection to do anything.
     }),
   ],
   server: {

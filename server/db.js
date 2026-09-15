@@ -167,4 +167,31 @@ db.exec(`
   );
 `);
 
+// Web Push subscriptions — one row per device/browser a user has opted in
+// on, since a single account can have several. `endpoint` alone uniquely
+// identifies a subscription (it encodes the specific push service and
+// device); re-subscribing the same endpoint (e.g. re-granting permission)
+// just refreshes its keys rather than creating a duplicate.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    endpoint TEXT UNIQUE NOT NULL,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);
+`);
+
+// Tiny generic key-value store for small bits of process state that need to
+// survive a restart — e.g. "was today's reminder already sent" (see
+// dailyReminder.js), so a redeploy mid-day can't cause a duplicate.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS app_state (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
+`);
+
 export default db;

@@ -12,6 +12,8 @@ import {
 } from "./auth.js";
 import { computeStreaks } from "../src/lib/streaks.js";
 import { runBackup, listBackups } from "./backup.js";
+import { isPushConfigured, removeSubscription, saveSubscription, vapidPublicKey } from "./push.js";
+import { startDailyReminderSchedule } from "./dailyReminder.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -44,9 +46,12 @@ app.use((req, res, next) => {
       // inline style="" attribute — there's no avoiding 'unsafe-inline' here
       // short of a CSS-in-JS engine that supports nonces, which this app
       // doesn't use. Lower severity than an inline-script hole, in any case.
-      "style-src 'self' 'unsafe-inline'",
+      // fonts.googleapis.com is the app's own @import for Space Grotesk/
+      // Inter/JetBrains Mono (see App.jsx) — its stylesheet in turn points
+      // at fonts.gstatic.com for the actual font files, hence font-src too.
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data:",
-      "font-src 'self'",
+      "font-src 'self' https://fonts.gstatic.com",
       "connect-src 'self'",
       "worker-src 'self'",
       "object-src 'none'",
@@ -332,6 +337,31 @@ app.patch("/api/me", requireAuth, (req, res) => {
 // keeps working uninterrupted.
 app.post("/api/me/logout-all", requireAuth, (req, res) => {
   issueSession(res, req.userId);
+  res.json({ ok: true });
+});
+
+// Public: the client needs this to call pushManager.subscribe(), and it's
+// not secret — VAPID's public key is meant to be handed out (it's how the
+// push service later verifies OUR server signed the message, not a way to
+// authenticate the client).
+app.get("/api/push/vapid-public-key", (req, res) => {
+  if (!isPushConfigured()) return res.status(503).json({ error: "notificações não configuradas no servidor" });
+  res.json({ publicKey: vapidPublicKey() });
+});
+
+app.post("/api/push/subscribe", requireAuth, (req, res) => {
+  const { subscription } = req.body || {};
+  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    return res.status(400).json({ error: "subscription inválida" });
+  }
+  saveSubscription(req.userId, subscription);
+  res.json({ ok: true });
+});
+
+app.post("/api/push/unsubscribe", requireAuth, (req, res) => {
+  const { endpoint } = req.body || {};
+  if (typeof endpoint !== "string" || !endpoint) return res.status(400).json({ error: "endpoint é obrigatório" });
+  removeSubscription(req.userId, endpoint);
   res.json({ ok: true });
 });
 
@@ -698,5 +728,7 @@ setInterval(() => {
     console.error("backup periódico falhou:", err.message);
   }
 }, BACKUP_INTERVAL_MS);
+
+if (isPushConfigured()) startDailyReminderSchedule();
 
 app.listen(PORT, () => console.log(`API rodando em http://localhost:${PORT}`));

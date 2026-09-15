@@ -1,17 +1,45 @@
-import React, { useRef, useState } from "react";
-import { Download, Eye, EyeOff, Moon, Sun, Upload, Volume2, VolumeX } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Bell, BellOff, Download, Eye, EyeOff, Moon, Sun, Upload, Volume2, VolumeX } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { todayISO } from "../lib/date.js";
 import { migrate } from "../data/model.js";
 import { playCompleteSound } from "../lib/sound.js";
 import { setRankingVisibility } from "../api/ranking.js";
+import { getExistingSubscription, pushSupported, subscribeToPush, unsubscribeFromPush } from "../api/push.js";
 
 export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport, user, onUserUpdate }) {
   const fileInputRef = useRef(null);
   const [importError, setImportError] = useState("");
   const [importOk, setImportOk] = useState(false);
   const [rankingBusy, setRankingBusy] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(null);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushError, setPushError] = useState("");
+
+  useEffect(() => {
+    if (!pushSupported()) {
+      setPushSubscribed(false);
+      return;
+    }
+    getExistingSubscription()
+      .then((sub) => setPushSubscribed(Boolean(sub)))
+      .catch(() => setPushSubscribed(false));
+  }, []);
+
+  async function togglePush(value) {
+    setPushError("");
+    setPushBusy(true);
+    try {
+      if (value) await subscribeToPush();
+      else await unsubscribeFromPush();
+      setPushSubscribed(value);
+    } catch (e) {
+      setPushError(e.message);
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   async function toggleRanking(value) {
     setRankingBusy(true);
@@ -108,6 +136,34 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
             </button>
           )}
         </div>
+      </div>
+
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>notificações</div>
+        <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
+          um lembrete às 19h, só se você ainda não tiver estudado nada naquele dia. precisa manter o app instalado/aberto no navegador para funcionar.
+        </div>
+        {!pushSupported() ? (
+          <div style={{ fontSize: 12.5, color: colors.textFaint }}>seu navegador não suporta notificações push.</div>
+        ) : (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              disabled={pushBusy || pushSubscribed === null}
+              onClick={() => togglePush(true)}
+              style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${pushSubscribed ? colors.amber : colors.border}`, color: pushSubscribed ? colors.amber : colors.text }}
+            >
+              <Bell size={14} /> ativado
+            </button>
+            <button
+              disabled={pushBusy || pushSubscribed === null}
+              onClick={() => togglePush(false)}
+              style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${pushSubscribed === false ? colors.amber : colors.border}`, color: pushSubscribed === false ? colors.amber : colors.text }}
+            >
+              <BellOff size={14} /> desativado
+            </button>
+          </div>
+        )}
+        {pushError && <div style={{ color: colors.red, fontSize: 12.5, marginTop: 10 }}>{pushError}</div>}
       </div>
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
