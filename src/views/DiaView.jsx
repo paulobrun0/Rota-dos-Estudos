@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CalendarClock, Check, ChevronLeft, ChevronRight, ExternalLink, Flame, Link2, ListChecks, Pencil, StickyNote } from "lucide-react";
+import { CalendarClock, Check, ChevronLeft, ChevronRight, ExternalLink, Eye, Flame, Link2, ListChecks, Pencil, RotateCw, StickyNote } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -184,10 +184,18 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
   const [editCorrect, setEditCorrect] = useState(String(topic.questionsCorrect || ""));
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkDraft, setLinkDraft] = useState(topic.link || "");
+  // A review card with a saved note becomes a flashcard: the note stays
+  // hidden until the user actively asks to see it, so there's a real moment
+  // of trying to recall first — a review that shows the answer immediately
+  // isn't testing anything. Nothing to quiz with (no note ever written) or
+  // already done just behaves like a normal card.
+  const [revealed, setRevealed] = useState(false);
   const isRevisao = card.tipo === "revisao";
   const showForm = asking || forcedOpen;
   const hasNotes = (topic.notes || "").trim().length > 0;
   const hasLink = (topic.link || "").trim().length > 0;
+  const isFlashcard = isRevisao && hasNotes && !card.feito;
+  const awaitingReveal = isFlashcard && !revealed;
 
   function saveLinkIfChanged() {
     if (linkDraft !== (topic.link || "")) updateTopicLink(materiaId, topic.id, linkDraft.trim());
@@ -216,6 +224,10 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
       onToggle();
       return;
     }
+    if (awaitingReveal) {
+      setRevealed(true);
+      return;
+    }
     setAsking(true);
   }
 
@@ -242,18 +254,23 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <button
           onClick={handleCircleClick}
-          aria-label={card.feito ? "marcar como não estudado" : "marcar como estudado"}
+          aria-label={card.feito ? "marcar como não estudado" : awaitingReveal ? "virar card" : "marcar como estudado"}
           style={{
-            width: 22, height: 22, borderRadius: "50%", flexShrink: 0, border: `1.5px solid ${card.feito ? colors.amber : colors.border}`,
+            width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+            border: `1.5px solid ${card.feito ? colors.amber : awaitingReveal ? colors.teal : colors.border}`,
             background: card.feito ? colors.amber : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
           }}
         >
           {card.feito && <Check size={13} color={colors.bg} strokeWidth={3} />}
+          {awaitingReveal && <RotateCw size={11} color={colors.teal} />}
         </button>
         <div style={{ flex: "1 1 140px", minWidth: 0 }}>
           <div style={{ fontSize: 14, textDecoration: card.feito ? "line-through" : "none", color: colors.text }}>{topic.name}</div>
-          {hasNotes && !notesOpen && (
+          {hasNotes && !notesOpen && !awaitingReveal && (
             <div style={{ fontSize: 12, color: colors.textFaint, fontStyle: "italic", marginTop: 2 }}>{topic.notes}</div>
+          )}
+          {awaitingReveal && (
+            <div style={{ fontSize: 12, color: colors.teal, marginTop: 2 }}>tenta lembrar antes de virar o card</div>
           )}
         </div>
         <div
@@ -266,6 +283,18 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
         >
           {isRevisao ? "revisão · ciclo" : "novo"}
         </div>
+        {awaitingReveal && (
+          <button
+            onClick={() => setRevealed(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 5, background: colors.tealSoft, border: `1px solid ${colors.teal}`,
+              borderRadius: 20, padding: "4px 10px", flexShrink: 0,
+            }}
+          >
+            <Eye size={12} color={colors.teal} />
+            <span className="mono" style={{ fontSize: 10.5, color: colors.teal }}>virar card</span>
+          </button>
+        )}
         <button
           onClick={openQuestionsEdit}
           style={{ background: "transparent", border: "none", padding: "4px 2px", display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}
@@ -364,6 +393,13 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
             color: colors.text, fontSize: 12.5, padding: 8, resize: "vertical", boxSizing: "border-box",
           }}
         />
+      )}
+
+      {isFlashcard && revealed && !notesOpen && (
+        <div style={{ marginTop: 10, background: colors.tealSoft, border: `1px solid ${colors.teal}`, borderRadius: 6, padding: "10px 12px" }}>
+          <div style={{ fontSize: 10.5, color: colors.teal, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>sua anotação</div>
+          <div style={{ fontSize: 13, color: colors.text, whiteSpace: "pre-wrap" }}>{topic.notes}</div>
+        </div>
       )}
 
       {practicing && (
