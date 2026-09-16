@@ -6,7 +6,10 @@ import { todayISO } from "../lib/date.js";
 import { migrate } from "../data/model.js";
 import { playCompleteSound } from "../lib/sound.js";
 import { setRankingVisibility } from "../api/ranking.js";
+import { updateProfile } from "../api/profile.js";
 import { getExistingSubscription, pushSupported, subscribeToPush, unsubscribeFromPush } from "../api/push.js";
+
+const REMINDER_HOURS = Array.from({ length: 24 }, (_, h) => h);
 
 export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport, user, onUserUpdate }) {
   const fileInputRef = useRef(null);
@@ -16,6 +19,8 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
   const [pushSubscribed, setPushSubscribed] = useState(null);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState("");
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderError, setReminderError] = useState("");
 
   useEffect(() => {
     if (!pushSupported()) {
@@ -38,6 +43,19 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
       setPushError(e.message);
     } finally {
       setPushBusy(false);
+    }
+  }
+
+  async function changeReminderHour(hour) {
+    setReminderError("");
+    setReminderBusy(true);
+    try {
+      await updateProfile({ reminderHour: hour });
+      onUserUpdate((u) => ({ ...u, reminderHour: hour }));
+    } catch (e) {
+      setReminderError(e.message);
+    } finally {
+      setReminderBusy(false);
     }
   }
 
@@ -141,12 +159,12 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>notificações</div>
         <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
-          um lembrete às 19h, só se você ainda não tiver estudado nada naquele dia. precisa manter o app instalado/aberto no navegador para funcionar.
+          um lembrete no horário que você escolher, só se você ainda não tiver estudado nada naquele dia. precisa manter o app instalado/aberto no navegador para funcionar.
         </div>
         {!pushSupported() ? (
           <div style={{ fontSize: 12.5, color: colors.textFaint }}>seu navegador não suporta notificações push.</div>
         ) : (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <button
               disabled={pushBusy || pushSubscribed === null}
               onClick={() => togglePush(true)}
@@ -161,9 +179,25 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
             >
               <BellOff size={14} /> desativado
             </button>
+            {pushSubscribed && (
+              <>
+                <span style={{ fontSize: 12.5, color: colors.textMuted }}>às</span>
+                <select
+                  disabled={reminderBusy}
+                  value={user?.reminderHour ?? 19}
+                  onChange={(e) => changeReminderHour(Number(e.target.value))}
+                  style={{ background: colors.surface2, border: `1px solid ${colors.border}`, borderRadius: 8, color: colors.text, fontSize: 13, padding: "8px 10px", cursor: "pointer" }}
+                >
+                  {REMINDER_HOURS.map((h) => (
+                    <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                  ))}
+                </select>
+              </>
+            )}
           </div>
         )}
         {pushError && <div style={{ color: colors.red, fontSize: 12.5, marginTop: 10 }}>{pushError}</div>}
+        {reminderError && <div style={{ color: colors.red, fontSize: 12.5, marginTop: 10 }}>{reminderError}</div>}
       </div>
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>

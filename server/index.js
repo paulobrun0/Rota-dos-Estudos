@@ -115,6 +115,7 @@ const insertAuditLog = db.prepare(`
 `);
 const listAuditLog = db.prepare("SELECT * FROM admin_audit_log ORDER BY id DESC LIMIT ?");
 const setShowInRanking = db.prepare("UPDATE users SET show_in_ranking = ? WHERE id = ?");
+const setReminderHour = db.prepare("UPDATE users SET reminder_hour = ? WHERE id = ?");
 const listRankingData = db.prepare(`
   SELECT u.email, u.username, u.avatar, d.value
   FROM users u JOIN user_data d ON d.user_id = u.id
@@ -294,16 +295,23 @@ app.get("/api/me", requireAuth, (req, res) => {
   const user = req.user;
   res.json({
     email: user.email, isAdmin: !!user.is_admin, showInRanking: !!user.show_in_ranking,
-    username: user.username || null, avatar: user.avatar || null,
+    username: user.username || null, avatar: user.avatar || null, reminderHour: user.reminder_hour,
   });
 });
 
 app.patch("/api/me", requireAuth, (req, res) => {
-  const { showInRanking, username, avatar } = req.body || {};
+  const { showInRanking, username, avatar, reminderHour } = req.body || {};
 
   if (showInRanking !== undefined) {
     if (typeof showInRanking !== "boolean") return res.status(400).json({ error: "showInRanking deve ser true ou false" });
     setShowInRanking.run(showInRanking ? 1 : 0, req.userId);
+  }
+
+  if (reminderHour !== undefined) {
+    if (!Number.isInteger(reminderHour) || reminderHour < 0 || reminderHour > 23) {
+      return res.status(400).json({ error: "reminderHour deve ser um número inteiro entre 0 e 23" });
+    }
+    setReminderHour.run(reminderHour, req.userId);
   }
 
   if (username !== undefined) {

@@ -89,6 +89,22 @@ try {
   // column already exists
 }
 
+// Local (Brazil) hour the user wants the daily study reminder at, and the
+// UTC date it was last actually sent for — the latter is tracked per-user
+// (rather than in the old single app_state key) because different users can
+// now pick different hours, so "already sent today" can't be one global flag.
+try {
+  db.exec("ALTER TABLE users ADD COLUMN reminder_hour INTEGER NOT NULL DEFAULT 19");
+} catch {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE users ADD COLUMN reminder_last_sent TEXT");
+} catch {
+  // column already exists
+}
+
 // NULLs are all distinct under a unique index, so this is safe to run
 // before anyone has set a username.
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)");

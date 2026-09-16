@@ -1,5 +1,16 @@
 import { precacheAndRoute } from "workbox-precaching";
 
+// injectManifest (unlike generateSW) doesn't auto-add these: without them, a
+// newly-installed SW sits "waiting" until every open tab of the app is fully
+// closed, so anyone who keeps the PWA open never gets the update. skipWaiting
+// lets the new worker activate right away instead of waiting for old tabs to
+// go away, and clients.claim hands it control of those already-open tabs
+// immediately, so the next reload — not a full app restart — is enough.
+self.skipWaiting();
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 precacheAndRoute(self.__WB_MANIFEST);
 
 self.addEventListener("push", (event) => {
