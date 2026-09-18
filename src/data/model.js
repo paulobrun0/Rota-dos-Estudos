@@ -33,7 +33,12 @@ export const makeConcurso = (name, colorIndex) => ({
   cronograma: makeEmptyCronograma(),
 });
 
-export const defaultData = () => ({ concursos: [], activeConcursoId: null, activity: {}, questionActivity: {} });
+// null means "never configured" — every day counts (today's actual
+// behavior), and AjustesView/App.jsx use that to show a one-time nudge to
+// set it up. Once set, it's an array of weekday keys the user studies on
+// (see WEEKDAY_KEYS in lib/planner.js) — any day left out is an excused
+// rest day that skips the streak instead of breaking it.
+export const defaultData = () => ({ concursos: [], activeConcursoId: null, activity: {}, questionActivity: {}, studyDays: null });
 
 // Older single-concurso saves get wrapped into one concurso so nothing is lost.
 export function migrate(raw) {
@@ -47,6 +52,7 @@ export function migrate(raw) {
     });
     if (!raw.activity) raw.activity = {};
     if (!raw.questionActivity) raw.questionActivity = {};
+    if (raw.studyDays === undefined) raw.studyDays = null;
     return raw;
   }
   if (raw && Array.isArray(raw.materias)) {
@@ -61,7 +67,7 @@ export function migrate(raw) {
       planMode: raw.planMode || "ciclo",
       cronograma: { ...makeEmptyCronograma(), ...(raw.cronograma || {}) },
     };
-    return { concursos: [c], activeConcursoId: c.id, activity: {}, questionActivity: {} };
+    return { concursos: [c], activeConcursoId: c.id, activity: {}, questionActivity: {}, studyDays: null };
   }
   return defaultData();
 }

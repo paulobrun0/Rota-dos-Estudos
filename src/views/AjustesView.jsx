@@ -8,10 +8,13 @@ import { playCompleteSound } from "../lib/sound.js";
 import { setRankingVisibility } from "../api/ranking.js";
 import { updateProfile } from "../api/profile.js";
 import { getExistingSubscription, pushSupported, subscribeToPush, unsubscribeFromPush } from "../api/push.js";
+import { WeekdayToggle } from "../components/WeekdayToggle.jsx";
+import { WEEKDAY_KEYS } from "../lib/planner.js";
 
 const REMINDER_HOURS = Array.from({ length: 24 }, (_, h) => h);
+const ALL_DAYS = [...WEEKDAY_KEYS];
 
-export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport, user, onUserUpdate }) {
+export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport, user, onUserUpdate, studyDays, setStudyDays }) {
   const fileInputRef = useRef(null);
   const [importError, setImportError] = useState("");
   const [importOk, setImportOk] = useState(false);
@@ -198,6 +201,14 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
         )}
         {pushError && <div style={{ color: colors.red, fontSize: 12.5, marginTop: 10 }}>{pushError}</div>}
         {reminderError && <div style={{ color: colors.red, fontSize: 12.5, marginTop: 10 }}>{reminderError}</div>}
+      </div>
+
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>dias de estudo</div>
+        <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
+          marque os dias que você pretende estudar. num dia de fora, sua sequência não quebra — ela só espera você voltar.
+        </div>
+        <WeekdayToggle value={studyDays || ALL_DAYS} onChange={setStudyDays} />
       </div>
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>

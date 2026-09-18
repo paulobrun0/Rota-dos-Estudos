@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle, X,
+  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, NotebookText, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle, X,
 } from "lucide-react";
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
@@ -19,9 +19,11 @@ import { fetchQuestionCounts } from "./api/questions.js";
 import { looksLikeNumberedEdital, normalizeMateriaName, parseRawEdital } from "./lib/rawEditalParser.js";
 import { NavItem } from "./components/NavItem.jsx";
 import { EmptyConcursoState } from "./components/EmptyConcursoState.jsx";
+import { StudyDaysBanner } from "./components/StudyDaysBanner.jsx";
 import { DiaView } from "./views/DiaView.jsx";
 import { SemanaView } from "./views/SemanaView.jsx";
 import { EditalView } from "./views/EditalView.jsx";
+import { CadernoView } from "./views/CadernoView.jsx";
 import { MetasView } from "./views/MetasView.jsx";
 import { ConcursosView } from "./views/ConcursosView.jsx";
 import { ProgressoView } from "./views/ProgressoView.jsx";
@@ -115,6 +117,7 @@ const TAB_TITLES = {
   dia: "hoje",
   semana: "semana",
   edital: "edital",
+  caderno: "caderno",
   metas: "metas",
   progresso: "progresso",
   ranking: "ranking",
@@ -183,7 +186,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         let parsed = value ? migrate(JSON.parse(value)) : defaultData();
         if (parsed.concursos.length === 0) {
           const c = makeConcurso("Meu concurso", 0);
-          parsed = { concursos: [c], activeConcursoId: c.id, activity: parsed.activity || {}, questionActivity: parsed.questionActivity || {} };
+          parsed = { ...parsed, concursos: [c], activeConcursoId: c.id };
         }
         if (!parsed.concursos.some((c) => c.id === parsed.activeConcursoId)) {
           parsed.activeConcursoId = parsed.concursos[0].id;
@@ -192,7 +195,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
       } catch (e) {
         if (cancelled) return;
         const c = makeConcurso("Meu concurso", 0);
-        setData({ concursos: [c], activeConcursoId: c.id, activity: {} });
+        setData({ ...defaultData(), concursos: [c], activeConcursoId: c.id });
       }
       if (!cancelled) loaded.current = true;
     })();
@@ -609,6 +612,12 @@ export default function App({ user, onLogout, onUserUpdate }) {
     updateActive((c) => ({ ...c, cronograma: { ...c.cronograma, [day]: materiaIds } }));
   }
 
+  // Global (not per-concurso) — which weekdays count toward the streak. See
+  // computeStreaks for how an excused day is treated.
+  function setStudyDays(days) {
+    setData((d) => (d ? { ...d, studyDays: days } : d));
+  }
+
   function parseBulk() {
     setError("");
     setBulkHintMatches([]);
@@ -875,6 +884,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         <NavItem icon={<CalendarDays size={16} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); goTab("dia"); }} />
         <NavItem icon={<ListChecks size={16} />} label="semana" active={tab === "semana"} onClick={() => goTab("semana")} />
         <NavItem icon={<BookOpen size={16} />} label="edital" active={tab === "edital"} onClick={() => goTab("edital")} />
+        <NavItem icon={<NotebookText size={16} />} label="caderno" active={tab === "caderno"} onClick={() => goTab("caderno")} />
         <NavItem icon={<Target size={16} />} label="metas" active={tab === "metas"} onClick={() => goTab("metas")} />
         <NavItem icon={<Flame size={16} />} label="progresso" active={tab === "progresso"} onClick={() => goTab("progresso")} />
         <NavItem icon={<Trophy size={16} />} label="ranking" active={tab === "ranking"} onClick={() => goTab("ranking")} />
@@ -924,6 +934,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         </div>
 
         <main className="app-main" style={{ flex: 1, minWidth: 0, padding: "28px 36px" }}>
+        {!data.studyDays && <StudyDaysBanner setStudyDays={setStudyDays} />}
         {tab === "concursos" && (
           <ConcursosView
             concursos={data.concursos}
@@ -945,6 +956,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             questionActivity={data.questionActivity || {}}
             activeConcurso={activeConcurso}
             addTopicToToday={addTopicToToday}
+            studyDays={data.studyDays}
           />
         )}
 
@@ -958,6 +970,8 @@ export default function App({ user, onLogout, onUserUpdate }) {
             onImport={importData}
             user={user}
             onUserUpdate={onUserUpdate}
+            studyDays={data.studyDays}
+            setStudyDays={setStudyDays}
           />
         )}
 
@@ -986,7 +1000,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             materiasOrder={materiasOrder}
             minutesPerMateria={activeConcurso.settings?.minutesPerMateria || 0}
             toggleCard={toggleCard}
-            streak={computeStreaks(data.activity || {}).current}
+            streak={computeStreaks(data.activity || {}, data.studyDays).current}
             examDate={activeConcurso.examDate}
             sessionTimers={sessionTimers}
             restTimers={restTimers}
@@ -1039,6 +1053,10 @@ export default function App({ user, onLogout, onUserUpdate }) {
             contentBank={contentBank}
             importFromBank={importFromBank}
           />
+        )}
+
+        {tab === "caderno" && activeConcurso && (
+          <CadernoView activeConcurso={activeConcurso} updateTopicNotes={updateTopicNotes} />
         )}
 
         {tab === "metas" && activeConcurso && (

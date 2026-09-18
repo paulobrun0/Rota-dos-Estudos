@@ -10,10 +10,10 @@ import { StatsChart } from "../components/StatsChart.jsx";
 const HEAT_COLORS = [colors.surface2, colors.heat1, colors.heat2, colors.amber];
 const MESES_ABR = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
-export function ProgressoView({ activity, questionActivity, activeConcurso, addTopicToToday }) {
+export function ProgressoView({ activity, questionActivity, activeConcurso, addTopicToToday, studyDays }) {
   const materiaStats = computeMateriaStats(activeConcurso);
   const topicStats = computeTopicStats(activeConcurso);
-  const { current, longest } = computeStreaks(activity);
+  const { current, longest } = computeStreaks(activity, studyDays);
   const weeks = buildHeatmapWeeks(activity);
   const totalDias = Object.keys(activity).filter((k) => activity[k] > 0).length;
   const totalCards = Object.values(activity).reduce((a, b) => a + b, 0);
