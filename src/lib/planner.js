@@ -101,15 +101,19 @@ export function projectActiveMateriaIds(materias, settings, cursorId, dayOffset)
   return ids;
 }
 
-// A matéria's current "novo" batch in `cards` is cleared once every card in
-// it is done, meaning it's ready to drop out of the active window and let
-// the cursor move past it — same if it never had a batch to begin with
-// because it's already out of pending topics (nothing left for pickBatch to
-// hand out; reviewing what's already studied is the separate, cross-matéria
-// spaced-review pass below, not this rotation).
-function isMateriaCleared(materiaId, cards, m) {
-  const batch = cards.filter((c) => c.materiaId === materiaId && c.tipo === "novo");
-  if (batch.length > 0) return batch.every((c) => c.feito);
+// A matéria is cleared — ready to drop out of the active window and let the
+// cursor move past it — once it has no pending topics left anywhere, full
+// stop. This deliberately does NOT look at today's assigned batch: when
+// topicsPerDay is smaller than the matéria's total pending count (e.g. 1
+// assunto/day into a matéria with 4), finishing that one small batch used to
+// read as "cleared" even though 3 more pending topics hadn't been touched
+// yet — which defeated "matérias por dia = 1" (study one matéria fully
+// before the next), since the cursor would jump away after the very first
+// day instead of staying until the matéria actually runs out of topics. A
+// topic's status and its card's `feito` always flip together (see
+// toggleCard), so "no pending topics" already implies any assigned batch is
+// done too — nothing is lost by dropping the batch check.
+function isMateriaCleared(m) {
   return !m.topics.some((t) => t.status === "pendente");
 }
 
@@ -159,7 +163,7 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards, tod
     const frontId = activeMateriaIds(materias, settings, cursor)[0];
     if (frontId === undefined) break;
     const frontMateria = materias.find((m) => m.id === frontId);
-    if (frontMateria && isMateriaCleared(frontId, cards, frontMateria)) {
+    if (frontMateria && isMateriaCleared(frontMateria)) {
       const idx = materias.findIndex((m) => m.id === frontId);
       cursor = materias[(idx + 1) % materias.length].id;
     } else {

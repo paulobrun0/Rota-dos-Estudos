@@ -239,8 +239,20 @@ export default function App({ user, onLogout, onUserUpdate }) {
           // that's also what keeps a completed review from padding out
           // every future day's carryover forever, which would otherwise
           // eat into reviewsPerDay's daily cap for no reason.
+          //
+          // A completed "novo" card is dropped here too, for a similar
+          // reason: buildCyclePlan/buildCronogramaPlan only top up a
+          // matéria's batch by however many of its cards are NOT already in
+          // `already` below topicsPerDay — so a finished card that keeps
+          // riding along into every future day forever holds that count up
+          // permanently, and the matéria would never receive a fresh topic
+          // again after its very first batch. Dropping it on the day
+          // boundary (not on a same-day rebuild, which still needs it there
+          // to avoid re-topping-up a batch that's already fully done today)
+          // is what lets a matéria with more topics than topicsPerDay
+          // actually progress through them across multiple days.
           const existingToday = c.dailyPlans[today];
-          const base = existingToday || (mostRecentPlanBefore(c.dailyPlans, today) || []).filter((card) => !card.manual);
+          const base = existingToday || (mostRecentPlanBefore(c.dailyPlans, today) || []).filter((card) => !card.manual && !card.feito);
           const { cards, cursor } = buildDayPlan(c, base, today);
           return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
         }),
