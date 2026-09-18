@@ -32,6 +32,12 @@ import { AdminView } from "./views/AdminView.jsx";
 import { RankingView } from "./views/RankingView.jsx";
 import { ProfileView } from "./views/ProfileView.jsx";
 
+// Flat estimate for how long a single spaced-review pass takes — reviews
+// don't run through the ticking session timer (see DiaView's "reforços"
+// tab), so there's no measured duration to fall back on like "novo" cards
+// have via minutesPerMateria.
+const REVIEW_CARD_MINUTES = 3;
+
 // When the content bank has an entry for `materiaName`, reorders `topics` to
 // follow the bank's order (TecConcursos's real caderno order) instead of
 // whatever order the edital text or user typing produced — topics not found
@@ -337,6 +343,16 @@ export default function App({ user, onLogout, onUserUpdate }) {
       const topic = materia?.topics.find((t) => t.id === item.topicId);
       if (!topic) return prev;
 
+      // Estimated minutes this one card is worth: a "novo" card gets its
+      // share of the matéria's timed session budget (matching the same
+      // perTopic split MateriaGroupCard shows for the running clock); a
+      // "revisao" card, which never runs through that timer, gets a flat
+      // estimate instead.
+      const novoCardsForMateria = plan.filter((x) => x.materiaId === item.materiaId && x.tipo === "novo").length;
+      const cardMinutes = item.tipo === "novo"
+        ? (novoCardsForMateria > 0 ? (c.settings?.minutesPerMateria || 0) / novoCardsForMateria : 0)
+        : REVIEW_CARD_MINUTES;
+
       if (!item.feito) {
         item.feito = true;
         topic.status = "estudado";
@@ -362,6 +378,8 @@ export default function App({ user, onLogout, onUserUpdate }) {
         topic.history.push({ date: iso, tipo: item.tipo, questionsTotal: questions?.total || 0, questionsCorrect: questions?.correct || 0 });
         clone.activity = clone.activity || {};
         clone.activity[iso] = (clone.activity[iso] || 0) + 1;
+        clone.studyMinutes = clone.studyMinutes || {};
+        clone.studyMinutes[iso] = Math.round(((clone.studyMinutes[iso] || 0) + cardMinutes) * 10) / 10;
       } else {
         item.feito = false;
         if (item.tipo === "novo") {
@@ -378,6 +396,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
         clone.activity = clone.activity || {};
         clone.activity[iso] = Math.max(0, (clone.activity[iso] || 0) - 1);
         if (clone.activity[iso] === 0) delete clone.activity[iso];
+        clone.studyMinutes = clone.studyMinutes || {};
+        clone.studyMinutes[iso] = Math.round(Math.max(0, (clone.studyMinutes[iso] || 0) - cardMinutes) * 10) / 10;
+        if (clone.studyMinutes[iso] === 0) delete clone.studyMinutes[iso];
       }
 
       // Only today's plan drives the live rotation — a retroactive edit to
@@ -1001,6 +1022,8 @@ export default function App({ user, onLogout, onUserUpdate }) {
             minutesPerMateria={activeConcurso.settings?.minutesPerMateria || 0}
             toggleCard={toggleCard}
             streak={computeStreaks(data.activity || {}, data.studyDays).current}
+            studyMinutesToday={data.studyMinutes?.[selectedDate] || 0}
+            questionActivityToday={data.questionActivity?.[selectedDate] || { total: 0, correct: 0 }}
             examDate={activeConcurso.examDate}
             sessionTimers={sessionTimers}
             restTimers={restTimers}

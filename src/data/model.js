@@ -38,7 +38,10 @@ export const makeConcurso = (name, colorIndex) => ({
 // set it up. Once set, it's an array of weekday keys the user studies on
 // (see WEEKDAY_KEYS in lib/planner.js) — any day left out is an excused
 // rest day that skips the streak instead of breaking it.
-export const defaultData = () => ({ concursos: [], activeConcursoId: null, activity: {}, questionActivity: {}, studyDays: null });
+// studyMinutes mirrors activity's shape (iso -> number) but accumulates
+// estimated minutes spent instead of a card count — see toggleCard in
+// App.jsx for how each card's contribution is estimated.
+export const defaultData = () => ({ concursos: [], activeConcursoId: null, activity: {}, questionActivity: {}, studyMinutes: {}, studyDays: null });
 
 // Older single-concurso saves get wrapped into one concurso so nothing is lost.
 export function migrate(raw) {
@@ -52,6 +55,7 @@ export function migrate(raw) {
     });
     if (!raw.activity) raw.activity = {};
     if (!raw.questionActivity) raw.questionActivity = {};
+    if (!raw.studyMinutes) raw.studyMinutes = {};
     if (raw.studyDays === undefined) raw.studyDays = null;
     return raw;
   }
@@ -67,7 +71,7 @@ export function migrate(raw) {
       planMode: raw.planMode || "ciclo",
       cronograma: { ...makeEmptyCronograma(), ...(raw.cronograma || {}) },
     };
-    return { concursos: [c], activeConcursoId: c.id, activity: {}, questionActivity: {}, studyDays: null };
+    return { concursos: [c], activeConcursoId: c.id, activity: {}, questionActivity: {}, studyMinutes: {}, studyDays: null };
   }
   return defaultData();
 }

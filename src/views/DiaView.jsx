@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CalendarClock, Check, ChevronLeft, ChevronRight, ExternalLink, Eye, Flame, Link2, ListChecks, Pencil, RotateCw, StickyNote } from "lucide-react";
+import { CalendarClock, Check, ChevronLeft, ChevronRight, Clock, ExternalLink, Eye, Flame, Link2, ListChecks, Pencil, Percent, RotateCw, StickyNote } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -16,19 +16,49 @@ const EXAM_BADGE_STYLE = {
   normal: { bg: colors.surface2, fg: colors.textMuted },
 };
 
-export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
+// "1h30" for an hour or more, plain minutes below that — matches how the
+// app already writes durations elsewhere (e.g. "30 min no total").
+function formatMinutes(mins) {
+  const total = Math.round(mins || 0);
+  if (total < 60) return `${total}min`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return m > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
+}
+
+function StatTile({ icon, label, value, sub }) {
+  return (
+    <div style={{ minWidth: 0, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "14px 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>{icon}<span style={{ fontSize: 12, color: colors.textMuted }}>{label}</span></div>
+      <div className="sg" style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11.5, color: colors.textFaint, marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+}
+
+export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
   const isToday = selectedDate === todayISO();
   const exam = examCountdownInfo(examDate);
   const examStyle = exam ? EXAM_BADGE_STYLE[exam.level] : null;
   const novos = plan.filter((c) => c.tipo === "novo");
   const revisoes = plan.filter((c) => c.tipo === "revisao");
+  const [activeSubTab, setActiveSubTab] = useState("atividades");
 
-  const groupsMap = {};
-  plan.forEach((card) => {
-    if (!groupsMap[card.materiaId]) groupsMap[card.materiaId] = [];
-    groupsMap[card.materiaId].push(card);
+  const qa = questionActivityToday || { total: 0, correct: 0 };
+  const desempenhoPct = qa.total > 0 ? Math.round((qa.correct / qa.total) * 100) : null;
+
+  const novosGroups = {};
+  novos.forEach((card) => {
+    if (!novosGroups[card.materiaId]) novosGroups[card.materiaId] = [];
+    novosGroups[card.materiaId].push(card);
   });
-  const orderedMateriaIds = materiasOrder.filter((id) => groupsMap[id]);
+  const revisoesGroups = {};
+  revisoes.forEach((card) => {
+    if (!revisoesGroups[card.materiaId]) revisoesGroups[card.materiaId] = [];
+    revisoesGroups[card.materiaId].push(card);
+  });
+  const novosMateriaIds = materiasOrder.filter((id) => novosGroups[id]);
+  const revisoesMateriaIds = materiasOrder.filter((id) => revisoesGroups[id]);
 
   return (
     <div>
@@ -62,6 +92,18 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
         </div>
       </div>
 
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+        <StatTile icon={<Flame size={16} color={colors.amber} />} label="sequência" value={`${streak} dia${streak !== 1 ? "s" : ""}`} />
+        <StatTile
+          icon={<Percent size={16} color={colors.amber} />}
+          label={isToday ? "desempenho hoje" : "desempenho"}
+          value={desempenhoPct !== null ? `${desempenhoPct}%` : "—"}
+          sub={qa.total > 0 ? `${qa.correct}/${qa.total} questões` : "sem questões"}
+        />
+        <StatTile icon={<Clock size={16} color={colors.amber} />} label={isToday ? "horas estudadas" : "horas no dia"} value={formatMinutes(studyMinutesToday)} />
+        <StatTile icon={<ListChecks size={16} color={colors.amber} />} label="questões resolvidas" value={`${qa.total}`} sub={qa.total > 0 ? `${qa.correct} certas` : undefined} />
+      </div>
+
       <div style={{ display: "flex", alignItems: "center", gap: 20, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 14, padding: "18px 22px", marginBottom: 28 }}>
         <Ring pct={pct} />
         <div>
@@ -87,36 +129,89 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
         </div>
       )}
 
-      {orderedMateriaIds.map((materiaId) => (
-        <MateriaGroupCard
-          key={materiaId}
-          materia={materiaById(materiaId)}
-          minutesPerMateria={minutesPerMateria}
-          cards={groupsMap[materiaId]}
-          topicById={topicById}
-          onToggle={(cardId, questions) => toggleCard(selectedDate, cardId, questions)}
-          sessionTimers={sessionTimers}
-          restTimers={restTimers}
-          pendingCardId={pendingQuestions[materiaId]}
-          updateTopicNotes={updateTopicNotes}
-          updateTopicLink={updateTopicLink}
-          setTopicQuestions={setTopicQuestions}
-          questionCounts={questionCounts}
-          addTopicQuestions={addTopicQuestions}
-        />
-      ))}
+      {plan.length > 0 && (
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <button
+              onClick={() => setActiveSubTab("atividades")}
+              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "atividades" ? colors.amber : colors.border}`, color: activeSubTab === "atividades" ? colors.amber : colors.text }}
+            >
+              atividades
+              {novos.length > 0 && <span className="mono" style={{ marginLeft: 6, fontSize: 11, color: colors.textFaint }}>{novos.filter((c) => c.feito).length}/{novos.length}</span>}
+            </button>
+            <button
+              onClick={() => setActiveSubTab("reforcos")}
+              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "reforcos" ? colors.amber : colors.border}`, color: activeSubTab === "reforcos" ? colors.amber : colors.text }}
+            >
+              reforços
+              {revisoes.length > 0 && <span className="mono" style={{ marginLeft: 6, fontSize: 11, color: colors.textFaint }}>{revisoes.filter((c) => c.feito).length}/{revisoes.length}</span>}
+            </button>
+          </div>
+
+          {activeSubTab === "atividades" && (
+            novosMateriaIds.length === 0 ? (
+              <div style={{ color: colors.textFaint, fontSize: 14, padding: "12px 2px" }}>nenhum assunto novo planejado para hoje.</div>
+            ) : (
+              novosMateriaIds.map((materiaId) => (
+                <MateriaGroupCard
+                  key={materiaId}
+                  materia={materiaById(materiaId)}
+                  minutesPerMateria={minutesPerMateria}
+                  cards={novosGroups[materiaId]}
+                  timed
+                  topicById={topicById}
+                  onToggle={(cardId, questions) => toggleCard(selectedDate, cardId, questions)}
+                  sessionTimers={sessionTimers}
+                  restTimers={restTimers}
+                  pendingCardId={pendingQuestions[materiaId]}
+                  updateTopicNotes={updateTopicNotes}
+                  updateTopicLink={updateTopicLink}
+                  setTopicQuestions={setTopicQuestions}
+                  questionCounts={questionCounts}
+                  addTopicQuestions={addTopicQuestions}
+                />
+              ))
+            )
+          )}
+
+          {activeSubTab === "reforcos" && (
+            revisoesMateriaIds.length === 0 ? (
+              <div style={{ color: colors.textFaint, fontSize: 14, padding: "12px 2px" }}>nenhuma revisão pendente para hoje.</div>
+            ) : (
+              revisoesMateriaIds.map((materiaId) => (
+                <MateriaGroupCard
+                  key={materiaId}
+                  materia={materiaById(materiaId)}
+                  cards={revisoesGroups[materiaId]}
+                  timed={false}
+                  topicById={topicById}
+                  onToggle={(cardId, questions) => toggleCard(selectedDate, cardId, questions)}
+                  sessionTimers={sessionTimers}
+                  restTimers={restTimers}
+                  pendingCardId={pendingQuestions[materiaId]}
+                  updateTopicNotes={updateTopicNotes}
+                  updateTopicLink={updateTopicLink}
+                  setTopicQuestions={setTopicQuestions}
+                  questionCounts={questionCounts}
+                  addTopicQuestions={addTopicQuestions}
+                />
+              ))
+            )
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions }) {
+function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
   if (!materia) return null;
-  const totalMinutes = minutesPerMateria || 0;
+  const totalMinutes = timed ? (minutesPerMateria || 0) : 0;
   const perTopic = cards.length > 0 && totalMinutes > 0 ? totalMinutes / cards.length : null;
   const doneInGroup = cards.filter((c) => c.feito).length;
   const allDone = doneInGroup === cards.length;
-  const resting = allDone && restTimers.timers[materia.id];
-  const awaitingQuestions = cards.some((c) => c.id === pendingCardId);
+  const resting = timed && allDone && restTimers.timers[materia.id];
+  const awaitingQuestions = timed && cards.some((c) => c.id === pendingCardId);
 
   return (
     <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${materia.color}`, borderRadius: 12, padding: 16, marginBottom: 14, opacity: allDone && !resting ? 0.75 : 1 }}>
@@ -158,12 +253,12 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
         })}
       </div>
 
-      {totalMinutes === 0 && (
+      {timed && totalMinutes === 0 && (
         <div style={{ fontSize: 11.5, color: colors.textFaint, marginTop: 10 }}>
           defina os minutos por matéria em metas para ativar o cronômetro.
         </div>
       )}
-      {totalMinutes > 0 && !allDone && (
+      {timed && totalMinutes > 0 && !allDone && (
         <div style={{ fontSize: 11.5, color: colors.textFaint, marginTop: 10 }}>
           conforme o tempo passa, cada assunto é marcado como concluído automaticamente na sua vez — sem o cronômetro reiniciar.
         </div>
