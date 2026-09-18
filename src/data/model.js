@@ -4,6 +4,12 @@ export const PALETTE = ["#E8A33D", "#4FD1C5", "#E8615F", "#7C9CF0", "#C97FEF", "
 
 export const defaultSettings = () => ({ materiasPerDay: 0, topicsPerDay: 2, minutesPerMateria: 30, restMinutes: 5, reviewsPerDay: 3 });
 
+// One entry per weekday key (see WEEKDAY_KEYS in lib/planner.js), each an
+// array of matéria ids assigned to that day — empty means "day off" (no new
+// topics that day, only whatever spaced reviews are due). Repeats every
+// week, unlike the ciclo's progress-driven rotation.
+export const makeEmptyCronograma = () => ({ dom: [], seg: [], ter: [], qua: [], qui: [], sex: [], sab: [] });
+
 export const makeConcurso = (name, colorIndex) => ({
   id: uid(),
   name,
@@ -19,6 +25,12 @@ export const makeConcurso = (name, colorIndex) => ({
   // topics is actually finished, so an unfinished day picks back up on the
   // same matéria instead of the calendar moving on to the next one.
   cycleCursor: null,
+  // "ciclo" (default) rotates through matérias by progress, ignoring the
+  // calendar — see cycleCursor above. "cronograma" instead fixes which
+  // matéria(s) are active on each weekday, repeating every week regardless
+  // of progress — see cronograma below and buildCronogramaPlan.
+  planMode: "ciclo",
+  cronograma: makeEmptyCronograma(),
 });
 
 export const defaultData = () => ({ concursos: [], activeConcursoId: null, activity: {}, questionActivity: {} });
@@ -30,6 +42,8 @@ export function migrate(raw) {
       c.settings = { ...defaultSettings(), ...(c.settings || {}) };
       if (c.cycleCursor === undefined) c.cycleCursor = null;
       if (c.examDate === undefined) c.examDate = null;
+      if (!c.planMode) c.planMode = "ciclo";
+      c.cronograma = { ...makeEmptyCronograma(), ...(c.cronograma || {}) };
     });
     if (!raw.activity) raw.activity = {};
     if (!raw.questionActivity) raw.questionActivity = {};
@@ -44,6 +58,8 @@ export function migrate(raw) {
       settings: { ...defaultSettings(), ...(raw.settings || {}) },
       dailyPlans: raw.dailyPlans || {},
       cycleCursor: raw.cycleCursor ?? null,
+      planMode: raw.planMode || "ciclo",
+      cronograma: { ...makeEmptyCronograma(), ...(raw.cronograma || {}) },
     };
     return { concursos: [c], activeConcursoId: c.id, activity: {}, questionActivity: {} };
   }

@@ -1,5 +1,14 @@
 import { uid } from "./id.js";
-import { addDaysISO, todayISO } from "./date.js";
+import { addDaysISO, fromISO, todayISO } from "./date.js";
+
+// Sunday-first, matching Date#getDay() — used to key a concurso's
+// cronograma (see makeEmptyCronograma in data/model.js) and to look up
+// which weekday a given ISO date falls on.
+export const WEEKDAY_KEYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+
+export function weekdayKey(iso) {
+  return WEEKDAY_KEYS[fromISO(iso).getDay()];
+}
 
 // Days-after-completion before a topic comes back for review, doubling
 // roughly every step (the spacing effect: each successful recall of the
@@ -159,8 +168,15 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards, tod
   }
 
   activeMateriaIds(materias, settings, cursor).forEach((materiaId) => {
+    // Tops up to topicsPerDay rather than skipping outright once a batch
+    // exists — a mid-day increase to "assuntos por matéria" (e.g. 2 → 5)
+    // would otherwise never show up today, since a rebuild always carries
+    // today's existing batch forward. A decrease is left alone here (never
+    // shrinks or removes already-assigned cards) and only takes effect once
+    // this matéria's batch is finished and the cursor moves past it.
     const already = cards.filter((c) => c.materiaId === materiaId && c.tipo === "novo").length;
-    if (already > 0) return; // already has a batch — carried over, don't top it up mid-batch
+    const remaining = topicsPerDay - already;
+    if (remaining <= 0) return;
     const m = materias.find((x) => x.id === materiaId);
     if (!m) return;
     // A matéria stamped with a future createdAt — see materiaCreationDate in
@@ -171,7 +187,7 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards, tod
     // that's the ordinary same-day cascade as the cursor slides through
     // matérias that were already part of the day's set from the start.
     if (m.createdAt > today) return;
-    const { topics, tipo } = pickBatch(m, topicsPerDay, usedTopicIds);
+    const { topics, tipo } = pickBatch(m, remaining, usedTopicIds);
     topics.forEach((t) => {
       cards.push({ id: uid(), materiaId, topicId: t.id, tipo, feito: false });
       usedTopicIds.add(t.id);
@@ -195,4 +211,61 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards, tod
   });
 
   return { cards, cursor };
+}
+
+// The cronograma counterpart to buildCyclePlan: instead of a rotating
+// cursor that only advances once a matéria is actually finished, which
+// matéria(s) are "active" today is simply whatever the user assigned to
+// today's weekday (see makeEmptyCronograma) — fixed, repeats every week,
+// and doesn't care whether that matéria was ever touched before. A matéria
+// with nothing pending left just contributes no "novo" cards (pickBatch
+// already handles that), so its usual day quietly becomes review-only
+// instead of stalling like an unfinished ciclo window would. There's no
+// cursor to persist, so the return shape is just the cards.
+export function buildCronogramaPlan(materias, settings, cronograma, carryOverCards, today = todayISO()) {
+  if (materias.length === 0) return { cards: [] };
+  const topicsPerDay = settings?.topicsPerDay || 0;
+
+  const activeIds = (cronograma?.[weekdayKey(today)] || []).filter((id) => materias.some((m) => m.id === id));
+  const activeIdsSet = new Set(activeIds);
+
+  // Same carry-over rule as buildCyclePlan: a still-pending card survives
+  // into today's plan if its matéria is today's assigned one, or it's
+  // `manual` (added by hand, or a due spaced review — see buildCyclePlan's
+  // own comment on this for why manual cards are exempt).
+  const cards = (carryOverCards || []).filter((c) => {
+    const m = materias.find((x) => x.id === c.materiaId);
+    const t = m?.topics.find((x) => x.id === c.topicId);
+    return Boolean(t) && (c.manual || activeIdsSet.has(c.materiaId));
+  });
+  const usedTopicIds = new Set(cards.map((c) => c.topicId));
+
+  if (topicsPerDay > 0) {
+    activeIds.forEach((materiaId) => {
+      // Tops up to topicsPerDay rather than skipping outright — see the
+      // matching comment in buildCyclePlan for why (a mid-day increase to
+      // "assuntos por matéria" should show up today, not just tomorrow).
+      const already = cards.filter((c) => c.materiaId === materiaId && c.tipo === "novo").length;
+      const remaining = topicsPerDay - already;
+      if (remaining <= 0) return;
+      const m = materias.find((x) => x.id === materiaId);
+      if (!m || m.createdAt > today) return;
+      const { topics, tipo } = pickBatch(m, remaining, usedTopicIds);
+      topics.forEach((t) => {
+        cards.push({ id: uid(), materiaId, topicId: t.id, tipo, feito: false });
+        usedTopicIds.add(t.id);
+      });
+    });
+  }
+
+  // Spaced review is identical to buildCyclePlan's — it runs across the
+  // whole concurso regardless of which matéria today's weekday points to.
+  const reviewsPerDay = settings?.reviewsPerDay ?? 0;
+  const reviewsAlready = cards.filter((c) => c.tipo === "revisao").length;
+  pickDueReviews(materias, today, Math.max(0, reviewsPerDay - reviewsAlready), usedTopicIds).forEach(({ materiaId, topicId }) => {
+    cards.push({ id: uid(), materiaId, topicId, tipo: "revisao", feito: false, manual: true });
+    usedTopicIds.add(topicId);
+  });
+
+  return { cards };
 }

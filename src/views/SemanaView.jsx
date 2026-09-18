@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { navBtnStyle } from "../styles/shared.js";
 import { addDaysISO, daysSinceEpoch, fromISO, todayISO, weekStart } from "../lib/date.js";
-import { projectActiveMateriaIds } from "../lib/planner.js";
+import { projectActiveMateriaIds, weekdayKey } from "../lib/planner.js";
 
 export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOpenDay }) {
   const today = todayISO();
@@ -44,9 +44,14 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
                 // schedule, so an off day doesn't throw it off forever.
                 let projectedTotal = null;
                 if (total === null && isFuture) {
-                  const dayOffset = daysSinceEpoch(iso) - todayOffset;
-                  const activeIds = projectActiveMateriaIds(concurso.materias, concurso.settings, concurso.cycleCursor, dayOffset);
-                  projectedTotal = activeIds.length * (concurso.settings?.topicsPerDay || 0);
+                  // Cronograma's future days are exact (calendar-driven, not
+                  // progress-driven), unlike ciclo's assume-everything-goes-
+                  // on-schedule guess — but both boil down to "how many
+                  // matérias are active that day" times the daily quota.
+                  const activeCount = concurso.planMode === "cronograma"
+                    ? (concurso.cronograma?.[weekdayKey(iso)] || []).length
+                    : projectActiveMateriaIds(concurso.materias, concurso.settings, concurso.cycleCursor, daysSinceEpoch(iso) - todayOffset).length;
+                  projectedTotal = activeCount * (concurso.settings?.topicsPerDay || 0);
                 }
 
                 return (

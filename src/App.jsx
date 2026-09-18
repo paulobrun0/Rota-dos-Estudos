@@ -5,7 +5,7 @@ import {
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
 import { addDaysISO, todayISO, weekStart } from "./lib/date.js";
-import { activeMateriaIds, advanceReview, buildCyclePlan, pickBatch, scheduleFirstReview } from "./lib/planner.js";
+import { activeMateriaIds, advanceReview, buildCronogramaPlan, buildCyclePlan, pickBatch, scheduleFirstReview } from "./lib/planner.js";
 import { computeStreaks } from "./lib/streaks.js";
 import { uid } from "./lib/id.js";
 import { useTheme } from "./lib/useTheme.js";
@@ -51,6 +51,19 @@ function sortTopicsByBank(topics, materiaName, contentBank) {
 function mostRecentPlanBefore(dailyPlans, iso) {
   const keys = Object.keys(dailyPlans).filter((k) => k < iso).sort();
   return keys.length > 0 ? dailyPlans[keys[keys.length - 1]] : null;
+}
+
+// Builds one day's plan for a concurso regardless of which planMode it's
+// in — ciclo's rotating cursor, or cronograma's fixed weekday assignment.
+// Always returns { cards, cursor } so callers can spread cycleCursor
+// unconditionally; cronograma has no cursor of its own, so it just passes
+// the concurso's existing one through untouched.
+function buildDayPlan(c, base, today) {
+  if (c.planMode === "cronograma") {
+    const { cards } = buildCronogramaPlan(c.materias, c.settings, c.cronograma, base, today);
+    return { cards, cursor: c.cycleCursor };
+  }
+  return buildCyclePlan(c.materias, c.settings, c.cycleCursor, base, today);
 }
 
 // A matéria's createdAt decides (see buildCyclePlan's `m.createdAt > today`
@@ -224,7 +237,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           // eat into reviewsPerDay's daily cap for no reason.
           const existingToday = c.dailyPlans[today];
           const base = existingToday || (mostRecentPlanBefore(c.dailyPlans, today) || []).filter((card) => !card.manual);
-          const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, base, today);
+          const { cards, cursor } = buildDayPlan(c, base, today);
           return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
         }),
       };
@@ -239,7 +252,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
   // toggle — running it again here afterwards would reuse the
   // just-advanced cursor to prune the very cards that advance just added.
   const structuralKey = activeConcurso
-    ? `${activeConcurso.materias.map((m) => `${m.id}:${m.topics.length}`).join(",")}|${activeConcurso.settings?.materiasPerDay}|${activeConcurso.settings?.topicsPerDay}`
+    ? `${activeConcurso.materias.map((m) => `${m.id}:${m.topics.length}`).join(",")}|${activeConcurso.settings?.materiasPerDay}|${activeConcurso.settings?.topicsPerDay}|${activeConcurso.planMode}|${JSON.stringify(activeConcurso.cronograma)}`
     : "";
   useEffect(() => {
     if (activeConcurso) refreshTodayPlan();
@@ -351,7 +364,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
       // Only today's plan drives the live rotation — a retroactive edit to
       // a past day's history shouldn't reach forward and move the cursor.
       if (iso === todayISO()) {
-        const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, plan, iso);
+        const { cards, cursor } = buildDayPlan(c, plan, iso);
         c.dailyPlans[iso] = cards;
         c.cycleCursor = cursor;
       }
@@ -392,8 +405,11 @@ export default function App({ user, onLogout, onUserUpdate }) {
   // after today already had progress" guard exists for a matéria sneaking
   // into rotation as a side effect of some other change, not for a matéria
   // the user just explicitly asked for by clicking this.
+  // Ciclo-only: cronograma has no "next matéria in the rotation" concept to
+  // pull from (each weekday already names its own matéria), so this button
+  // stays hidden for it — see canPullMore below.
   function pullNextMateria() {
-    if (!activeConcurso) return;
+    if (!activeConcurso || activeConcurso.planMode === "cronograma") return;
     const today = todayISO();
     updateActive((c) => {
       const base = c.dailyPlans[today] || [];
@@ -550,6 +566,15 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
   function updateSettings(field, value) {
     updateActive((c) => ({ ...c, settings: { ...c.settings, [field]: value } }));
+  }
+
+  function setPlanMode(mode) {
+    updateActive((c) => ({ ...c, planMode: mode }));
+  }
+
+  // `materiaIds` replaces the whole list for that weekday (empty = day off).
+  function updateCronograma(day, materiaIds) {
+    updateActive((c) => ({ ...c, cronograma: { ...c.cronograma, [day]: materiaIds } }));
   }
 
   function parseBulk() {
@@ -941,6 +966,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             addTopicQuestions={addTopicQuestions}
             pullNextMateria={pullNextMateria}
             canPullMore={
+              activeConcurso.planMode !== "cronograma" &&
               totalCount > 0 && doneCount === totalCount &&
               activeMateriaIds(activeConcurso.materias, activeConcurso.settings, activeConcurso.cycleCursor).length < activeConcurso.materias.length
             }
@@ -982,7 +1008,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
           />
         )}
 
-        {tab === "metas" && activeConcurso && <MetasView concurso={activeConcurso} updateSettings={updateSettings} />}
+        {tab === "metas" && activeConcurso && (
+          <MetasView concurso={activeConcurso} updateSettings={updateSettings} setPlanMode={setPlanMode} updateCronograma={updateCronograma} />
+        )}
         </main>
       </div>
     </div>
