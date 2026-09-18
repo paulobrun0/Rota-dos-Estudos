@@ -510,6 +510,22 @@ export default function App({ user, onLogout, onUserUpdate }) {
     });
   }
 
+  // Drag-and-drop's counterpart to moveMateria: the drop target can be
+  // anywhere in the list, not just one step away, so this splices the
+  // dragged matéria out and reinserts it at the target's current position.
+  function reorderMaterias(draggedId, targetId) {
+    if (draggedId === targetId) return;
+    updateActive((c) => {
+      const materias = [...c.materias];
+      const fromIdx = materias.findIndex((m) => m.id === draggedId);
+      const toIdx = materias.findIndex((m) => m.id === targetId);
+      if (fromIdx === -1 || toIdx === -1) return c;
+      const [moved] = materias.splice(fromIdx, 1);
+      materias.splice(toIdx, 0, moved);
+      return { ...c, materias };
+    });
+  }
+
   function removeTopic(materiaId, topicId) {
     updateActive((c) => {
       const clone = JSON.parse(JSON.stringify(c));
@@ -1015,6 +1031,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             removeMateria={removeMateria}
             removeTopic={removeTopic}
             moveMateria={moveMateria}
+            reorderMaterias={reorderMaterias}
             updateTopicNotes={updateTopicNotes}
             updateTopicLink={updateTopicLink}
             topicDrafts={topicDrafts}

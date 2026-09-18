@@ -1,15 +1,82 @@
-import React, { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ExternalLink, Library, Link2, Plus, StickyNote, Trash2, X } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ExternalLink, GripVertical, Library, Link2, Plus, StickyNote, Trash2, X } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
+export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, reorderMaterias, updateTopicNotes, updateTopicLink, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
+  // Drag state lives here (not in each card) since a drag needs to know
+  // about every OTHER card too — which one the pointer is currently over,
+  // to highlight it as the drop target. `dragState` also drives the little
+  // floating label that follows the pointer; `dragIdRef`/`overIdRef` mirror
+  // the same ids into refs purely so the pointerup handler (attached once
+  // per drag gesture, not re-attached on every pointermove) always reads
+  // the latest values instead of a stale closure.
+  const [dragState, setDragState] = useState(null);
+  const [overId, setOverId] = useState(null);
+  const dragIdRef = useRef(null);
+  const overIdRef = useRef(null);
+
+  function startDrag(m, e) {
+    e.preventDefault();
+    dragIdRef.current = m.id;
+    overIdRef.current = null;
+    setDragState({ id: m.id, x: e.clientX, y: e.clientY, name: m.name, color: m.color });
+    setOverId(null);
+  }
+
+  useEffect(() => {
+    if (!dragState) return;
+    function onMove(e) {
+      setDragState((d) => (d ? { ...d, x: e.clientX, y: e.clientY } : d));
+      const row = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-materia-id]");
+      const id = row ? row.getAttribute("data-materia-id") : null;
+      overIdRef.current = id;
+      setOverId(id);
+    }
+    function onUp() {
+      const fromId = dragIdRef.current;
+      const toId = overIdRef.current;
+      if (fromId && toId && fromId !== toId) reorderMaterias(fromId, toId);
+      dragIdRef.current = null;
+      overIdRef.current = null;
+      setDragState(null);
+      setOverId(null);
+      // The browser fires a "click" right after this pointerup, landing on
+      // whichever collapse-toggle button happens to sit under the release
+      // point (the original card, or the drop target if the drag moved
+      // over another one) — swallow that one click so a drag never also
+      // toggles a card open/closed as a side effect.
+      window.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); }, { capture: true, once: true });
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragState?.id]);
+
   return (
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>edital</div>
       <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 20 }}>
-        matérias e assuntos de <b style={{ color: colors.text }}>{concurso.name}</b>. cadastre manualmente ou importe várias de uma vez. a ordem das matérias abaixo define a ordem do rodízio diário — use as setas para reorganizar.
+        matérias e assuntos de <b style={{ color: colors.text }}>{concurso.name}</b>. cadastre manualmente ou importe várias de uma vez. a ordem das matérias abaixo define a ordem do rodízio diário — arraste pelo ⠿ ou use as setas para reorganizar.
       </div>
+
+      {dragState && (
+        <div
+          style={{
+            position: "fixed", left: dragState.x + 14, top: dragState.y + 10, zIndex: 1000, pointerEvents: "none",
+            background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${dragState.color}`,
+            borderRadius: 8, padding: "8px 14px", boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+            fontSize: 13.5, fontWeight: 700, color: colors.text, maxWidth: 240,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}
+        >
+          {dragState.name}
+        </div>
+      )}
 
       {contentBank && contentBank.length > 0 && (
         <ContentBankImporter concurso={concurso} contentBank={contentBank} importFromBank={importFromBank} />
@@ -90,6 +157,9 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
           moveMateria={moveMateria}
           updateTopicNotes={updateTopicNotes}
           updateTopicLink={updateTopicLink}
+          onDragHandlePointerDown={(e) => startDrag(m, e)}
+          isDragging={dragState?.id === m.id}
+          isDropTarget={overId === m.id && dragState && dragState.id !== m.id}
         />
       ))}
     </div>
@@ -187,7 +257,7 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
   );
 }
 
-function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink }) {
+function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, onDragHandlePointerDown, isDragging, isDropTarget }) {
   const [collapsed, setCollapsed] = useState(false);
   const pendentes = m.topics.filter((t) => t.status === "pendente").length;
   const estudados = m.topics.length - pendentes;
@@ -199,7 +269,14 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
   }
 
   return (
-    <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${m.color}`, borderRadius: 10, padding: 16, marginBottom: 12 }}>
+    <div
+      data-materia-id={m.id}
+      style={{
+        background: colors.surface, border: `1px solid ${isDropTarget ? colors.amber : colors.border}`,
+        borderLeft: `3px solid ${m.color}`, borderRadius: 10, padding: 16, marginBottom: 12,
+        opacity: isDragging ? 0.4 : 1, transition: "opacity 0.1s, border-color 0.1s",
+      }}
+    >
       <button
         onClick={() => setCollapsed((c) => !c)}
         aria-expanded={!collapsed}
@@ -209,6 +286,15 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span
+            role="button"
+            aria-label="arrastar para reordenar"
+            title="arrastar para reordenar"
+            onPointerDown={(e) => { e.stopPropagation(); onDragHandlePointerDown(e); }}
+            style={{ ...iconBtnStyle, cursor: "grab", touchAction: "none" }}
+          >
+            <GripVertical size={15} />
+          </span>
           <span style={{ color: colors.textFaint, display: "flex" }}>
             {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
           </span>
