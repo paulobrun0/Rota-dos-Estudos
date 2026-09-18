@@ -62,7 +62,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", rowGap: 10, marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={() => setSelectedDate(addDaysISO(selectedDate, -1))} style={navBtnStyle}><ChevronLeft size={16} /></button>
           <div>
@@ -73,14 +73,14 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
           </div>
           <button onClick={() => setSelectedDate(addDaysISO(selectedDate, 1))} style={navBtnStyle}><ChevronRight size={16} /></button>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {isToday && exam && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, background: examStyle.bg, color: examStyle.fg, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", background: examStyle.bg, color: examStyle.fg, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
               <CalendarClock size={14} /> {exam.text}
             </div>
           )}
           {isToday && streak > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, background: colors.amberSoft, color: colors.amber, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", background: colors.amberSoft, color: colors.amber, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
               <Flame size={14} /> {streak} dia{streak !== 1 ? "s" : ""}
             </div>
           )}
@@ -92,7 +92,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+      <div className="stat-grid" style={{ marginBottom: 20 }}>
         <StatTile icon={<Flame size={16} color={colors.amber} />} label="sequência" value={`${streak} dia${streak !== 1 ? "s" : ""}`} />
         <StatTile
           icon={<Percent size={16} color={colors.amber} />}

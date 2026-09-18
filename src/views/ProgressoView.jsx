@@ -35,7 +35,7 @@ export function ProgressoView({ activity, questionActivity, activeConcurso, addT
         sua constância ao longo do tempo, somando todos os concursos.
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 26 }}>
+      <div className="stat-grid" style={{ marginBottom: 26 }}>
         <StatCard icon={<Flame size={16} color={colors.amber} />} label="sequência atual" value={`${current} dia${current !== 1 ? "s" : ""}`} />
         <StatCard icon={<Trophy size={16} color={colors.amber} />} label="recorde" value={`${longest} dia${longest !== 1 ? "s" : ""}`} />
         <StatCard icon={<Check size={16} color={colors.amber} />} label="cards concluídos" value={`${totalCards}`} sub={`em ${totalDias} dia${totalDias !== 1 ? "s" : ""}`} />

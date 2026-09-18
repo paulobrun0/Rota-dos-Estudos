@@ -28,7 +28,8 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
             <div style={{ fontSize: 11.5, color: colors.textFaint, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, margin: "0 2px 10px" }}>
               {firstDay.getDate()} - {lastDay.getDate()} de {firstDay.toLocaleDateString("pt-BR", { month: "long" })}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
+            <div style={{ overflowX: "auto" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(72px, 1fr))", gap: 8 }}>
               {days.map((iso) => {
                 const plan = concurso.dailyPlans[iso];
                 const isToday = iso === today;
@@ -70,7 +71,7 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
                     </div>
                     {total === null ? (
                       <div style={{ fontSize: 11.5, color: colors.textFaint }}>
-                        {isFuture ? (projectedTotal > 0 ? `~${projectedTotal} previstos` : "previsão vazia") : "sem plano"}
+                        {isFuture ? (projectedTotal > 0 ? `~${projectedTotal} previstos` : "vazio") : "sem plano"}
                       </div>
                     ) : total === 0 ? (
                       <div style={{ fontSize: 11.5, color: colors.textFaint }}>vazio</div>
@@ -85,6 +86,7 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
                   </button>
                 );
               })}
+            </div>
             </div>
           </section>
         );

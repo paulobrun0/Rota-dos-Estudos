@@ -875,6 +875,10 @@ export default function App({ user, onLogout, onUserUpdate }) {
           }
           .app-main { padding: 16px !important; }
         }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        @media (max-width: 520px) {
+          .stat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
       `}</style>
 
       <div className={`nav-backdrop${mobileNavOpen ? " open" : ""}`} onClick={() => setMobileNavOpen(false)} />
