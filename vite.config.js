@@ -8,6 +8,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      // The default auto-injected registerSW.js only calls .register() —
+      // it never tells an already-open tab that a new version landed, so
+      // someone who leaves the PWA open (the common case for a daily-use
+      // study app) can sit on stale JS indefinitely. injectRegister: false
+      // turns that off in favor of the virtual:pwa-register/react hook
+      // (see UpdateBanner.jsx), which we drive ourselves so we can actually
+      // surface "nova versão disponível" instead of updating silently.
+      injectRegister: false,
       // Custom service worker (src/sw.js) instead of the auto-generated one
       // — needed for the push/notificationclick handlers, which
       // generateSW's config alone can't add. injectManifest still gives us

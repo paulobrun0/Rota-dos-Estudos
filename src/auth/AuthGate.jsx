@@ -3,6 +3,7 @@ import App from "../App.jsx";
 import { colors } from "../styles/colors.js";
 import { fetchCurrentUser, logoutUser } from "./api.js";
 import { LoginForm } from "./LoginForm.jsx";
+import { UpdateBanner } from "../components/UpdateBanner.jsx";
 
 // How often an idle-but-open tab re-checks that its session is still the
 // live one for its account — a second login elsewhere (see server's
@@ -59,17 +60,23 @@ export default function AuthGate() {
     }
   }
 
+  let content;
   if (status === "loading") {
-    return (
+    content = (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: colors.bg, color: colors.textMuted, fontFamily: "Inter, system-ui, sans-serif" }}>
         carregando...
       </div>
     );
+  } else if (status === "anon") {
+    content = <LoginForm onAuthed={handleAuthed} noticeMessage={kickedReason} />;
+  } else {
+    content = <App user={user} onLogout={handleLogout} onUserUpdate={setUser} />;
   }
 
-  if (status === "anon") {
-    return <LoginForm onAuthed={handleAuthed} noticeMessage={kickedReason} />;
-  }
-
-  return <App user={user} onLogout={handleLogout} onUserUpdate={setUser} />;
+  return (
+    <>
+      {content}
+      <UpdateBanner />
+    </>
+  );
 }

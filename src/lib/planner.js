@@ -137,6 +137,20 @@ export function pickBatch(m, topicsPerDay, usedTopicIds) {
   return { topics: candidates.slice(0, topicsPerDay), tipo: "novo" };
 }
 
+// A same-day decrease to topicsPerDay should show up today too, same as an
+// increase — otherwise changing the number reads as "did nothing" until
+// the matéria's batch finishes on its own. Only pending (not yet `feito`)
+// cards are ever removed, and the newest-assigned ones go first, so a
+// completed topic never disappears out from under the user just because
+// the quota dropped. Mutates `cards` in place.
+function trimExcessNovoCards(cards, materiaId, excessCount) {
+  const pending = cards.filter((c) => c.materiaId === materiaId && c.tipo === "novo" && !c.feito);
+  const removeIds = new Set(pending.slice(Math.max(0, pending.length - excessCount)).map((c) => c.id));
+  for (let i = cards.length - 1; i >= 0; i--) {
+    if (removeIds.has(cards[i].id)) cards.splice(i, 1);
+  }
+}
+
 // Builds "today"'s plan from whatever carried over — cards not yet done,
 // regardless of which earlier day they were first assigned — plus the
 // current cycle cursor. Advances the cursor past any matéria whose batch is
@@ -183,15 +197,18 @@ export function buildCyclePlan(materias, settings, cursorId, carryOverCards, tod
   }
 
   activeMateriaIds(materias, settings, cursor).forEach((materiaId) => {
-    // Tops up to topicsPerDay rather than skipping outright once a batch
-    // exists — a mid-day increase to "assuntos por matéria" (e.g. 2 → 5)
-    // would otherwise never show up today, since a rebuild always carries
-    // today's existing batch forward. A decrease is left alone here (never
-    // shrinks or removes already-assigned cards) and only takes effect once
-    // this matéria's batch is finished and the cursor moves past it.
+    // Tops up to (or trims down to) topicsPerDay rather than leaving today's
+    // batch as-is — a mid-day change to "assuntos por matéria" (e.g. 2 → 5,
+    // or 5 → 2) would otherwise never show up today, since a rebuild always
+    // carries today's existing batch forward. See trimExcessNovoCards for
+    // why a decrease only ever removes still-pending cards.
     const already = cards.filter((c) => c.materiaId === materiaId && c.tipo === "novo").length;
     const remaining = topicsPerDay - already;
-    if (remaining <= 0) return;
+    if (remaining < 0) {
+      trimExcessNovoCards(cards, materiaId, -remaining);
+      return;
+    }
+    if (remaining === 0) return;
     const m = materias.find((x) => x.id === materiaId);
     if (!m) return;
     // A matéria stamped with a future createdAt — see materiaCreationDate in
@@ -257,12 +274,16 @@ export function buildCronogramaPlan(materias, settings, cronograma, carryOverCar
 
   if (topicsPerDay > 0) {
     activeIds.forEach((materiaId) => {
-      // Tops up to topicsPerDay rather than skipping outright — see the
-      // matching comment in buildCyclePlan for why (a mid-day increase to
-      // "assuntos por matéria" should show up today, not just tomorrow).
+      // Tops up to (or trims down to) topicsPerDay — see the matching
+      // comment in buildCyclePlan for why a mid-day change in either
+      // direction should show up today, not just tomorrow.
       const already = cards.filter((c) => c.materiaId === materiaId && c.tipo === "novo").length;
       const remaining = topicsPerDay - already;
-      if (remaining <= 0) return;
+      if (remaining < 0) {
+        trimExcessNovoCards(cards, materiaId, -remaining);
+        return;
+      }
+      if (remaining === 0) return;
       const m = materias.find((x) => x.id === materiaId);
       if (!m || m.createdAt > today) return;
       const { topics, tipo } = pickBatch(m, remaining, usedTopicIds);
