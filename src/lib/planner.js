@@ -157,8 +157,15 @@ function trimExcessNovoCards(cards, materiaId, excessCount) {
 // now fully cleared and gives newly-active matérias a fresh batch. Returns
 // { cards, cursor }; the caller persists both onto the concurso.
 export function buildCyclePlan(materias, settings, cursorId, carryOverCards, today = todayISO()) {
+  if (materias.length === 0) return { cards: [], cursor: cursorId };
+  // topicsPerDay === 0 isn't special-cased: the top-up/trim loop below
+  // already treats it as "trim every pending novo card down to 0, add
+  // none" (the same logic any other decrease goes through), and spaced
+  // reviews run independently afterward regardless of this value — a
+  // paused-on-new-content day shouldn't also silently stop showing due
+  // reviews, matching how buildCronogramaPlan already keeps the two concerns
+  // separate.
   const topicsPerDay = settings?.topicsPerDay || 0;
-  if (topicsPerDay === 0 || materias.length === 0) return { cards: [], cursor: cursorId };
 
   // Keep every carried-over card whose topic still exists AND whose matéria
   // is still in the active window as of the incoming cursor (before this
