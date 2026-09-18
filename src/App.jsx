@@ -69,14 +69,18 @@ function buildDayPlan(c, base, today) {
 // A matéria's createdAt decides (see buildCyclePlan's `m.createdAt > today`
 // guard) whether it can join today's rotation the moment its turn arrives,
 // or has to wait for tomorrow's rebuild. Today's own date is right when
-// nothing has been shown yet today — first-ever setup, or adding a matéria
-// before opening "hoje" at all. But once today's plan already exists, a
-// matéria added now is a genuine addition mid-session, not part of that
-// plan's original set, so it's stamped tomorrow instead — guaranteed
-// deferred regardless of whether a card happens to be done yet today.
+// nothing real has been shown yet today — first-ever setup, or adding a
+// matéria before opening "hoje" at all, but also a brand-new concurso whose
+// only "plan" for today is the empty placeholder every fresh concurso starts
+// with (dailyPlans[today] = [], set by the very first rebuild, before the
+// user has added anything at all) — there's nothing there yet to disturb.
+// Once today's plan has actual cards in it, though, a matéria added now is a
+// genuine addition mid-session, not part of that plan's original set, so
+// it's stamped tomorrow instead — guaranteed deferred regardless of whether
+// a card happens to be done yet today.
 function materiaCreationDate(dailyPlans) {
   const today = todayISO();
-  return dailyPlans[today] ? addDaysISO(today, 1) : today;
+  return dailyPlans[today]?.length > 0 ? addDaysISO(today, 1) : today;
 }
 
 // Shared by the free-text bulk importer and the content-bank importer: given
