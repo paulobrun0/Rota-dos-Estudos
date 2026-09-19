@@ -737,12 +737,20 @@ export default function App({ user, onLogout, onUserUpdate }) {
     setBulkHintMatches((matches) => matches.filter((m) => m.materiaName !== materiaName));
   }
 
-  // Imports one or more matérias (with their topics) from the shared content
-  // bank into the active concurso, merging into existing matérias by name.
-  function importFromBank(bankIds) {
-    if (!activeConcurso || bankIds.length === 0) return 0;
-    const idSet = new Set(bankIds);
-    const entries = contentBank.filter((m) => idSet.has(m.id));
+  // Imports selected assuntos from one or more bank matérias into the active
+  // concurso, merging into existing matérias by name. `selections` maps each
+  // chosen bank matéria's id to exactly which of its assunto names to bring
+  // in — picking a handful out of a big matéria doesn't have to mean taking
+  // all of it.
+  function importFromBank(selections) {
+    if (!activeConcurso || selections.size === 0) return 0;
+    const entries = [...selections.entries()]
+      .map(([bankId, topicNames]) => {
+        const bankEntry = contentBank.find((m) => m.id === bankId);
+        return bankEntry && topicNames.size > 0 ? { name: bankEntry.name, topics: [...topicNames] } : null;
+      })
+      .filter(Boolean);
+    if (entries.length === 0) return 0;
     const dryRun = JSON.parse(JSON.stringify(activeConcurso));
     const count = mergeMateriaEntries(dryRun, entries, contentBank);
     updateActive((c) => {

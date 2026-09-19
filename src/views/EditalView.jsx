@@ -169,18 +169,70 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
 function ContentBankImporter({ concurso, contentBank, importFromBank }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState(() => new Set());
+  // bankMateriaId -> Set<topicName> — which individual assuntos are picked,
+  // not just which matérias, so a matéria with 80 assuntos doesn't have to
+  // come in all-or-nothing.
+  const [selected, setSelected] = useState(() => new Map());
+  const [expanded, setExpanded] = useState(() => new Set());
   const [feedback, setFeedback] = useState("");
 
-  const ownedNames = useMemo(() => new Set(concurso.materias.map((m) => m.name.toLowerCase())), [concurso.materias]);
+  // Per matéria name, the assuntos the user already has — lets the topic
+  // list mark exactly which ones are already in the edital instead of just
+  // flagging the whole matéria as "already added".
+  const ownedTopicsByMateria = useMemo(() => {
+    const map = new Map();
+    concurso.materias.forEach((m) => {
+      map.set(m.name.toLowerCase(), new Set(m.topics.map((t) => t.name.toLowerCase())));
+    });
+    return map;
+  }, [concurso.materias]);
 
+  // A search term matches either the matéria name (show every assunto) or
+  // individual assunto names (narrow that matéria's list down to just the
+  // matches) — `matchedTopics: null` means "show them all".
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return contentBank.filter((m) => !q || m.name.toLowerCase().includes(q));
+    if (!q) return contentBank.map((m) => ({ ...m, matchedTopics: null }));
+    return contentBank
+      .map((m) => {
+        const nameMatches = m.name.toLowerCase().includes(q);
+        if (nameMatches) return { ...m, matchedTopics: null };
+        const matchedTopics = m.topics.filter((t) => t.toLowerCase().includes(q));
+        return matchedTopics.length > 0 ? { ...m, matchedTopics } : null;
+      })
+      .filter(Boolean);
   }, [contentBank, search]);
 
-  function toggle(id) {
+  function visibleTopicsFor(m) {
+    return m.matchedTopics || m.topics;
+  }
+
+  function toggleMateria(m) {
+    const topics = visibleTopicsFor(m);
     setSelected((prev) => {
+      const next = new Map(prev);
+      const current = next.get(m.id);
+      const allSelected = current && topics.every((t) => current.has(t));
+      if (allSelected) next.delete(m.id);
+      else next.set(m.id, new Set(topics));
+      return next;
+    });
+  }
+
+  function toggleTopic(bankId, topicName) {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      const current = new Set(next.get(bankId) || []);
+      if (current.has(topicName)) current.delete(topicName);
+      else current.add(topicName);
+      if (current.size === 0) next.delete(bankId);
+      else next.set(bankId, current);
+      return next;
+    });
+  }
+
+  function toggleExpanded(id) {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -188,12 +240,17 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
     });
   }
 
+  const totalSelected = useMemo(() => {
+    let total = 0;
+    selected.forEach((set) => { total += set.size; });
+    return total;
+  }, [selected]);
+
   function handleImport() {
-    const ids = [...selected];
-    if (ids.length === 0) return;
-    const count = importFromBank(ids);
+    if (totalSelected === 0) return;
+    const count = importFromBank(selected);
     setFeedback(count > 0 ? `${count} assunto(s) importado(s).` : "nada de novo — já estavam no seu edital.");
-    setSelected(new Set());
+    setSelected(new Map());
   }
 
   return (
@@ -211,7 +268,7 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
 
       {!open && (
         <div style={{ fontSize: 12.5, color: colors.textMuted, marginTop: 6 }}>
-          {contentBank.length} matéria(s) prontas no banco compartilhado — importe direto pro seu edital sem digitar nada.
+          {contentBank.length} matéria(s) prontas no banco compartilhado — importe a matéria inteira ou só os assuntos que interessam.
         </div>
       )}
 
@@ -220,34 +277,71 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="buscar matéria..."
+            placeholder="buscar matéria ou assunto..."
             style={{ ...inputStyle, marginBottom: 10 }}
           />
-          <div style={{ maxHeight: 260, overflowY: "auto", border: `1px solid ${colors.border}`, borderRadius: 8, marginBottom: 10 }}>
+          <div style={{ maxHeight: 320, overflowY: "auto", border: `1px solid ${colors.border}`, borderRadius: 8, marginBottom: 10 }}>
             {filtered.length === 0 && (
-              <div style={{ padding: 12, fontSize: 12.5, color: colors.textFaint }}>nenhuma matéria encontrada.</div>
+              <div style={{ padding: 12, fontSize: 12.5, color: colors.textFaint }}>nenhuma matéria ou assunto encontrado.</div>
             )}
             {filtered.map((m) => {
-              const already = ownedNames.has(m.name.toLowerCase());
+              const topics = visibleTopicsFor(m);
+              const ownedSet = ownedTopicsByMateria.get(m.name.toLowerCase()) || new Set();
+              const ownedCount = topics.filter((t) => ownedSet.has(t.toLowerCase())).length;
+              const selectedSet = selected.get(m.id);
+              const selectedCount = selectedSet ? topics.filter((t) => selectedSet.has(t)).length : 0;
+              const isExpanded = expanded.has(m.id) || Boolean(m.matchedTopics);
               return (
-                <label
-                  key={m.id}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", fontSize: 13,
-                    borderTop: `1px solid ${colors.border}`, cursor: "pointer",
-                  }}
-                >
-                  <input type="checkbox" checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
-                  <span style={{ flex: 1, color: colors.text }}>{m.name}</span>
-                  <span className="mono" style={{ fontSize: 11, color: colors.textFaint }}>{m.topics.length} assuntos</span>
-                  {already && <span style={{ fontSize: 10.5, color: colors.teal }}>já no edital</span>}
-                </label>
+                <div key={m.id} style={{ borderTop: `1px solid ${colors.border}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedCount > 0 && selectedCount === topics.length}
+                      onChange={() => toggleMateria(m)}
+                      title="selecionar todos os assuntos listados dessa matéria"
+                    />
+                    <button
+                      onClick={() => toggleExpanded(m.id)}
+                      aria-label={isExpanded ? "recolher assuntos" : "ver assuntos"}
+                      style={{ background: "transparent", border: "none", padding: 2, display: "flex", color: colors.textFaint }}
+                    >
+                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </button>
+                    <span style={{ flex: 1, color: colors.text, cursor: "pointer" }} onClick={() => toggleExpanded(m.id)}>{m.name}</span>
+                    <span className="mono" style={{ fontSize: 11, color: colors.textFaint }}>
+                      {selectedCount > 0 ? `${selectedCount}/${topics.length}` : topics.length} assunto{topics.length !== 1 ? "s" : ""}
+                    </span>
+                    {ownedCount > 0 && (
+                      <span style={{ fontSize: 10.5, color: colors.teal }}>
+                        {ownedCount === topics.length ? "já no edital" : `${ownedCount} já no edital`}
+                      </span>
+                    )}
+                  </div>
+                  {isExpanded && (
+                    <div style={{ paddingLeft: 34, paddingBottom: 6 }}>
+                      {topics.map((topicName) => {
+                        const topicAlready = ownedSet.has(topicName.toLowerCase());
+                        const topicSelected = selectedSet?.has(topicName) || false;
+                        return (
+                          <label
+                            key={topicName}
+                            style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 10px 4px 0", fontSize: 12.5, cursor: "pointer" }}
+                          >
+                            <input type="checkbox" checked={topicSelected} onChange={() => toggleTopic(m.id, topicName)} />
+                            <span style={{ flex: 1, color: topicAlready ? colors.textFaint : colors.text }}>{topicName}</span>
+                            {topicAlready && <span style={{ fontSize: 10, color: colors.teal }}>já no edital</span>}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button onClick={handleImport} disabled={selected.size === 0} style={{ ...primaryBtnStyle, marginTop: 0, opacity: selected.size === 0 ? 0.5 : 1 }}>
-              <Plus size={14} /> importar {selected.size > 0 ? `(${selected.size})` : ""}
+            <button onClick={handleImport} disabled={totalSelected === 0} style={{ ...primaryBtnStyle, marginTop: 0, opacity: totalSelected === 0 ? 0.5 : 1 }}>
+              <Plus size={14} /> importar {totalSelected > 0 ? `(${totalSelected})` : ""}
             </button>
             {feedback && <span style={{ fontSize: 12, color: colors.textMuted }}>{feedback}</span>}
           </div>
