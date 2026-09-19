@@ -16,6 +16,21 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
   const dragIdRef = useRef(null);
   const overIdRef = useRef(null);
 
+  // Lives here (not inside each card) so "expandir todas"/"recolher todas"
+  // can drive every card at once, while a single card's own toggle still
+  // works independently — not being in this set just means collapsed,
+  // which is why a newly added matéria starts collapsed with no extra
+  // bookkeeping needed.
+  const [expandedIds, setExpandedIds] = useState(() => new Set());
+  function toggleExpanded(id) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   function startDrag(m, e) {
     e.preventDefault();
     dragIdRef.current = m.id;
@@ -143,6 +158,17 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
         <div style={{ color: colors.textFaint, fontSize: 14 }}>nenhuma matéria cadastrada ainda.</div>
       )}
 
+      {concurso.materias.length > 0 && (
+        <div style={{ display: "flex", gap: 14, marginBottom: 10 }}>
+          <button onClick={() => setExpandedIds(new Set(concurso.materias.map((m) => m.id)))} style={{ background: "transparent", border: "none", padding: 0, fontSize: 12.5, color: colors.amber, cursor: "pointer" }}>
+            expandir todas
+          </button>
+          <button onClick={() => setExpandedIds(new Set())} style={{ background: "transparent", border: "none", padding: 0, fontSize: 12.5, color: colors.amber, cursor: "pointer" }}>
+            recolher todas
+          </button>
+        </div>
+      )}
+
       {concurso.materias.map((m, index) => (
         <MateriaEditalCard
           key={m.id}
@@ -160,6 +186,8 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
           onDragHandlePointerDown={(e) => startDrag(m, e)}
           isDragging={dragState?.id === m.id}
           isDropTarget={overId === m.id && dragState && dragState.id !== m.id}
+          isExpanded={expandedIds.has(m.id)}
+          onToggleExpanded={() => toggleExpanded(m.id)}
         />
       ))}
     </div>
@@ -351,8 +379,8 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
   );
 }
 
-function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, onDragHandlePointerDown, isDragging, isDropTarget }) {
-  const [collapsed, setCollapsed] = useState(false);
+function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, onDragHandlePointerDown, isDragging, isDropTarget, isExpanded, onToggleExpanded }) {
+  const collapsed = !isExpanded;
   const pendentes = m.topics.filter((t) => t.status === "pendente").length;
   const estudados = m.topics.length - pendentes;
 
@@ -372,7 +400,7 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
       }}
     >
       <button
-        onClick={() => setCollapsed((c) => !c)}
+        onClick={onToggleExpanded}
         aria-expanded={!collapsed}
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",

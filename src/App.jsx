@@ -657,7 +657,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
       setError('Esse texto não tem o nome da matéria. Digite o nome no campo "nome da matéria" (abaixo) e clique em importar de novo.');
       return;
     }
-    let entries = rawEntries || bulkText
+    const entries = rawEntries || bulkText
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean)
@@ -667,20 +667,18 @@ export default function App({ user, onLogout, onUserUpdate }) {
         return { name: line.slice(0, sepIndex), topics: line.slice(sepIndex + 1).split(";") };
       })
       .filter(Boolean);
-    // Texto de edital colado é uma extração mecânica do texto da banca — por
-    // melhor que o parser fique, não tem como bater com a granularidade real
-    // de estudo (itens "guarda-chuva" que o parser não reconhece, redações
-    // diferentes da banca, etc). Quando a matéria já tem uma entrada
-    // validada no banco compartilhado, usamos ela por completo em vez do que
-    // foi extraído do texto — só se aplica ao formato numerado do edital;
-    // o formato manual "Matéria: assunto 1; assunto 2" é curadoria
-    // deliberada do usuário e nunca é substituído.
-    if (rawEntries) {
-      entries = entries.map((entry) => {
-        const bankEntry = contentBank.find((b) => normalizeMateriaName(b.name) === normalizeMateriaName(entry.name));
-        return bankEntry ? { name: entry.name, topics: bankEntry.topics } : entry;
-      });
-    }
+    // A matéria name matching an existing bank entry used to auto-swap the
+    // pasted text for the bank's full topic list here, silently — the
+    // reasoning being that a mechanical text extraction can't match real
+    // study granularity. But "same matéria name" doesn't mean "same scope":
+    // a specific edital's own item list is sometimes deliberately narrower
+    // than the bank's generic version (a "Noções de X" for one cargo, or a
+    // reduced slice like this concurso's "Estatística" alongside "Análise
+    // de Dados"), and silently inflating it with the bank's broader version
+    // wastes the user's study time on things this exam doesn't cover. So
+    // this never auto-replaces — richerMatches below surfaces the same
+    // "usar os N do banco" suggestion the manual-paste format already had,
+    // leaving the swap opt-in either way.
     // Counted against a read-only snapshot first, not from inside the
     // updater passed to updateActive: React (in dev/StrictMode) can invoke
     // that updater more than once, and since mergeMateriaEntries is
@@ -700,11 +698,14 @@ export default function App({ user, onLogout, onUserUpdate }) {
     });
     setBulkText("");
 
-    // No formato numerado (rawEntries), matérias com match no banco já foram
-    // substituídas acima — não sobra gap pra avisar. Isso só ainda dispara
-    // para o formato manual "Matéria: assunto 1; assunto 2", que é curadoria
-    // deliberada do usuário: aí só avisamos e deixamos a troca por completo
-    // opcional (o botão "usar os N do banco"), sem forçar.
+    // Surfaces a "usar os N do banco" suggestion whenever the bank's
+    // version of a just-imported matéria is more detailed than what was
+    // just parsed — for both the numbered-edital format and the manual
+    // "Matéria: assunto 1; assunto 2" format alike. Never applied
+    // automatically: the user decides per matéria whether the bank's
+    // (possibly broader-scoped) version is actually what this concurso
+    // needs — see the comment above on why a name match alone isn't enough
+    // to assume it's a strict upgrade.
     const richerMatches = entries
       .map((entry) => {
         const normalized = normalizeMateriaName(entry.name);
