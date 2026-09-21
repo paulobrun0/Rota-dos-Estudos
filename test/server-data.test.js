@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { addDaysISO, todayISO } from "../src/lib/date.js";
+import { brazilIsoDaysAgo } from "../server/brazilTime.js";
 
 process.env.SQLITE_PATH = ":memory:";
 process.env.AUTH_RATE_LIMIT = "1000";
@@ -243,14 +243,16 @@ describe("GET /api/ranking", () => {
 
   test("day/week/month question periods only include activity within their own cutoff", async () => {
     const user = await registerFresh();
-    const today = todayISO();
+    // Built the same way the route itself computes "today" (Brazil-shifted,
+    // not the test runner's own local/UTC clock) so this test is correct
+    // regardless of which timezone CI happens to run in.
     await setPlanData(user.cookie, {
       concursos: [],
       questionActivity: {
-        [today]: { total: 1, correct: 1 },
-        [addDaysISO(today, -3)]: { total: 10, correct: 5 },
-        [addDaysISO(today, -10)]: { total: 100, correct: 50 },
-        [addDaysISO(today, -40)]: { total: 1000, correct: 500 },
+        [brazilIsoDaysAgo(0)]: { total: 1, correct: 1 },
+        [brazilIsoDaysAgo(3)]: { total: 10, correct: 5 },
+        [brazilIsoDaysAgo(10)]: { total: 100, correct: 50 },
+        [brazilIsoDaysAgo(40)]: { total: 1000, correct: 500 },
       },
     });
 

@@ -11,6 +11,7 @@ import {
   generateRecoveryCode, formatRecoveryCode, normalizeRecoveryInput, generateTempPassword, generateSessionToken,
 } from "./auth.js";
 import { computeStreaks } from "../src/lib/streaks.js";
+import { brazilIsoDaysAgo } from "./brazilTime.js";
 import { runBackup, listBackups } from "./backup.js";
 import { isPushConfigured, removeSubscription, saveSubscription, vapidPublicKey } from "./push.js";
 import { startDailyReminderSchedule } from "./dailyReminder.js";
@@ -411,12 +412,6 @@ app.post("/api/me/change-email", authLimiter, requireAuth, (req, res) => {
   res.json({ email: normalizedEmail });
 });
 
-function isoDaysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-
 // Aggregate, read-only view across every opted-in user's plan data: total
 // topics studied, per-matéria counts (matched by lowercased name), and
 // questions solved per period — so people can see how they compare without
@@ -424,9 +419,13 @@ function isoDaysAgo(n) {
 app.get("/api/ranking", requireAuth, (req, res) => {
   if (!isFeatureEnabled("ranking")) return res.status(403).json({ error: "o ranking está desativado no momento" });
   const rows = listRankingData.all();
-  const dayCutoff = isoDaysAgo(0);
-  const weekCutoff = isoDaysAgo(6);
-  const monthCutoff = isoDaysAgo(29);
+  // Brazil-shifted, not the server's own UTC date — see brazilTime.js for
+  // why: questionActivity's keys are dates the client computed in its own
+  // (Brazil) local time, and a plain UTC "today" here would disagree with
+  // that for about 3 hours every evening.
+  const dayCutoff = brazilIsoDaysAgo(0);
+  const weekCutoff = brazilIsoDaysAgo(6);
+  const monthCutoff = brazilIsoDaysAgo(29);
 
   const users = [];
   const periodTotals = { day: [], week: [], month: [] };

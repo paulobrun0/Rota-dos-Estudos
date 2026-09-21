@@ -1,9 +1,9 @@
 import db from "./db.js";
+import { BRAZIL_UTC_OFFSET_HOURS } from "./brazilTime.js";
 import { sendToUser } from "./push.js";
 
-// Brazil is UTC-3 (no DST currently) and the VPS itself runs in UTC, so a
-// user's local reminder_hour maps to (reminder_hour + 3) % 24 in UTC.
-const BRAZIL_UTC_OFFSET = 3;
+// A user's local reminder_hour maps to (reminder_hour + offset) % 24 in UTC
+// — see brazilTime.js for the shared offset and why it's needed.
 const CHECK_INTERVAL_MS = 15 * 60 * 1000;
 
 // reminder_last_sent is tracked per-user (on the users row) rather than in a
@@ -51,7 +51,7 @@ export function startDailyReminderSchedule() {
     const today = todayUTC();
     const rows = listSubscribedUsers.all();
     for (const row of rows) {
-      const targetUtcHour = (row.reminder_hour + BRAZIL_UTC_OFFSET) % 24;
+      const targetUtcHour = (row.reminder_hour + BRAZIL_UTC_OFFSET_HOURS) % 24;
       if (nowUtcHour !== targetUtcHour || row.reminder_last_sent === today) continue;
       markSent.run(today, row.id);
       try {
