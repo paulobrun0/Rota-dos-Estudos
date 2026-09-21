@@ -235,14 +235,20 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
     return m.matchedTopics || m.topics;
   }
 
+  // Only adds/removes whichever topics are currently VISIBLE (the search
+  // might be narrowing `topics` down to a few matches) — replacing the whole
+  // per-matéria set outright would silently drop any selection made earlier
+  // under a different (or no) search filter.
   function toggleMateria(m) {
     const topics = visibleTopicsFor(m);
     setSelected((prev) => {
+      const current = prev.get(m.id) || new Set();
+      const allSelected = topics.length > 0 && topics.every((t) => current.has(t));
+      const updated = new Set(current);
+      topics.forEach((t) => (allSelected ? updated.delete(t) : updated.add(t)));
       const next = new Map(prev);
-      const current = next.get(m.id);
-      const allSelected = current && topics.every((t) => current.has(t));
-      if (allSelected) next.delete(m.id);
-      else next.set(m.id, new Set(topics));
+      if (updated.size === 0) next.delete(m.id);
+      else next.set(m.id, updated);
       return next;
     });
   }

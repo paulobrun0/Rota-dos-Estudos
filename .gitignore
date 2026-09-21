@@ -4,6 +4,7 @@ dist/
 .env.*
 !.env.example
 server/*.sqlite
+server/backups/
 .claude/settings.local.json
 
 # cadernos de provas baixados das bancas (binários grandes)

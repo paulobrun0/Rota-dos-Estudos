@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 import db from "./db.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const BACKUP_DIR = path.join(__dirname, "backups");
+// Overridable for the same reason as SQLITE_PATH in db.js — tests get their
+// own throwaway directory instead of writing into the real backups/ folder.
+const BACKUP_DIR = process.env.BACKUP_DIR || path.join(__dirname, "backups");
 const RETENTION = 14;
 
 fs.mkdirSync(BACKUP_DIR, { recursive: true });

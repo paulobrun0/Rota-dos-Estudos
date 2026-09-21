@@ -26,7 +26,7 @@ export default function AuthGate() {
     if (status !== "authed") return;
     const id = setInterval(() => {
       fetchCurrentUser().catch((e) => {
-        if (e.code === "SESSION_SUPERSEDED" || e.code === "MAINTENANCE") {
+        if (e.code === "SESSION_SUPERSEDED" || e.code === "MAINTENANCE" || e.code === "SUSPENDED" || e.code === "SESSION_INVALID") {
           setKickedReason(e.message);
           setUser(null);
           setStatus("anon");

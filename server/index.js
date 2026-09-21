@@ -1,6 +1,6 @@
 import "dotenv/config";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
@@ -77,7 +77,10 @@ const PORT = process.env.PORT || 4000;
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  // Overridable so tests that need many auth calls (unrelated to testing the
+  // limiter itself) aren't throttled by it — unset in dev/production, where
+  // it's always the real 20.
+  limit: Number(process.env.AUTH_RATE_LIMIT) || 20,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -166,8 +169,13 @@ function isFeatureEnabled(key) {
 // JWT carries an older, superseded session_token.
 function requireCurrentUser(req, res, next) {
   const user = findUserById.get(req.userId);
-  if (!user) return res.status(401).json({ error: "não autenticado" });
-  if (user.is_suspended) return res.status(403).json({ error: "esta conta foi suspensa" });
+  // No `code` distinguishes "never existed" from "deleted after this token
+  // was issued" — both mean the same thing to the client: whatever session
+  // it thought it had is gone, and AuthGate's periodic check (see
+  // SESSION_INVALID there) uses this to boot an already-open tab right away
+  // instead of leaving it looking logged-in until its next real API call.
+  if (!user) return res.status(401).json({ error: "não autenticado", code: "SESSION_INVALID" });
+  if (user.is_suspended) return res.status(403).json({ error: "esta conta foi suspensa", code: "SUSPENDED" });
   // Strict, not just "if a session_token is set": after an explicit logout
   // session_token is cleared to null, and a stale cookie's decoded token
   // still carries its old (non-null) sessionToken, so a loose falsy-guard
@@ -718,25 +726,37 @@ app.use((req, res, next) => {
   res.sendFile(path.join(distDir, "index.html"));
 });
 
-// One on startup (covers a VM that stays up for weeks without a deploy —
-// otherwise it could go a long time before its first snapshot), then every
-// 12h for the life of the process. Ties the backup schedule to the app's
-// own process rather than an external cron job, so it needs nothing set up
-// on the host beyond the app itself — a `systemctl restart` just resumes it.
-const BACKUP_INTERVAL_MS = 12 * 60 * 60 * 1000;
-try {
-  runBackup();
-} catch (err) {
-  console.error("backup inicial falhou:", err.message);
-}
-setInterval(() => {
+// True only when this file is the actual entry point (`node server/index.js`,
+// which is how `npm run dev:server` and production both start it) — not when
+// some other module (a test, importing `app` to drive it with its own
+// ephemeral `.listen(0)`) merely imports it. Keeps building the Express app
+// itself side-effect-free to import, while `node server/index.js` still does
+// everything it always did.
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMain) {
+  // One on startup (covers a VM that stays up for weeks without a deploy —
+  // otherwise it could go a long time before its first snapshot), then every
+  // 12h for the life of the process. Ties the backup schedule to the app's
+  // own process rather than an external cron job, so it needs nothing set up
+  // on the host beyond the app itself — a `systemctl restart` just resumes it.
+  const BACKUP_INTERVAL_MS = 12 * 60 * 60 * 1000;
   try {
     runBackup();
   } catch (err) {
-    console.error("backup periódico falhou:", err.message);
+    console.error("backup inicial falhou:", err.message);
   }
-}, BACKUP_INTERVAL_MS);
+  setInterval(() => {
+    try {
+      runBackup();
+    } catch (err) {
+      console.error("backup periódico falhou:", err.message);
+    }
+  }, BACKUP_INTERVAL_MS);
 
-if (isPushConfigured()) startDailyReminderSchedule();
+  if (isPushConfigured()) startDailyReminderSchedule();
 
-app.listen(PORT, () => console.log(`API rodando em http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`API rodando em http://localhost:${PORT}`));
+}
+
+export default app;

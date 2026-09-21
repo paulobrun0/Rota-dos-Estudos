@@ -204,12 +204,19 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
   );
 }
 
-function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
+function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
   if (!materia) return null;
+  // dailyPlans keeps history and isn't pruned when a topic is later deleted
+  // from the matéria (see computeMateriaStats), so an old day's cards can
+  // reference a topic that no longer exists — those are skipped below when
+  // rendering, and must be excluded here too so the "done/total" count,
+  // the session timer's segment count, and "all done" all agree with what's
+  // actually on screen.
+  const cards = rawCards.filter((c) => topicById(materia, c.topicId));
   const totalMinutes = timed ? (minutesPerMateria || 0) : 0;
   const perTopic = cards.length > 0 && totalMinutes > 0 ? totalMinutes / cards.length : null;
   const doneInGroup = cards.filter((c) => c.feito).length;
-  const allDone = doneInGroup === cards.length;
+  const allDone = cards.length > 0 && doneInGroup === cards.length;
   const resting = timed && allDone && restTimers.timers[materia.id];
   const awaitingQuestions = timed && cards.some((c) => c.id === pendingCardId);
 
@@ -234,7 +241,6 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards, topicById, onTogg
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {cards.map((card) => {
           const topic = topicById(materia, card.topicId);
-          if (!topic) return null;
           return (
             <TopicRow
               key={card.id}

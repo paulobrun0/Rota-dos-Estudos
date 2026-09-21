@@ -112,8 +112,35 @@ function flattenToLeaves(content) {
     return { path: m[1], text: content.slice(start, end).trim() };
   });
 
-  const hasChildren = (path) => items.some((it) => it.path !== path && it.path.startsWith(path + "."));
-  const leaves = items.filter((it) => !hasChildren(it.path));
+  // A matéria's numbering normally restarts at 1 only once (right after its
+  // header), but some editais group items under unnumbered Roman-numeral
+  // sub-headings that each restart their own "1, 2, 3..." — e.g. "I ... 1
+  // ... 10" followed by "II ... 1 ... 13". Without scoping, hasChildren's
+  // plain prefix match would treat block II's "1.1" as proof block I's own
+  // unrelated "1" has children too, silently demoting (and dropping — only
+  // leaves become topics) a real leaf item just because some other block
+  // happens to reuse the same number. Segmenting wherever the top-level
+  // number drops back down (a restart) keeps each hasChildren check scoped
+  // to its own block; an edital with no restarts yields exactly one segment,
+  // so ordinary numbering is unaffected.
+  const segments = [];
+  let current = [];
+  let prevTop = -Infinity;
+  for (const it of items) {
+    const top = Number(it.path.split(".")[0]);
+    if (top < prevTop) {
+      segments.push(current);
+      current = [];
+    }
+    current.push(it);
+    prevTop = top;
+  }
+  if (current.length > 0) segments.push(current);
+
+  const leaves = segments.flatMap((segment) => {
+    const hasChildren = (path) => segment.some((it) => it.path !== path && it.path.startsWith(path + "."));
+    return segment.filter((it) => !hasChildren(it.path));
+  });
   return leaves.flatMap((leaf) => expandLeaf(leaf.text));
 }
 

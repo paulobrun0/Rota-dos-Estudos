@@ -3,7 +3,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new DatabaseSync(path.join(__dirname, "data.sqlite"));
+// Overridable so tests can point at an isolated (e.g. ":memory:") database
+// instead of the real data.sqlite — unset in dev/production, where it always
+// resolves to the real file exactly as before.
+const dbPath = process.env.SQLITE_PATH || path.join(__dirname, "data.sqlite");
+const db = new DatabaseSync(dbPath);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (

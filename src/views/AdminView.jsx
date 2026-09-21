@@ -121,7 +121,10 @@ function Switch({ checked, onChange, disabled }) {
 function FeaturesPanel() {
   const [features, setFeatures] = useState(null);
   const [error, setError] = useState("");
-  const [busyKey, setBusyKey] = useState(null);
+  // A Set of in-flight keys, not a single scalar — toggling one feature
+  // while another's request is still pending must not clear the first
+  // one's busy/disabled state out from under it.
+  const [busyKeys, setBusyKeys] = useState(() => new Set());
 
   function load() {
     fetchFeatures()
@@ -133,7 +136,7 @@ function FeaturesPanel() {
 
   async function toggle(key, enabled) {
     setError("");
-    setBusyKey(key);
+    setBusyKeys((prev) => new Set(prev).add(key));
     setFeatures((prev) => prev.map((f) => (f.key === key ? { ...f, enabled } : f)));
     try {
       await setFeatureEnabled(key, enabled);
@@ -141,7 +144,11 @@ function FeaturesPanel() {
       setError(e.message);
       setFeatures((prev) => prev.map((f) => (f.key === key ? { ...f, enabled: !enabled } : f)));
     } finally {
-      setBusyKey(null);
+      setBusyKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
     }
   }
 
@@ -166,7 +173,7 @@ function FeaturesPanel() {
               key={f.key}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px",
-                borderTop: i > 0 ? `1px solid ${colors.border}` : "none", opacity: busyKey === f.key ? 0.6 : 1,
+                borderTop: i > 0 ? `1px solid ${colors.border}` : "none", opacity: busyKeys.has(f.key) ? 0.6 : 1,
               }}
             >
               <div>
@@ -175,7 +182,7 @@ function FeaturesPanel() {
                   {f.enabled ? "ativo para todos os usuários" : "desativado para todos os usuários"}
                 </div>
               </div>
-              <Switch checked={f.enabled} disabled={busyKey === f.key} onChange={(v) => toggle(f.key, v)} />
+              <Switch checked={f.enabled} disabled={busyKeys.has(f.key)} onChange={(v) => toggle(f.key, v)} />
             </div>
           ))}
         </div>
@@ -324,11 +331,14 @@ function BackupsPanel() {
   );
 }
 
-export function AdminView({ currentUserEmail }) {
+export function AdminView({ currentUserEmail, onUserUpdate }) {
   const [section, setSection] = useState("usuarios");
   const [users, setUsers] = useState(null);
   const [error, setError] = useState("");
-  const [busyId, setBusyId] = useState(null);
+  // A Set of in-flight user ids, not a single scalar — starting an action on
+  // one row while another row's own action is still pending must not clear
+  // that other row's busy/disabled guard out from under it.
+  const [busyIds, setBusyIds] = useState(() => new Set());
   const [query, setQuery] = useState("");
   const [resetResult, setResetResult] = useState(null);
 
@@ -340,30 +350,39 @@ export function AdminView({ currentUserEmail }) {
 
   useEffect(load, []);
 
+  function setBusy(id, isBusy) {
+    setBusyIds((prev) => {
+      const next = new Set(prev);
+      if (isBusy) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
   async function run(id, fn) {
     setError("");
-    setBusyId(id);
+    setBusy(id, true);
     try {
       await fn();
       load();
     } catch (e) {
       setError(e.message);
     } finally {
-      setBusyId(null);
+      setBusy(id, false);
     }
   }
 
   async function handleResetPassword(u) {
     if (!window.confirm(`gerar uma nova senha temporária para ${u.email}? a senha atual dela deixa de funcionar.`)) return;
     setError("");
-    setBusyId(u.id);
+    setBusy(u.id, true);
     try {
       const result = await resetUserPassword(u.id);
       setResetResult(result);
     } catch (e) {
       setError(e.message);
     } finally {
-      setBusyId(null);
+      setBusy(u.id, false);
     }
   }
 
@@ -495,9 +514,22 @@ export function AdminView({ currentUserEmail }) {
               return (
                 <div
                   key={u.id}
-                  style={{ display: "grid", gridTemplateColumns: "1.6fr 80px 110px 110px 110px 140px", gap: 8, alignItems: "center", padding: "12px 16px", borderTop: `1px solid ${colors.border}`, fontSize: 13, opacity: busyId === u.id ? 0.5 : 1 }}
+                  style={{ display: "grid", gridTemplateColumns: "1.6fr 80px 110px 110px 110px 140px", gap: 8, alignItems: "center", padding: "12px 16px", borderTop: `1px solid ${colors.border}`, fontSize: 13, opacity: busyIds.has(u.id) ? 0.5 : 1 }}
                 >
-                  <EmailCell user={u} isSelf={isSelf} onSave={(email) => run(u.id, () => setUserEmail(u.id, email))} />
+                  <EmailCell
+                    user={u}
+                    isSelf={isSelf}
+                    onSave={(email) => run(u.id, async () => {
+                      await setUserEmail(u.id, email);
+                      // currentUserEmail comes from the top-level logged-in
+                      // user, not from this table's own `users` list — if an
+                      // admin edits their own row here without this, isSelf
+                      // goes stale on the very next render and every
+                      // self-protection guard below (can't suspend/demote/
+                      // delete "yourself") silently stops applying to them.
+                      if (isSelf) onUserUpdate((prev) => ({ ...prev, email }));
+                    })}
+                  />
                   <div style={{ display: "flex", alignItems: "center", gap: 4, color: u.currentStreak > 0 ? colors.amber : colors.textFaint, fontSize: 12.5 }}>
                     <Flame size={13} /> {u.currentStreak}
                   </div>
@@ -511,7 +543,7 @@ export function AdminView({ currentUserEmail }) {
                   <div style={{ display: "flex", gap: 2 }}>
                     <button
                       onClick={() => run(u.id, () => setUserAdmin(u.id, !u.isAdmin))}
-                      disabled={busyId === u.id || (isSelf && u.isAdmin)}
+                      disabled={busyIds.has(u.id) || (isSelf && u.isAdmin)}
                       aria-label={u.isAdmin ? "remover admin" : "tornar admin"}
                       title={u.isAdmin ? "remover admin" : "tornar admin"}
                       style={actionBtnStyle(u.isAdmin ? colors.amber : colors.textFaint)}
@@ -520,7 +552,7 @@ export function AdminView({ currentUserEmail }) {
                     </button>
                     <button
                       onClick={() => run(u.id, () => setUserSuspended(u.id, !u.isSuspended))}
-                      disabled={busyId === u.id || isSelf}
+                      disabled={busyIds.has(u.id) || isSelf}
                       aria-label={u.isSuspended ? "reativar conta" : "suspender conta"}
                       title={u.isSuspended ? "reativar conta" : "suspender conta"}
                       style={actionBtnStyle(u.isSuspended ? colors.red : colors.textFaint)}
@@ -529,7 +561,7 @@ export function AdminView({ currentUserEmail }) {
                     </button>
                     <button
                       onClick={() => handleResetPassword(u)}
-                      disabled={busyId === u.id}
+                      disabled={busyIds.has(u.id)}
                       aria-label="resetar senha"
                       title="resetar senha"
                       style={actionBtnStyle(colors.textFaint)}
@@ -538,7 +570,7 @@ export function AdminView({ currentUserEmail }) {
                     </button>
                     <button
                       onClick={() => handleDelete(u)}
-                      disabled={busyId === u.id || isSelf}
+                      disabled={busyIds.has(u.id) || isSelf}
                       aria-label="excluir usuário"
                       title="excluir usuário"
                       style={actionBtnStyle(colors.textFaint)}
