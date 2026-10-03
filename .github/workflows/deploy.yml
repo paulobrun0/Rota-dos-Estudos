@@ -27,6 +27,20 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Package Oracle release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ORACLE_DEPLOY_ENABLED == 'true'
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          node -e 'require("fs").writeFileSync("dist/deploy-version.json", JSON.stringify({commit:process.env.RELEASE_SHA}))'
+          tar -czf oracle-release.tar.gz dist server src scripts package.json package-lock.json
+      - name: Upload Oracle release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ORACLE_DEPLOY_ENABLED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: oracle-release
+          path: oracle-release.tar.gz
+          retention-days: 7
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
@@ -52,3 +66,52 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+
+  oracle:
+    name: Deploy Oracle
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ORACLE_DEPLOY_ENABLED == 'true'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: oracle-production
+      url: https://app.paulobruno.dev
+    concurrency:
+      group: oracle-production
+      cancel-in-progress: false
+    env:
+      ORACLE_HOST: ${{ vars.ORACLE_HOST || '150.230.72.89' }}
+      ORACLE_USER: ${{ vars.ORACLE_USER || 'opc' }}
+    steps:
+      - name: Download tested release
+        uses: actions/download-artifact@v4
+        with:
+          name: oracle-release
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.ORACLE_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY" && test -n "$SSH_KNOWN_HOSTS" || { echo 'Configure ORACLE_SSH_KEY e ORACLE_KNOWN_HOSTS.' >&2; exit 1; }
+          [[ "$ORACLE_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$ORACLE_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || exit 1
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/oracle_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/oracle_key ~/.ssh/known_hosts
+      - name: Deploy and verify API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          latest=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          [[ "$latest" = "$GITHUB_SHA" ]] || { echo "Deploy antigo ignorado: a main avançou."; exit 0; }
+          target="$ORACLE_USER@$ORACLE_HOST"
+          release="/home/opc/.rota-releases/$GITHUB_SHA"
+          options=(-i "$HOME/.ssh/oracle_key" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
+          ssh "${options[@]}" "$target" "mkdir -p '$release'"
+          scp "${options[@]}" oracle-release.tar.gz "$target:$release/release.tar.gz"
+          ssh "${options[@]}" "$target" "tar -xzf '$release/release.tar.gz' -C '$release' && bash '$release/scripts/deploy-oracle.sh'"
+      - name: Remove temporary SSH key
+        if: always()
+        run: rm -f ~/.ssh/oracle_key
