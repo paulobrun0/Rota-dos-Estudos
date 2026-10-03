@@ -1,5 +1,7 @@
+import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
+import { getTopicLinks } from "../lib/topicLinks.js";
 import React, { useState } from "react";
-import { CalendarClock, Check, ChevronLeft, ChevronRight, Clock, ExternalLink, Eye, Flame, Link2, ListChecks, Pencil, Percent, RotateCw, StickyNote } from "lucide-react";
+import { CalendarClock, Check, ChevronLeft, ChevronRight, Clock, Eye, Flame, Link2, ListChecks, Pencil, Percent, RotateCw, StickyNote } from "lucide-react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -36,7 +38,7 @@ function StatTile({ icon, label, value, sub }) {
   );
 }
 
-export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
+export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
   const isToday = selectedDate === todayISO();
   const exam = examCountdownInfo(examDate);
   const examStyle = exam ? EXAM_BADGE_STYLE[exam.level] : null;
@@ -154,6 +156,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
             ) : (
               novosMateriaIds.map((materiaId) => (
                 <MateriaGroupCard
+                  concursoId={concursoId}
                   key={materiaId}
                   materia={materiaById(materiaId)}
                   minutesPerMateria={minutesPerMateria}
@@ -180,6 +183,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
             ) : (
               revisoesMateriaIds.map((materiaId) => (
                 <MateriaGroupCard
+                  concursoId={concursoId}
                   key={materiaId}
                   materia={materiaById(materiaId)}
                   cards={revisoesGroups[materiaId]}
@@ -204,7 +208,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
   );
 }
 
-function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
+function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
   if (!materia) return null;
   // dailyPlans keeps history and isn't pruned when a topic is later deleted
   // from the matéria (see computeMateriaStats), so an old day's cards can
@@ -243,6 +247,8 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicBy
           const topic = topicById(materia, card.topicId);
           return (
             <TopicRow
+              concursoId={concursoId}
+              materiaName={materia.name}
               key={card.id}
               card={card}
               topic={topic}
@@ -252,7 +258,7 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicBy
               updateTopicLink={updateTopicLink}
               setTopicQuestions={setTopicQuestions}
               materiaId={materia.id}
-              questionsAvailable={questionCounts[topic.name] || 0}
+              questionsAvailable={questionCounts[JSON.stringify([materia.name, topic.name])] || 0}
               addTopicQuestions={addTopicQuestions}
             />
           );
@@ -273,7 +279,7 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicBy
   );
 }
 
-function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
+function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
   const [asking, setAsking] = useState(false);
   const [practicing, setPracticing] = useState(false);
   const [feitas, setFeitas] = useState("");
@@ -284,7 +290,6 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
   const [editTotal, setEditTotal] = useState(String(topic.questionsTotal || ""));
   const [editCorrect, setEditCorrect] = useState(String(topic.questionsCorrect || ""));
   const [linkOpen, setLinkOpen] = useState(false);
-  const [linkDraft, setLinkDraft] = useState(topic.link || "");
   // A review card with a saved note becomes a flashcard: the note stays
   // hidden until the user actively asks to see it, so there's a real moment
   // of trying to recall first — a review that shows the answer immediately
@@ -294,13 +299,11 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
   const isRevisao = card.tipo === "revisao";
   const showForm = asking || forcedOpen;
   const hasNotes = (topic.notes || "").trim().length > 0;
-  const hasLink = (topic.link || "").trim().length > 0;
+  const hasLink = Object.values(getTopicLinks(topic)).some(Boolean);
   const isFlashcard = isRevisao && hasNotes && !card.feito;
   const awaitingReveal = isFlashcard && !revealed;
 
-  function saveLinkIfChanged() {
-    if (linkDraft !== (topic.link || "")) updateTopicLink(materiaId, topic.id, linkDraft.trim());
-  }
+
   const hasQuestions = (topic.questionsTotal || 0) > 0;
 
   function saveNotesIfChanged() {
@@ -421,14 +424,7 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
             <span className="mono" style={{ fontSize: 10.5, color: colors.teal }}>praticar ({questionsAvailable})</span>
           </button>
         )}
-        {hasLink && (
-          <a
-            href={topic.link} target="_blank" rel="noreferrer" aria-label="abrir caderno de questões"
-            style={{ display: "flex", alignItems: "center", padding: 4, color: colors.teal }}
-          >
-            <ExternalLink size={14} />
-          </a>
-        )}
+          <TopicLinkButtons topic={topic} />
         <button
           onClick={() => setLinkOpen((o) => !o)}
           aria-label="link do caderno de questões"
@@ -466,21 +462,7 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
         </div>
       )}
 
-      {linkOpen && (
-        <input
-          autoFocus
-          value={linkDraft}
-          onChange={(e) => setLinkDraft(e.target.value)}
-          onBlur={saveLinkIfChanged}
-          onKeyDown={(e) => { if (e.key === "Enter") { saveLinkIfChanged(); setLinkOpen(false); } }}
-          placeholder="link do caderno de questões (ex: TecConcursos)"
-          style={{
-            width: "100%", marginTop: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 6,
-            color: colors.text, fontSize: 12.5, padding: "8px 10px", boxSizing: "border-box",
-          }}
-        />
-      )}
-
+      {linkOpen && <TopicLinksEditor topic={topic} onSave={(links) => updateTopicLink(materiaId, topic.id, links)} onClose={() => setLinkOpen(false)} />}
       {notesOpen && (
         <textarea
           value={notesDraft}
@@ -506,9 +488,13 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
       {practicing && (
         <QuizPractice
           assunto={topic.name}
+          materia={materiaName}
+          concursoId={concursoId}
+          materiaId={materiaId}
+          topicId={topic.id}
+          onAnswer={(correct) => addTopicQuestions(materiaId, topic.id, 1, correct ? 1 : 0)}
           disponivel={questionsAvailable}
           onFinish={(total, correct) => {
-            if (total > 0) addTopicQuestions(materiaId, topic.id, total, correct);
             setPracticing(false);
           }}
         />

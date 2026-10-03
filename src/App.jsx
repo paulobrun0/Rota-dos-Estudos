@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, NotebookText, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle, X,
 } from "lucide-react";
 import { colors } from "./styles/colors.js";
-import { PALETTE, defaultSettings, defaultData, makeConcurso, migrate } from "./data/model.js";
+import { PALETTE, defaultSettings, makeConcurso } from "./data/model.js";
 import { addDaysISO, todayISO, weekStart } from "./lib/date.js";
 import { activeMateriaIds, advanceReview, buildCyclePlan, pickBatch, scheduleFirstReview } from "./lib/planner.js";
 import { computeStreaks } from "./lib/streaks.js";
@@ -14,7 +14,9 @@ import { useSessionTimers } from "./lib/useSessionTimers.js";
 import { useRestTimers } from "./lib/useRestTimers.js";
 import { useSoundEnabled } from "./lib/useSoundEnabled.js";
 import { playCompleteSound, playRestOverSound } from "./lib/sound.js";
-import { fetchPlanData, savePlanData } from "./api/planData.js";
+import { useTopicActions } from "./lib/useTopicActions.js";
+import { usePlanData } from "./lib/usePlanData.js";
+import { SaveStatus } from "./components/SaveStatus.jsx";
 import { fetchContentBank } from "./api/contentBank.js";
 import { fetchQuestionCounts } from "./api/questions.js";
 import { looksLikeNumberedEdital, normalizeMateriaName, parseRawEdital } from "./lib/rawEditalParser.js";
@@ -54,7 +56,7 @@ const TAB_TITLES = {
 };
 
 export default function App({ user, onLogout, onUserUpdate }) {
-  const [data, setData] = useState(null);
+  const { data, setData, sync, retry, flush } = usePlanData(user.email);
   const [tab, setTab] = useState("dia");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayISO());
@@ -75,7 +77,6 @@ export default function App({ user, onLogout, onUserUpdate }) {
   // summed across bancas — lets TopicRow show a "praticar (N)" button only
   // where the question bank actually has something for that exact topic.
   const [questionCounts, setQuestionCounts] = useState({});
-  const loaded = useRef(false);
 
   useEffect(() => {
     fetchContentBank()
@@ -88,52 +89,19 @@ export default function App({ user, onLogout, onUserUpdate }) {
       .then((res) => {
         const map = {};
         (res.counts || []).forEach((row) => {
-          map[row.assunto] = (map[row.assunto] || 0) + row.total;
+          const key = JSON.stringify([row.materia, row.assunto]);
+          map[key] = (map[key] || 0) + row.total;
         });
         setQuestionCounts(map);
       })
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    // React 18 StrictMode mounts every effect twice in dev (mount, simulated
-    // unmount, mount again) to surface impure ones — with no cleanup here,
-    // that fired two concurrent fetchPlanData() calls. Harmless on its own,
-    // but the first mount's fetch can resolve AFTER today's plan has
-    // already been rebuilt from it (cycleCursor advanced, a fresh batch
-    // handed out), and applying that stale response would silently wipe the
-    // rebuild back out. `cancelled` makes only the surviving mount's fetch
-    // actually apply.
-    let cancelled = false;
-    (async () => {
-      try {
-        const value = await fetchPlanData();
-        if (cancelled) return;
-        let parsed = value ? migrate(JSON.parse(value)) : defaultData();
-        if (parsed.concursos.length === 0) {
-          const c = makeConcurso("Meu concurso", 0);
-          parsed = { ...parsed, concursos: [c], activeConcursoId: c.id };
-        }
-        if (!parsed.concursos.some((c) => c.id === parsed.activeConcursoId)) {
-          parsed.activeConcursoId = parsed.concursos[0].id;
-        }
-        setData(parsed);
-      } catch (e) {
-        if (cancelled) return;
-        const c = makeConcurso("Meu concurso", 0);
-        setData({ ...defaultData(), concursos: [c], activeConcursoId: c.id });
-      }
-      if (!cancelled) loaded.current = true;
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!loaded.current || !data) return;
-    savePlanData(JSON.stringify(data));
-  }, [data]);
+  async function handleLogout() {
+    const pendingChanges = await flush();
+    if (pendingChanges && !window.confirm("Há alterações pendentes. Sair pode descartá-las. Deseja sair?")) return;
+    await onLogout();
+  }
 
   const activeConcurso = data ? data.concursos.find((c) => c.id === data.activeConcursoId) || null : null;
 
@@ -487,65 +455,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
     });
   }
 
-  function updateTopicNotes(materiaId, topicId, notes) {
-    updateActive((c) => {
-      const clone = JSON.parse(JSON.stringify(c));
-      const m = clone.materias.find((x) => x.id === materiaId);
-      const t = m?.topics.find((x) => x.id === topicId);
-      if (!t) return c;
-      t.notes = notes;
-      return clone;
-    });
-  }
-
-  function updateTopicLink(materiaId, topicId, link) {
-    updateActive((c) => {
-      const clone = JSON.parse(JSON.stringify(c));
-      const m = clone.materias.find((x) => x.id === materiaId);
-      const t = m?.topics.find((x) => x.id === topicId);
-      if (!t) return c;
-      t.link = link;
-      return clone;
-    });
-  }
-
-  function setTopicQuestions(materiaId, topicId, total, correct) {
-    updateActive((c) => {
-      const clone = JSON.parse(JSON.stringify(c));
-      const m = clone.materias.find((x) => x.id === materiaId);
-      const t = m?.topics.find((x) => x.id === topicId);
-      if (!t) return c;
-      const safeTotal = Math.max(0, total);
-      t.questionsTotal = safeTotal;
-      t.questionsCorrect = Math.min(safeTotal, Math.max(0, correct));
-      return clone;
-    });
-  }
-
-  // Tallies a round of real practice questions onto a topic without touching
-  // its "estudado"/feito state — unlike setTopicQuestions (an absolute value
-  // from manual editing), this adds to whatever the topic already has, the
-  // same way toggleCard does when a "fez questões?" prompt is answered.
-  function addTopicQuestions(materiaId, topicId, total, correct) {
-    if (!activeConcurso || total <= 0) return;
-    const activeId = activeConcurso.id;
-    const iso = todayISO();
-    setData((prev) => {
-      if (!prev) return prev;
-      const clone = JSON.parse(JSON.stringify(prev));
-      const c = clone.concursos.find((x) => x.id === activeId);
-      if (!c) return prev;
-      const m = c.materias.find((x) => x.id === materiaId);
-      const t = m?.topics.find((x) => x.id === topicId);
-      if (!t) return prev;
-      t.questionsTotal = (t.questionsTotal || 0) + total;
-      t.questionsCorrect = (t.questionsCorrect || 0) + Math.min(total, Math.max(0, correct));
-      clone.questionActivity = clone.questionActivity || {};
-      const bucket = clone.questionActivity[iso] || { total: 0, correct: 0 };
-      clone.questionActivity[iso] = { total: bucket.total + total, correct: bucket.correct + Math.min(total, Math.max(0, correct)) };
-      return clone;
-    });
-  }
+  const { updateTopicNotes, updateTopicLink, setTopicQuestions, addTopicQuestions } = useTopicActions({ updateActive, setData, activeConcurso });
 
   function updateSettings(field, value) {
     updateActive((c) => ({ ...c, settings: { ...c.settings, [field]: value } }));
@@ -770,8 +680,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
   if (!data) {
     return (
-      <div style={{ background: colors.bg, color: colors.textMuted, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, sans-serif" }}>
-        carregando seu plano...
+      <div style={{ padding: 32, background: colors.bg, color: colors.text, minHeight: "100vh" }}>
+        <p role="status">{sync.status === "load-error" ? "Não foi possível carregar seu plano. Nenhum dado foi substituído." : "carregando seu plano…"}</p>
+        {sync.status === "load-error" && <><p>{sync.error}</p><button onClick={retry}>tentar novamente</button></>}
       </div>
     );
   }
@@ -875,7 +786,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             </div>
           </button>
           <button
-            onClick={onLogout}
+            onClick={handleLogout}
             style={{
               width: "100%", display: "flex", alignItems: "center", gap: 8, background: "transparent",
               border: "none", borderRadius: 8, padding: "9px 10px", color: colors.textMuted, fontSize: 13, textAlign: "left",
@@ -895,6 +806,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         </div>
 
         <main className="app-main" style={{ flex: 1, minWidth: 0, padding: "28px 36px" }}>
+        <SaveStatus sync={sync} data={data} onRetry={retry} />
         {!data.studyDays && <StudyDaysBanner setStudyDays={setStudyDays} />}
         {tab === "concursos" && (
           <ConcursosView
@@ -950,6 +862,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
         {tab === "dia" && activeConcurso && (
           <DiaView
+            concursoId={activeConcurso.id}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             plan={plan}
@@ -1019,7 +932,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         )}
 
         {tab === "caderno" && activeConcurso && (
-          <CadernoView activeConcurso={activeConcurso} updateTopicNotes={updateTopicNotes} />
+          <CadernoView key={activeConcurso.id} activeConcurso={activeConcurso} updateTopicNotes={updateTopicNotes} addTopicQuestions={addTopicQuestions} />
         )}
 
         {tab === "metas" && activeConcurso && (

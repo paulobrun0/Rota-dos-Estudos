@@ -8,6 +8,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // resolves to the real file exactly as before.
 const dbPath = process.env.SQLITE_PATH || path.join(__dirname, "data.sqlite");
 const db = new DatabaseSync(dbPath);
+db.exec("PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000; PRAGMA journal_mode = WAL;");
+
+function addColumn(table, name, definition) {
+  if (!db.prepare(`PRAGMA table_info(${table})`).all().some((column) => column.name === name)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${definition}`);
+  }
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -23,91 +30,43 @@ db.exec(`
   );
 `);
 
-// Added after the tables above already shipped — guarded so it's a no-op
-// against a database that already has the column.
-try {
-  db.exec("ALTER TABLE users ADD COLUMN recovery_code_hash TEXT");
-} catch {
-  // column already exists
-}
+// Inspect the schema before altering it; database errors must not be
+// swallowed as if every failure meant "column already exists".
+addColumn("users", "recovery_code_hash", "TEXT");
 
-try {
-  db.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
-} catch {
-  // column already exists
-}
+addColumn("users", "is_admin", "INTEGER NOT NULL DEFAULT 0");
 
-try {
-  db.exec("ALTER TABLE users ADD COLUMN is_suspended INTEGER NOT NULL DEFAULT 0");
-} catch {
-  // column already exists
-}
+addColumn("users", "is_suspended", "INTEGER NOT NULL DEFAULT 0");
 
-try {
-  db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT");
-} catch {
-  // column already exists
-}
+addColumn("users", "last_login_at", "TEXT");
 
-try {
-  db.exec("ALTER TABLE users ADD COLUMN show_in_ranking INTEGER NOT NULL DEFAULT 1");
-} catch {
-  // column already exists
-}
+addColumn("users", "show_in_ranking", "INTEGER NOT NULL DEFAULT 1");
 
-try {
-  db.exec("ALTER TABLE users ADD COLUMN username TEXT");
-} catch {
-  // column already exists
-}
+addColumn("users", "username", "TEXT");
 
-try {
-  db.exec("ALTER TABLE users ADD COLUMN avatar TEXT");
-} catch {
-  // column already exists
-}
+addColumn("users", "avatar", "TEXT");
 
 // A random value rotated on every login/register/password-reset and baked
 // into that request's JWT — a token whose embedded value no longer matches
 // the row (because a later login overwrote it) is a session that's been
 // superseded, so only the most recent login for an email stays valid.
-try {
-  db.exec("ALTER TABLE users ADD COLUMN session_token TEXT");
-} catch {
-  // column already exists
-}
+addColumn("users", "session_token", "TEXT");
 
 // Per-account brute-force guard, separate from the IP-based rate limiter on
 // the route itself — that one resets the moment an attacker rotates IPs,
 // this one doesn't. failed_login_attempts resets to 0 on any successful
 // login; locked_until is cleared the same way and otherwise just expires.
-try {
-  db.exec("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER NOT NULL DEFAULT 0");
-} catch {
-  // column already exists
-}
+addColumn("users", "failed_login_attempts", "INTEGER NOT NULL DEFAULT 0");
 
-try {
-  db.exec("ALTER TABLE users ADD COLUMN locked_until TEXT");
-} catch {
-  // column already exists
-}
+addColumn("users", "locked_until", "TEXT");
 
 // Local (Brazil) hour the user wants the daily study reminder at, and the
 // UTC date it was last actually sent for — the latter is tracked per-user
 // (rather than in the old single app_state key) because different users can
 // now pick different hours, so "already sent today" can't be one global flag.
-try {
-  db.exec("ALTER TABLE users ADD COLUMN reminder_hour INTEGER NOT NULL DEFAULT 19");
-} catch {
-  // column already exists
-}
+addColumn("users", "reminder_hour", "INTEGER NOT NULL DEFAULT 19");
 
-try {
-  db.exec("ALTER TABLE users ADD COLUMN reminder_last_sent TEXT");
-} catch {
-  // column already exists
-}
+addColumn("users", "reminder_last_sent", "TEXT");
 
 // NULLs are all distinct under a unique index, so this is safe to run
 // before anyone has set a username.
@@ -212,6 +171,28 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT
   );
+`);
+
+// Each plan write must match the version read by that browser.
+addColumn("user_data", "revision", "INTEGER NOT NULL DEFAULT 0");
+db.exec("CREATE INDEX IF NOT EXISTS idx_questions_topic_banca ON questions(assunto, banca)");
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS question_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    attempt_id TEXT NOT NULL,
+    question_id INTEGER NOT NULL,
+    concurso_id TEXT NOT NULL,
+    materia_id TEXT NOT NULL,
+    topic_id TEXT NOT NULL,
+    selected_answer TEXT NOT NULL,
+    correct INTEGER NOT NULL CHECK (correct IN (0, 1)),
+    snapshot TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id, attempt_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_attempts_history ON question_attempts(user_id, concurso_id, materia_id, topic_id, question_id, id);
 `);
 
 export default db;

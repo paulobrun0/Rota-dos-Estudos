@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import rateLimit from "express-rate-limit";
 import db from "./db.js";
+import { createDataRouter } from "./routes/data.js";
+import { createQuestionsRouter } from "./routes/questions.js";
 import {
   signToken, authMiddleware, requireAdmin, COOKIE_NAME, COOKIE_OPTIONS,
   generateRecoveryCode, formatRecoveryCode, normalizeRecoveryInput, generateTempPassword, generateSessionToken,
@@ -90,11 +92,6 @@ const insertUser = db.prepare("INSERT INTO users (email, password_hash, recovery
 const findUserByEmail = db.prepare("SELECT * FROM users WHERE email = ?");
 const findUserById = db.prepare("SELECT * FROM users WHERE id = ?");
 const updateCredentials = db.prepare("UPDATE users SET password_hash = ?, recovery_code_hash = ? WHERE id = ?");
-const getData = db.prepare("SELECT value FROM user_data WHERE user_id = ?");
-const upsertData = db.prepare(`
-  INSERT INTO user_data (user_id, value, updated_at) VALUES (?, ?, datetime('now'))
-  ON CONFLICT(user_id) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
-`);
 const listUsers = db.prepare(`
   SELECT u.id, u.email, u.created_at, u.is_admin, u.is_suspended, u.last_login_at, d.updated_at AS data_updated_at, d.value AS data_value
   FROM users u LEFT JOIN user_data d ON d.user_id = u.id
@@ -131,15 +128,6 @@ const upsertBankMateria = db.prepare(`
   ON CONFLICT(name) DO UPDATE SET topics = excluded.topics, updated_at = excluded.updated_at
 `);
 const deleteBankMateria = db.prepare("DELETE FROM content_bank_materias WHERE id = ?");
-const listQuestionsByAssunto = db.prepare(
-  "SELECT * FROM questions WHERE assunto = ? ORDER BY RANDOM() LIMIT ?",
-);
-const listQuestionsByAssuntoBanca = db.prepare(
-  "SELECT * FROM questions WHERE assunto = ? AND banca = ? ORDER BY RANDOM() LIMIT ?",
-);
-const countQuestionsByAssunto = db.prepare(
-  "SELECT assunto, banca, COUNT(*) AS total FROM questions GROUP BY assunto, banca",
-);
 const getFeatureFlag = db.prepare("SELECT enabled FROM feature_flags WHERE key = ?");
 const listFeatureFlags = db.prepare("SELECT key, enabled FROM feature_flags");
 const upsertFeatureFlag = db.prepare(`
@@ -291,11 +279,11 @@ app.post("/api/reset-password", authLimiter, (req, res) => {
   res.json({ email: user.email, recoveryCode: formatRecoveryCode(newRecoveryCode) });
 });
 
-app.post("/api/logout", authMiddleware, (req, res) => {
+app.post("/api/logout", ...requireAuth, (req, res) => {
   // Clears the server-side session_token too, not just the cookie — so a
   // copy of the old cookie (already on disk somewhere, say) can't keep
   // working after an explicit logout.
-  setSessionToken.run(null, req.userId);
+  db.prepare("UPDATE users SET session_token = NULL WHERE id = ? AND session_token = ?").run(req.userId, req.sessionToken);
   res.clearCookie(COOKIE_NAME);
   res.json({ ok: true });
 });
@@ -572,6 +560,7 @@ app.delete("/api/admin/users/:id", adminOnly, (req, res) => {
   if (targetId === req.userId) return res.status(400).json({ error: "você não pode excluir sua própria conta por aqui" });
   const target = findUserById.get(targetId);
   if (!target) return res.status(404).json({ error: "usuário não encontrado" });
+  db.prepare("DELETE FROM push_subscriptions WHERE user_id = ?").run(targetId);
   deleteUserData.run(targetId);
   deleteUserById.run(targetId);
   logAdminAction(req, "delete_user", target.email);
@@ -648,59 +637,9 @@ app.post("/api/admin/backups", adminOnly, (req, res) => {
   res.json({ backups: listBackups() });
 });
 
-// Questions for the topic a user is studying. `assunto` is the topic name as
-// it appears in their edital, which is why the matéria trees and the question
-// bank are kept on the same naming.
-app.get("/api/questions", requireAuth, (req, res) => {
-  if (!isFeatureEnabled("questoes")) return res.status(403).json({ error: "a prática de questões está desativada no momento" });
-  const assunto = typeof req.query.assunto === "string" ? req.query.assunto.trim() : "";
-  if (!assunto) return res.status(400).json({ error: "assunto é obrigatório" });
-  const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
-  const banca = typeof req.query.banca === "string" ? req.query.banca.trim() : "";
-  const rows = banca
-    ? listQuestionsByAssuntoBanca.all(assunto, banca, limit)
-    : listQuestionsByAssunto.all(assunto, limit);
-  res.json({
-    questions: rows.map((r) => ({
-      id: r.id,
-      fonte: r.fonte,
-      materia: r.materia,
-      assunto: r.assunto,
-      banca: r.banca,
-      orgao: r.orgao,
-      cargo: r.cargo,
-      ano: r.ano,
-      tipo: r.tipo,
-      textoBase: r.texto_base,
-      comando: r.comando,
-      enunciado: r.enunciado,
-      alternativas: JSON.parse(r.alternativas),
-      gabarito: r.gabarito,
-      comentario: r.comentario,
-    })),
-  });
-});
+app.use("/api", createQuestionsRouter(db, requireAuth, isFeatureEnabled));
 
-// How many questions exist per topic, so the UI can tell which topics can
-// already be practised and which have nothing yet.
-app.get("/api/questions/counts", requireAuth, (req, res) => {
-  // Empty counts, not an error: the UI derives the "praticar (N)" button
-  // straight from this, so an empty list already hides it everywhere without
-  // any extra plumbing — and a disabled feature isn't really an error case.
-  res.json({ counts: isFeatureEnabled("questoes") ? countQuestionsByAssunto.all() : [] });
-});
-
-app.get("/api/data", requireAuth, (req, res) => {
-  const row = getData.get(req.userId);
-  res.json({ value: row?.value ?? null });
-});
-
-app.put("/api/data", requireAuth, (req, res) => {
-  const { value } = req.body || {};
-  if (typeof value !== "string") return res.status(400).json({ error: "value deve ser uma string JSON" });
-  upsertData.run(req.userId, value);
-  res.json({ ok: true });
-});
+app.use("/api/data", createDataRouter(db, requireAuth));
 
 // Public, unauthenticated — just enough for a simple status page to show
 // the app is up, with no account or usage data exposed.

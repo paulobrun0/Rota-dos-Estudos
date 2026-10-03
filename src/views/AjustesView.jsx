@@ -4,6 +4,7 @@ import { colors } from "../styles/colors.js";
 import { primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { todayISO } from "../lib/date.js";
 import { migrate } from "../data/model.js";
+import { parsePlanData } from "../lib/planValidation.js";
 import { playCompleteSound } from "../lib/sound.js";
 import { setRankingVisibility } from "../api/ranking.js";
 import { updateProfile } from "../api/profile.js";
@@ -91,10 +92,12 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
     setImportError("");
     setImportOk(false);
 
+    if (file.size > 3 * 1024 * 1024) { setImportError("O backup excede o limite de 3 MB."); return; }
     const reader = new FileReader();
+    reader.onerror = () => setImportError("Não foi possível ler esse arquivo.");
     reader.onload = () => {
       try {
-        const parsed = migrate(JSON.parse(reader.result));
+        const parsed = migrate(parsePlanData(reader.result));
         const confirmed = window.confirm(
           "Importar vai substituir todos os dados atuais (concursos, matérias, planos e histórico). Continuar?"
         );

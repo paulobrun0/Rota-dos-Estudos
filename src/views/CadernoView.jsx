@@ -1,72 +1,89 @@
-import React, { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 import { colors } from "../styles/colors.js";
-import { inputStyle } from "../styles/shared.js";
+import { inputStyle, secondaryBtnStyle } from "../styles/shared.js";
+import { fetchQuestionHistory } from "../api/questions.js";
+import { QuizPractice } from "../components/QuizPractice.jsx";
 
-// Every topic note in the concurso, in one place — the "caderno de erros"
-// concurseiros keep by hand, but pulling from notes that already live on
-// each topic (see TopicEditalRow in EditalView) instead of a separate store,
-// so there's nothing new to keep in sync. Useful for a last-week cram pass
-// without hunting through every matéria's accordion in edital.
-export function CadernoView({ activeConcurso, updateTopicNotes }) {
+export function CadernoView({ activeConcurso, updateTopicNotes, addTopicQuestions }) {
+  const [mode, setMode] = useState("erros");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [refresh, setRefresh] = useState(0);
+  const [history, setHistory] = useState({ entries: [], total: 0, summary: { total: 0, correct: 0 } });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [practice, setPractice] = useState(null);
 
-  const entries = useMemo(() => {
-    if (!activeConcurso) return [];
-    const list = [];
-    activeConcurso.materias.forEach((m) => {
-      m.topics.forEach((t) => {
-        const notes = (t.notes || "").trim();
-        if (!notes) return;
-        const accuracyPct = t.questionsTotal > 0 ? Math.round((t.questionsCorrect / t.questionsTotal) * 100) : null;
-        list.push({ materiaId: m.id, materiaName: m.name, materiaColor: m.color, topicId: t.id, topicName: t.name, notes, accuracyPct });
-      });
-    });
-    return list;
-  }, [activeConcurso]);
+  useEffect(() => {
+    if (mode === "anotacoes") return;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    const timer = setTimeout(() => {
+      fetchQuestionHistory({ concursoId: activeConcurso.id, onlyErrors: mode === "erros", search, offset: page * 30 })
+        .then((result) => {
+          if (!cancelled) setHistory((previous) => ({ ...result, entries: page === 0 ? result.entries : [...previous.entries, ...result.entries] }));
+        })
+        .catch((failure) => { if (!cancelled) setError(failure.message); })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    }, 200);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [activeConcurso.id, mode, search, page, refresh]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return entries;
-    return entries.filter((e) => e.materiaName.toLowerCase().includes(q) || e.topicName.toLowerCase().includes(q) || e.notes.toLowerCase().includes(q));
-  }, [entries, search]);
+  const notes = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return activeConcurso.materias.flatMap((materia) => materia.topics.filter((topic) => (topic.notes || "").trim()).map((topic) => ({
+      materiaId: materia.id, materiaName: materia.name, materiaColor: materia.color,
+      topicId: topic.id, topicName: topic.name, notes: topic.notes,
+      accuracyPct: topic.questionsTotal > 0 ? Math.round(topic.questionsCorrect / topic.questionsTotal * 100) : null,
+    }))).filter((entry) => !query || `${entry.materiaName} ${entry.topicName} ${entry.notes}`.toLowerCase().includes(query));
+  }, [activeConcurso, search]);
 
-  if (!activeConcurso) return null;
+  function changeMode(value) { setMode(value); setPage(0); }
+  function changeSearch(value) { setSearch(value); setPage(0); }
+  function finishPractice() { setPractice(null); setPage(0); setRefresh((value) => value + 1); }
 
   return (
     <div>
-      <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>caderno</div>
-      <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 20 }}>
-        todas as suas anotações de <b style={{ color: colors.text }}>{activeConcurso.name}</b> num lugar só — pegadinhas, pontos de atenção, o que errou. escreva nos assuntos em edital; aparece aqui automaticamente.
+      <h1 className="sg" style={{ fontSize: 20, margin: "0 0 6px" }}>caderno</h1>
+      <p style={{ color: colors.textMuted, fontSize: 13.5 }}>revise seus erros, acompanhe as respostas e consulte suas anotações de {activeConcurso.name}.</p>
+      <div aria-label="visão do caderno" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+        {[["erros", "erros para refazer"], ["historico", "histórico de questões"], ["anotacoes", "anotações"]].map(([value, label]) => (
+          <button key={value} aria-pressed={mode === value} onClick={() => changeMode(value)} style={{ ...secondaryBtnStyle, borderColor: mode === value ? colors.teal : colors.border }}>{label}</button>
+        ))}
       </div>
-
-      {entries.length === 0 ? (
-        <div style={{ color: colors.textFaint, fontSize: 14 }}>
-          nenhuma anotação ainda. abra um assunto em edital e clique no ícone de nota pra escrever uma.
+      <input aria-label="buscar no caderno" value={search} onChange={(event) => changeSearch(event.target.value)} placeholder="buscar por matéria, assunto ou texto…" style={{ ...inputStyle, marginBottom: 16 }} />
+      {mode === "anotacoes" ? (
+        <div style={{ display: "grid", gap: 10 }}>
+          {notes.length === 0 && <p style={{ color: colors.textFaint }}>nenhuma anotação encontrada. escreva nos assuntos em edital; elas aparecem aqui.</p>}
+          {notes.map((entry) => <CadernoEntry key={`${entry.materiaId}:${entry.topicId}`} entry={entry} updateTopicNotes={updateTopicNotes} />)}
         </div>
       ) : (
         <>
-          <div style={{ position: "relative", marginBottom: 18 }}>
-            <Search size={14} color={colors.textFaint} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="buscar por matéria, assunto ou texto da anotação..."
-              style={{ ...inputStyle, paddingLeft: 34 }}
-            />
-          </div>
-
-          {filtered.length === 0 ? (
-            <div style={{ color: colors.textFaint, fontSize: 14 }}>nenhuma anotação encontrada pra "{search}".</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {filtered.map((e) => (
-                <CadernoEntry key={e.topicId} entry={e} updateTopicNotes={updateTopicNotes} />
-              ))}
-            </div>
-          )}
+          <p style={{ fontSize: 12, color: colors.textMuted }}>{history.summary.total} respostas registradas • {history.summary.total ? Math.round(history.summary.correct / history.summary.total * 100) : 0}% de acerto</p>
+          {error && <div role="alert" style={{ color: colors.red }}>{error} <button onClick={() => setRefresh((value) => value + 1)} style={secondaryBtnStyle}>tentar novamente</button></div>}
+          {loading && <p role="status" style={{ color: colors.textMuted }}>carregando questões…</p>}
+          {!loading && !error && history.entries.length === 0 && <p style={{ color: colors.textFaint }}>{mode === "erros" ? "nenhum erro pendente. as questões erradas nas práticas aparecem aqui; ao acertar de novo, saem desta lista." : "nenhuma questão encontrada. o histórico começa com as práticas feitas no aplicativo."}</p>}
+          {!error && (!loading || page > 0) && <div style={{ display: "grid", gap: 12 }}>
+            {history.entries.map((entry) => (
+              <article key={entry.attemptId} style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 10, padding: 16 }}>
+                <div style={{ fontSize: 12, color: colors.textMuted }}>{entry.question.materia} • {entry.question.assunto} • {entry.question.banca}{entry.question.ano ? ` • ${entry.question.ano}` : ""}</div>
+                <p style={{ whiteSpace: "pre-wrap", color: colors.text, fontSize: 14 }}>{entry.question.enunciado}</p>
+                <p style={{ fontSize: 12, color: entry.correct ? colors.teal : colors.red }}>{entry.correct ? "última resposta correta" : "última resposta incorreta"} • {entry.correctAttempts}/{entry.attempts} acertos • {new Date(entry.answeredAt).toLocaleDateString("pt-BR")}</p>
+                <details style={{ fontSize: 13, color: colors.textMuted }}>
+                  <summary>ver resposta e comentário</summary>
+                  <p>sua resposta: {entry.selectedAnswer}</p><p>gabarito: {entry.question.gabarito}</p>
+                  {entry.question.textoBase && <p style={{ whiteSpace: "pre-wrap" }}>{entry.question.textoBase}</p>}
+                  {entry.question.comentario && <p style={{ whiteSpace: "pre-wrap" }}>{entry.question.comentario}</p>}
+                </details>
+                <button onClick={() => setPractice(entry)} style={{ ...secondaryBtnStyle, marginTop: 12 }}>refazer questão</button>
+              </article>
+            ))}
+          </div>}
+          {!error && history.entries.length < history.total && <button disabled={loading} onClick={() => setPage((value) => value + 1)} style={{ ...secondaryBtnStyle, marginTop: 16 }}>carregar mais questões</button>}
         </>
       )}
+      {practice && <QuizPractice initialQuestionId={practice.question.id} assunto={practice.question.assunto} materia={practice.question.materia} concursoId={activeConcurso.id} materiaId={practice.materiaId} topicId={practice.topicId} onAnswer={(correct) => addTopicQuestions(practice.materiaId, practice.topicId, 1, correct ? 1 : 0)} onFinish={finishPractice} />}
     </div>
   );
 }

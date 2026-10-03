@@ -143,6 +143,13 @@ describe("session lifecycle", () => {
     assert.equal(freshCheck.status, 200);
   });
 
+  test("an older session cannot log out the current session", async () => {
+    const { email, password, cookie: older } = await registerFresh();
+    const login = await api("/api/login", { method: "POST", body: { email, password } });
+    assert.equal((await api("/api/logout", { method: "POST", cookie: older })).status, 401);
+    assert.equal((await api("/api/me", { cookie: login.cookie })).status, 200);
+  });
+
   test("logout clears the server-side session, so the old cookie stops working", async () => {
     const { cookie } = await registerFresh();
     const logoutRes = await api("/api/logout", { method: "POST", cookie });
