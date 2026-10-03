@@ -1,3 +1,4 @@
+import { SharedPractice } from "../components/SharedPractice.jsx";
 import { filterTopics } from "../lib/studyInsights.js";
 import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
 import { getTopicLinks } from "../lib/topicLinks.js";
@@ -6,7 +7,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, GripVertical, Library, L
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, reorderMaterias, updateTopicNotes, updateTopicLink, updateTopicMaterials, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
+export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, reorderMaterias, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
   // Drag state lives here (not in each card) since a drag needs to know
   // about every OTHER card too — which one the pointer is currently over,
   // to highlight it as the drop target. `dragState` also drives the little
@@ -187,7 +188,7 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
           removeMateria={removeMateria}
           removeTopic={removeTopic}
           moveMateria={moveMateria}
-          updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
+          skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
           updateTopicLink={updateTopicLink}
           onDragHandlePointerDown={(e) => startDrag(m, e)}
           isDragging={dragState?.id === m.id}
@@ -391,7 +392,7 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
   );
 }
 
-function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, updateTopicMaterials, onDragHandlePointerDown, isDragging, isDropTarget, isExpanded, onToggleExpanded }) {
+function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, onDragHandlePointerDown, isDragging, isDropTarget, isExpanded, onToggleExpanded }) {
   const collapsed = !isExpanded;
   const visibleTopics = filterTopics(m.topics, topicFilter);
   const pendentes = m.topics.filter((t) => t.status === "pendente").length;
@@ -472,7 +473,7 @@ function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraf
           {m.topics.length > 0 && (
             <div className="topic-table-wrap" tabIndex={0} role="region" aria-label={`Tabela de assuntos de ${m.name}`}><table className="topic-table edital-topics-table" aria-label={`Assuntos de ${m.name}`}><thead><tr><th scope="col">Assunto</th><th scope="col">Situação</th><th scope="col">Questões</th><th scope="col">Cadernos</th><th scope="col">Ações</th></tr></thead><tbody>
               {visibleTopics.map((t) => (
-                <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes} updateTopicLink={updateTopicLink} />
+                <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes} updateTopicLink={updateTopicLink} />
               ))}
             </tbody></table>{!visibleTopics.length && <p className="muted" style={{padding:12}}>Nenhum assunto neste filtro.</p>}</div>
           )}
@@ -495,7 +496,7 @@ function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraf
   );
 }
 
-function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink, updateTopicMaterials }) {
+function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [draft, setDraft] = useState(t.notes || "");
   const hasNotes = (t.notes || "").trim().length > 0;
@@ -511,9 +512,9 @@ function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, up
 
   return <>
     <tr>
-      <td data-label="Assunto" style={{ color: colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}</td>
+      <td data-label="Assunto" style={{ color: colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}<SharedPractice topic={t} onSkip={() => skipShared(materiaId, t.id)} onUndo={() => undoShared(materiaId, t.id)} /></td>
       <td data-label="Situação"><span className="topic-status" style={{ color: t.mastered ? colors.success : t.status === "estudado" ? colors.accent : colors.textMuted, background: t.status === "estudado" ? colors.accentSoft : colors.surface2 }}>{t.mastered ? "dominado" : t.status === "estudado" ? "estudado" : "pendente"}</span></td>
-      <td data-label="Questões"><span className="mono">{t.questionsTotal > 0 ? `${t.questionsCorrect}/${t.questionsTotal}` : "—"}</span>{t.questionsTotal > 0 && <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 3 }}>{Math.round(t.questionsCorrect / t.questionsTotal * 100)}% de acertos</div>}</td>
+      <td data-label="Questões"><span className="mono">{(t.crossStudy?.total ?? t.questionsTotal) > 0 ? `${t.crossStudy?.correct ?? t.questionsCorrect}/${t.crossStudy?.total ?? t.questionsTotal}` : "—"}</span>{(t.crossStudy?.total ?? t.questionsTotal) > 0 && <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 3 }}>{Math.round((t.crossStudy?.correct ?? t.questionsCorrect) / (t.crossStudy?.total ?? t.questionsTotal) * 100)}% de acertos</div>}</td>
       <td data-label="Cadernos"><div className="topic-actions"><TopicLinkButtons topic={t} /><button type="button" onClick={() => setLinkOpen(o => !o)} aria-label={`buscar questões de ${t.name}`} style={{ ...secondaryBtnStyle, marginTop: 0, padding: "4px 8px", fontSize: 11 }}>Buscar questões</button><button onClick={() => setLinkOpen(o => !o)} aria-label="link do caderno de questões" aria-expanded={linkOpen} title="Editar links dos cadernos" style={{ ...iconBtnStyle, color: hasLink ? colors.success : colors.textFaint }}><Link2 size={16} /></button></div></td>
       <td data-label="Ações"><div className="topic-actions"><button onClick={() => setNotesOpen(o => !o)} aria-label="anotações do assunto" aria-expanded={notesOpen} title="Anotações" style={{ ...iconBtnStyle, color: hasNotes ? colors.accent : colors.textFaint }}><StickyNote size={16} /></button><button onClick={() => removeTopic(materiaId, t.id)} aria-label={`excluir assunto ${t.name}`} title="Excluir assunto" style={iconBtnStyle}><X size={16} /></button></div></td>
     </tr>

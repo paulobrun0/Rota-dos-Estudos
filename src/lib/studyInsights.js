@@ -1,3 +1,4 @@
+import { topicQuestionTotals } from "./editalCompatibility.js";
 import { todayISO } from './date.js';
 import { computeMateriaStats } from './materiaStats.js';
 
@@ -13,7 +14,8 @@ export function sortedExams(concurso) {
 export function reviewRows(concurso, today = todayISO()) {
   const plan = concurso?.dailyPlans?.[today] || [];
   return (concurso?.materias || []).flatMap(m => m.topics.filter(t => t.status === 'estudado' && !t.mastered).map(t => {
-    const accuracy = t.questionsTotal ? Math.round((t.questionsCorrect || 0) / t.questionsTotal * 100) : null;
+    const questions = t.crossStudy?.total ?? t.questionsTotal;
+    const accuracy = questions ? Math.round((t.crossStudy?.correct ?? t.questionsCorrect ?? 0) / questions * 100) : null;
     const due = t.nextReviewDate && t.nextReviewDate <= today;
     const weak = accuracy !== null && accuracy < 70;
     return { ...t, materiaId: m.id, materiaName: m.name, accuracy, due: Boolean(due), weak,
@@ -25,8 +27,7 @@ export function concursoSummary(concurso) {
   const rows = computeMateriaStats(concurso);
   const total = rows.reduce((s, r) => s + r.total, 0);
   const done = rows.reduce((s, r) => s + r.done, 0);
-  const questions = rows.reduce((s, r) => s + r.questionsTotal, 0);
-  const correct = rows.reduce((s, r) => s + r.questionsCorrect, 0);
+  const { total: questions, correct } = topicQuestionTotals((concurso?.materias || []).flatMap(m => m.topics));
   let estimatedMinutes = 0;
   for (const plan of Object.values(concurso?.dailyPlans || {})) {
     const groups = {};
@@ -39,7 +40,7 @@ export function filterTopics(topics, { query = '', status = 'all', sort = 'origi
   const normalize = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const needle = normalize(query.trim());
   const rows = topics.filter(t => normalize(t.name).includes(needle) && (status === 'all' || status === 'pending' && t.status !== 'estudado' || status === 'studied' && t.status === 'estudado' || status === 'due' && !t.mastered && t.nextReviewDate && t.nextReviewDate <= today));
-  const accuracy = t => t.questionsTotal ? (t.questionsCorrect || 0) / t.questionsTotal : Infinity;
+  const accuracy = t => (t.crossStudy?.total ?? t.questionsTotal) ? (t.crossStudy?.correct ?? t.questionsCorrect ?? 0) / (t.crossStudy?.total ?? t.questionsTotal) : Infinity;
   if (sort === 'accuracy') rows.sort((a, b) => accuracy(a) - accuracy(b));
   if (sort === 'review') rows.sort((a, b) => (a.nextReviewDate || '9999').localeCompare(b.nextReviewDate || '9999'));
   if (sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));

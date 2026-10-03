@@ -1,7 +1,10 @@
+import { ConciliacaoView } from "./views/ConciliacaoView.jsx";
+import { buildPracticeIndex, decorateConcurso, linkEquivalentTopics, removeManualEquivalence } from "./lib/editalCompatibility.js";
+import { applySharedSkip } from "./lib/sharedSkip.js";
 import { DashboardView } from "./views/DashboardView.jsx";
 import { RevisoesView } from "./views/RevisoesView.jsx";
 import { SimuladosView } from "./views/SimuladosView.jsx";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, NotebookText, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle, X,
 } from "./components/Icons.jsx";
@@ -48,6 +51,7 @@ const REVIEW_CARD_MINUTES = 3;
 
 const TAB_TITLES = {
   painel: "painel",
+  conciliar: "conciliar editais",
   revisoes: "revisões",
   simulados: "simulados",
   dia: "hoje",
@@ -120,7 +124,18 @@ export default function App({ user, onLogout, onUserUpdate }) {
     await onLogout();
   }
 
-  const activeConcurso = data ? data.concursos.find((c) => c.id === data.activeConcursoId) || null : null;
+  const practiceIndex = useMemo(() => buildPracticeIndex(data?.concursos), [data?.concursos]);
+  const activeConcurso = useMemo(() => decorateConcurso(data?.concursos.find(c => c.id === data.activeConcursoId), practiceIndex), [data, practiceIndex]);
+  const skipShared = ref => {
+    setData(d => applySharedSkip(d, ref, todayISO()));
+    if (ref.concursoId === activeConcurso?.id) {
+      sessionTimers.pause(ref.materiaId);
+      setPendingQuestions(prev => { const next = { ...prev }; delete next[ref.materiaId]; return next; });
+    }
+  };
+  const undoShared = ref => setData(d => applySharedSkip(d, ref, todayISO(), true));
+  const skipActiveShared = (materiaId, topicId) => skipShared({ concursoId: activeConcurso.id, materiaId, topicId });
+  const undoActiveShared = (materiaId, topicId) => undoShared({ concursoId: activeConcurso.id, materiaId, topicId });
 
   function updateActive(updater) {
     setData((prev) => {
@@ -268,6 +283,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
       if (!item.feito) {
         item.feito = true;
         topic.status = "estudado";
+        delete topic.skippedFromShared;
         topic.mastered = false;
         // "novo" puts a topic on the spaced-review schedule for the first
         // time; a scheduled "revisao" pass advances it to the next, longer
@@ -669,6 +685,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           ...m,
           topics: m.topics.map((t) => {
             const reset = { ...t, status: "pendente", mastered: false };
+            delete reset.skippedFromShared;
             if (!keepHistory) {
               delete reset.history;
               delete reset.questionsTotal;
@@ -777,6 +794,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         <NavItem icon={<Flame size={20} />} label="progresso" active={tab === "progresso"} onClick={() => goTab("progresso")} />
         <NavItem icon={<Trophy size={20} />} label="ranking" active={tab === "ranking"} onClick={() => goTab("ranking")} />
         <div style={{ height: 1, background: colors.border, margin: "8px 6px" }} />
+        <NavItem icon={<BookOpen size={20} />} label="conciliar editais" active={tab === "conciliar"} onClick={() => goTab("conciliar")} />
         <NavItem icon={<GraduationCap size={20} />} label="concursos" active={tab === "concursos"} onClick={() => goTab("concursos")} />
         <NavItem icon={<UserCircle size={20} />} label="perfil" active={tab === "perfil"} onClick={() => goTab("perfil")} />
         <NavItem icon={<Settings size={20} />} label="ajustes" active={tab === "ajustes"} onClick={() => goTab("ajustes")} />
@@ -881,10 +899,13 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
         {tab === "admin" && user?.isAdmin && <AdminView currentUserEmail={user.email} onUserUpdate={onUserUpdate} />}
 
-        {tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && tab !== "admin" && tab !== "ranking" && tab !== "perfil" && !activeConcurso && (
+        {tab !== "conciliar" && tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && tab !== "admin" && tab !== "ranking" && tab !== "perfil" && !activeConcurso && (
           <EmptyConcursoState onGo={() => setTab("concursos")} />
         )}
 
+        {tab === "conciliar" && <ConciliacaoView concursos={data.concursos} activeConcursoId={data.activeConcursoId}
+          onLink={(left, right) => setData(d => linkEquivalentTopics(d, left, right, `shared:${uid()}`))}
+          onUnlink={ref => setData(d => removeManualEquivalence(d, ref))} onSkip={skipShared} onUndo={undoShared} />}
         {tab === "painel" && activeConcurso && <DashboardView concurso={activeConcurso} onNavigate={goTab} />}
         {tab === "revisoes" && activeConcurso && <RevisoesView key={activeConcurso.id} concurso={activeConcurso} addTopicToToday={addTopicToToday} onNavigate={goTab} />}
         {tab === "simulados" && activeConcurso && <SimuladosView key={activeConcurso.id} concurso={activeConcurso}
@@ -914,6 +935,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             updateTopicNotes={updateTopicNotes}
             updateTopicLink={updateTopicLink}
             updateTopicMaterials={updateTopicMaterials}
+            skipShared={skipActiveShared} undoShared={undoActiveShared}
             setTopicQuestions={setTopicQuestions}
             questionCounts={questionCounts}
             addTopicQuestions={addTopicQuestions}
@@ -956,6 +978,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             updateTopicNotes={updateTopicNotes}
             updateTopicLink={updateTopicLink}
             updateTopicMaterials={updateTopicMaterials}
+            skipShared={skipActiveShared} undoShared={undoActiveShared}
             topicDrafts={topicDrafts}
             setTopicDrafts={setTopicDrafts}
             contentBank={contentBank}

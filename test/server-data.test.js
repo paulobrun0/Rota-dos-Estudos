@@ -307,3 +307,23 @@ describe("GET /api/ranking", () => {
     await api("/api/admin/features/ranking", { method: "PATCH", cookie: admin.cookie, body: { enabled: true } });
   });
 });
+
+test('manual topic equivalence and optional skip survive API reload without copying question counts', async () => {
+  const { makeConcurso } = await import('../src/data/model.js');
+  const { applySharedSkip } = await import('../src/lib/sharedSkip.js');
+  const user = await registerFresh(), other = await registerFresh();
+  const source = makeConcurso('Origem', 0), target = makeConcurso('Destino', 1);
+  source.materias = [{ id: 'source-m', name: 'Português', topics: [{ id: 'source-t', name: 'Crase', status: 'pendente', questionsTotal: 20, questionsCorrect: 16, equivalenceKey: 'shared:api-test' }] }];
+  target.materias = [{ id: 'target-m', name: 'Língua Portuguesa', topics: [{ id: 'target-t', name: 'Emprego da crase', status: 'pendente', equivalenceKey: 'shared:api-test' }] }];
+  const plan = { concursos: [source, target], activeConcursoId: target.id, activity: {}, questionActivity: {} };
+  const skipped = applySharedSkip(plan, { concursoId: target.id, materiaId: 'target-m', topicId: 'target-t' }, '2026-10-03');
+  assert.equal((await api('/api/data', { method: 'PUT', cookie: user.cookie, body: { value: JSON.stringify(skipped) } })).status, 200);
+  const restored = JSON.parse((await api('/api/data', { cookie: user.cookie })).body.value);
+  assert.deepEqual(restored, skipped);
+  assert.equal(restored.concursos[1].materias[0].topics[0].skippedFromShared, true);
+  assert.equal(restored.concursos[1].materias[0].topics[0].questionsTotal, undefined);
+  assert.equal((await api('/api/data', { cookie: other.cookie })).body.value, null);
+  const invalid = structuredClone(skipped); invalid.concursos[1].materias[0].topics[0].skippedFromShared = 'true';
+  assert.equal((await api('/api/data', { method: 'PUT', cookie: user.cookie, body: { value: JSON.stringify(invalid) } })).status, 400);
+  assert.deepEqual(JSON.parse((await api('/api/data', { cookie: user.cookie })).body.value), skipped);
+});

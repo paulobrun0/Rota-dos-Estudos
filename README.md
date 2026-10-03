@@ -2,6 +2,14 @@
 
 Planejador de estudos para concursos com painel de desempenho, edital, ciclos por progresso, revisões, simulados e materiais organizados por assunto.
 
+## Conciliar editais e aproveitar a prática
+
+Abra **Conciliar editais** e escolha dois concursos. A tela mostra assuntos em comum, porcentagem de cobertura de cada edital, sobreposição global (interseção ÷ união) e assuntos exclusivos. Os denominadores contam assuntos distintos, evitando inflar a comparação com entradas repetidas. A análise compara conteúdo; datas, banca, pesos e profundidade também influenciam a preparação.
+
+Matéria e assunto iguais são reconhecidos ignorando acentos, pontuação e numeração. Português e Língua Portuguesa são tratados como a mesma matéria. Para nomes diferentes, selecione os assuntos e use **Confirmar assuntos equivalentes**. O vínculo manual pode ser removido. Uma semelhança de palavras, sozinha, não cria equivalência automática.
+
+Questões registradas na plataforma aparecem somadas nos assuntos equivalentes dos seus outros editais, com origem e acertos. Os registros locais e a atividade global não são copiados nem duplicados. Em Hoje, Edital e na comparação, **Pular assunto já praticado** aproveita a etapa inicial, mantém revisões e não conta nova atividade nem domínio. **Voltar a estudar** desfaz o aproveitamento enquanto ele ainda não foi substituído por estudo real. Resultados de Qconcursos ou TEC continuam dependendo do registro manual na plataforma.
+
 ## Cadernos de questões externos
 
 Em **Edital** ou **Hoje**, use **Buscar questões** ao lado de um assunto. O nome já aparece preenchido e pode ser ajustado antes da busca. **Buscar no Qconcursos** abre questões por palavra-chave; confira os filtros de disciplina e assunto. Para o **TEC Concursos**, copie o assunto, abra a plataforma e escolha seus filtros. A criação e o salvamento do caderno são feitos na sua conta da plataforma externa. Depois cole a URL nos campos de cadernos e salve: o link ficará disponível diretamente naquele assunto, inclusive após recarregar a página. O aplicativo não recebe credenciais dessas plataformas e não sincroniza automaticamente as questões resolvidas nelas.

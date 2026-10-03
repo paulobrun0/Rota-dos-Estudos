@@ -57,6 +57,8 @@ function validateMaterias(materias) {
         requireValue(object(topic.links), "links inválidos");
         for (const link of Object.values(topic.links)) requireValue(isSafeStudyLink(link), "link precisa começar com http ou https");
       }
+      if (topic.equivalenceKey !== undefined) { text(topic.equivalenceKey, "equivalência do assunto"); requireValue(topic.equivalenceKey.length <= 1000, "equivalência muito longa"); }
+      if (topic.skippedFromShared !== undefined) requireValue(typeof topic.skippedFromShared === "boolean", "aproveitamento inválido");
       if (topic.materials !== undefined) {
         distinct(topic.materials, "materiais");
         for (const material of topic.materials) {

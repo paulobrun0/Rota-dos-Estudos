@@ -1,3 +1,4 @@
+import { topicQuestionTotals } from "./editalCompatibility.js";
 // Per-matéria breakdown for the active concurso: completion of the current
 // edital plus how many "novo" vs "revisão" cards were checked off over time.
 // The novo/revisão counts come from scanning every day ever planned
@@ -19,8 +20,7 @@ export function computeMateriaStats(concurso) {
     const done = m.topics.filter((t) => t.status === "estudado").length;
     const pct = total === 0 ? 0 : Math.round((done / total) * 100);
     const completed = completedByMateria[m.id] || { novo: 0, revisao: 0 };
-    const questionsTotal = m.topics.reduce((sum, t) => sum + (t.questionsTotal || 0), 0);
-    const questionsCorrect = m.topics.reduce((sum, t) => sum + (t.questionsCorrect || 0), 0);
+    const { total: questionsTotal, correct: questionsCorrect } = topicQuestionTotals(m.topics);
     const accuracyPct = questionsTotal === 0 ? null : Math.round((questionsCorrect / questionsTotal) * 100);
     return {
       id: m.id,
@@ -49,9 +49,9 @@ export function computeTopicStats(concurso) {
   const rows = [];
   concurso.materias.forEach((m) => {
     m.topics.forEach((t) => {
-      const total = t.questionsTotal || 0;
+      const total = t.crossStudy?.total ?? t.questionsTotal ?? 0;
       if (total === 0) return;
-      const correct = t.questionsCorrect || 0;
+      const correct = t.crossStudy?.correct ?? t.questionsCorrect ?? 0;
       rows.push({
         id: t.id,
         name: t.name,

@@ -1,3 +1,4 @@
+import { SharedPractice } from "../components/SharedPractice.jsx";
 import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
 import { getTopicLinks } from "../lib/topicLinks.js";
 import React, { useState } from "react";
@@ -38,7 +39,7 @@ function StatTile({ icon, label, value, sub }) {
   );
 }
 
-export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
+export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
   const isToday = selectedDate === todayISO();
   const exam = examCountdownInfo(examDate);
   const examStyle = exam ? EXAM_BADGE_STYLE[exam.level] : null;
@@ -167,7 +168,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
                   sessionTimers={sessionTimers}
                   restTimers={restTimers}
                   pendingCardId={pendingQuestions[materiaId]}
-                  updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
+                  skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
                   updateTopicLink={updateTopicLink}
                   setTopicQuestions={setTopicQuestions}
                   questionCounts={questionCounts}
@@ -193,7 +194,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
                   sessionTimers={sessionTimers}
                   restTimers={restTimers}
                   pendingCardId={pendingQuestions[materiaId]}
-                  updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
+                  skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
                   updateTopicLink={updateTopicLink}
                   setTopicQuestions={setTopicQuestions}
                   questionCounts={questionCounts}
@@ -208,7 +209,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
   );
 }
 
-function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
+function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
   if (!materia) return null;
   // dailyPlans keeps history and isn't pruned when a topic is later deleted
   // from the matéria (see computeMateriaStats), so an old day's cards can
@@ -255,7 +256,7 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
               topic={topic}
               forcedOpen={card.id === pendingCardId}
               onToggle={(questions) => onToggle(card.id, questions)}
-              updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
+              skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
               updateTopicLink={updateTopicLink}
               setTopicQuestions={setTopicQuestions}
               materiaId={materia.id}
@@ -280,7 +281,7 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
   );
 }
 
-function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
+function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
   const [asking, setAsking] = useState(false);
   const [practicing, setPracticing] = useState(false);
   const [feitas, setFeitas] = useState("");
@@ -305,7 +306,9 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
   const awaitingReveal = isFlashcard && !revealed;
 
 
-  const hasQuestions = (topic.questionsTotal || 0) > 0;
+  const sharedTotal = topic.crossStudy?.total ?? topic.questionsTotal ?? 0;
+  const sharedCorrect = topic.crossStudy?.correct ?? topic.questionsCorrect ?? 0;
+  const hasQuestions = sharedTotal > 0;
 
   function saveNotesIfChanged() {
     if (notesDraft !== (topic.notes || "")) updateTopicNotes(materiaId, topic.id, notesDraft);
@@ -371,6 +374,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
         </button>
         <div style={{ flex: "1 1 140px", minWidth: 0 }}>
           <div style={{ fontSize: 14, textDecoration: card.feito ? "line-through" : "none", color: colors.text }}>{topic.name}</div>
+          <SharedPractice topic={topic} onSkip={() => skipShared(materiaId, topic.id)} onUndo={() => undoShared(materiaId, topic.id)} />
           {hasNotes && !notesOpen && !awaitingReveal && (
             <div style={{ fontSize: 12, color: colors.textFaint, fontStyle: "italic", marginTop: 2 }}>{topic.notes}</div>
           )}
@@ -394,7 +398,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
         >
           {hasQuestions ? (
             <span className="mono" style={{ fontSize: 10.5, color: colors.textFaint }}>
-              {topic.questionsCorrect}/{topic.questionsTotal}
+              {sharedCorrect}/{sharedTotal}
             </span>
           ) : (
             <span style={{ fontSize: 10.5, color: colors.textFaint }}>questões</span>
@@ -447,6 +451,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
       {questionsEditOpen && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
           <span style={{ fontSize: 11.5, color: colors.textMuted }}>total de questões</span>
+          <span style={{ fontSize: 11, color: colors.textMuted }}>Editar somente os registros deste edital.</span>
           <input
             type="number" min={0} autoFocus value={editTotal}
             onChange={(e) => setEditTotal(e.target.value)}

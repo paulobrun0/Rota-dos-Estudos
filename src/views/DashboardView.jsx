@@ -13,7 +13,7 @@ export function DashboardView({ concurso, onNavigate }) {
   const cycle = [...concurso.materias.slice(index), ...concurso.materias.slice(0, index)];
   const planned = concurso.dailyPlans?.[todayISO()] || [];
   return <div>
-    <div className="study-metrics"><Metric label="Questões registradas" value={summary.questions} hint="Práticas e registros nos assuntos" /><Metric label="Taxa de acertos" value={summary.accuracy === null ? '—' : `${summary.accuracy}%`} /><Metric label="Cobertura do edital" value={`${summary.coverage}%`} hint={`${summary.done}/${summary.total} assuntos`} /><Metric label="Último simulado" value={latest ? `${examScore(latest).percent}%` : '—'} hint={latest?.name || 'Registre seu primeiro simulado'} /></div>
+    <div className="study-metrics"><Metric label="Questões registradas" value={summary.questions} hint="Inclui prática de assuntos equivalentes" /><Metric label="Taxa de acertos" value={summary.accuracy === null ? '—' : `${summary.accuracy}%`} /><Metric label="Cobertura do edital" value={`${summary.coverage}%`} hint={`${summary.done}/${summary.total} assuntos`} /><Metric label="Último simulado" value={latest ? `${examScore(latest).percent}%` : '—'} hint={latest?.name || 'Registre seu primeiro simulado'} /></div>
     <div className="dashboard-columns"><div>
       <Panel title={concurso.name} action={<button onClick={() => onNavigate('edital')} style={secondaryBtnStyle}>Abrir edital</button>}>
         <div className="dashboard-meta">{concurso.cargo || 'Cargo não informado'} · {concurso.banca || 'Banca não informada'} · {concurso.stage === 'completed' ? 'Concurso realizado' : concurso.stage === 'post' ? 'Pós-edital' : 'Pré-edital'}</div>
