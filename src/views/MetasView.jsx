@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarDays, Clock, Coffee, Layers, RotateCw, Target } from "lucide-react";
+import { CalendarDays, Clock, Coffee, Layers, RotateCw, Target } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { inputStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -53,13 +53,13 @@ export function MetasView({ concurso, updateSettings, setPlanMode, updateCronogr
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => setPlanMode("ciclo")}
-            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${planMode === "ciclo" ? colors.amber : colors.border}`, color: planMode === "ciclo" ? colors.amber : colors.text }}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${planMode === "ciclo" ? colors.accent : colors.border}`, color: planMode === "ciclo" ? colors.accent : colors.text }}
           >
             <RotateCw size={14} /> ciclo
           </button>
           <button
             onClick={() => setPlanMode("cronograma")}
-            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${planMode === "cronograma" ? colors.amber : colors.border}`, color: planMode === "cronograma" ? colors.amber : colors.text }}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${planMode === "cronograma" ? colors.accent : colors.border}`, color: planMode === "cronograma" ? colors.accent : colors.text }}
           >
             <CalendarDays size={14} /> cronograma
           </button>
@@ -69,7 +69,7 @@ export function MetasView({ concurso, updateSettings, setPlanMode, updateCronogr
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "18px 20px", marginBottom: 22, display: "flex", flexDirection: "column", gap: 18 }}>
         {planMode === "ciclo" && (
           <GlobalGoalRow
-            icon={<Layers size={15} color={colors.amber} />}
+            icon={<Layers size={15} color={colors.accent} />}
             label="matérias por dia"
             hint={materiasPerDay === 0 ? `0 = todas as ${totalMaterias || 0} matérias, todo dia (sem revezamento)` : `revezando de ${effectivePerDay} em ${effectivePerDay}, entre as ${totalMaterias} matérias cadastradas`}
             value={materiasPerDay}
@@ -77,21 +77,21 @@ export function MetasView({ concurso, updateSettings, setPlanMode, updateCronogr
           />
         )}
         <GlobalGoalRow
-          icon={<Target size={15} color={colors.amber} />}
+          icon={<Target size={15} color={colors.accent} />}
           label="assuntos por matéria"
           hint="quantos assuntos novos puxar de cada matéria escalada para o dia"
           value={topicsPerDay}
           onChange={(v) => updateSettings("topicsPerDay", v)}
         />
         <GlobalGoalRow
-          icon={<RotateCw size={15} color={colors.amber} />}
+          icon={<RotateCw size={15} color={colors.accent} />}
           label="revisões por dia"
           hint={reviewsPerDay === 0 ? "revisão espaçada desligada — assuntos já estudados não voltam sozinhos" : `até ${reviewsPerDay} assuntos já estudados voltam por dia, no intervalo certo (1/3/7/15/30 dias) — vindos de qualquer matéria, não só as do dia`}
           value={reviewsPerDay}
           onChange={(v) => updateSettings("reviewsPerDay", v)}
         />
         <GlobalGoalRow
-          icon={<Clock size={15} color={colors.amber} />}
+          icon={<Clock size={15} color={colors.accent} />}
           label="minutos por matéria"
           hint="tempo total da sessão daquela matéria — dividido entre os assuntos do dia"
           value={minutesPerMateria}
@@ -99,7 +99,7 @@ export function MetasView({ concurso, updateSettings, setPlanMode, updateCronogr
           step={5}
         />
         <GlobalGoalRow
-          icon={<Coffee size={15} color={colors.amber} />}
+          icon={<Coffee size={15} color={colors.accent} />}
           label="minutos de descanso"
           hint={restMinutes === 0 ? "sem pausa automática ao concluir uma matéria" : "pausa que começa sozinha assim que você termina os assuntos da matéria"}
           value={restMinutes}

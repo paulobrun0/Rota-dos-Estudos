@@ -156,7 +156,7 @@ export function QuizPractice({ assunto, materia, concursoId, materiaId, topicId,
             ))}
             <button
               onClick={() => setQuantidade(teto)}
-              style={{ ...secondaryBtnStyle, padding: "10px 18px", fontSize: 14, fontWeight: 600, border: `1px solid ${colors.teal}`, color: colors.teal }}
+              style={{ ...secondaryBtnStyle, padding: "10px 18px", fontSize: 14, fontWeight: 600, border: `1px solid ${colors.success}`, color: colors.success }}
             >
               todas ({teto})
             </button>
@@ -247,8 +247,8 @@ export function QuizPractice({ assunto, materia, concursoId, materiaId, topicId,
                 disabled={answered || answerBusy || (answerDraft !== null && answerDraft !== alt)}
                 style={{
                   textAlign: "left", padding: "10px 12px", borderRadius: 8, fontSize: 13.5, lineHeight: 1.45, cursor: answered ? "default" : "pointer",
-                  border: `1px solid ${isThisCorrect ? colors.teal : isThisWrongPick ? colors.red : colors.border}`,
-                  background: isThisCorrect ? colors.tealSoft : isThisWrongPick ? colors.redSoft : colors.surface2,
+                  border: `1px solid ${isThisCorrect ? colors.success : isThisWrongPick ? colors.red : colors.border}`,
+                  background: isThisCorrect ? colors.successSoft : isThisWrongPick ? colors.redSoft : colors.surface2,
                   color: colors.text,
                 }}
               >
@@ -263,7 +263,7 @@ export function QuizPractice({ assunto, materia, concursoId, materiaId, topicId,
         {answered && current.comentario && <p style={{ color: colors.textMuted, whiteSpace: "pre-wrap" }}>{current.comentario}</p>}
         {answered && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: isCorrect ? colors.teal : colors.red }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: isCorrect ? colors.success : colors.red }}>
               {isCorrect ? "certo!" : `errado — resposta: ${answerGabarito ?? current.gabarito}`}
             </span>
             <button onClick={() => next(isLast)} style={{ ...secondaryBtnStyle, padding: "7px 16px", fontSize: 13 }}>

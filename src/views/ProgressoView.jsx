@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BookOpen, Check, ChevronDown, Flame, Plus, Trophy } from "lucide-react";
+import { BookOpen, Check, ChevronDown, Flame, Plus, Trophy } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { formatDatePretty, fromISO } from "../lib/date.js";
 import { buildHeatmapWeeks, computeStreaks, heatLevel } from "../lib/streaks.js";
@@ -7,7 +7,7 @@ import { computeMateriaStats, computeTopicStats } from "../lib/materiaStats.js";
 import { SectionLabel } from "../components/SectionLabel.jsx";
 import { StatsChart } from "../components/StatsChart.jsx";
 
-const HEAT_COLORS = [colors.surface2, colors.heat1, colors.heat2, colors.amber];
+const HEAT_COLORS = [colors.surface2, colors.heat1, colors.heat2, colors.accent];
 const MESES_ABR = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 export function ProgressoView({ activity, questionActivity, activeConcurso, addTopicToToday, studyDays }) {
@@ -36,11 +36,11 @@ export function ProgressoView({ activity, questionActivity, activeConcurso, addT
       </div>
 
       <div className="stat-grid" style={{ marginBottom: 26 }}>
-        <StatCard icon={<Flame size={16} color={colors.amber} />} label="sequência atual" value={`${current} dia${current !== 1 ? "s" : ""}`} />
-        <StatCard icon={<Trophy size={16} color={colors.amber} />} label="recorde" value={`${longest} dia${longest !== 1 ? "s" : ""}`} />
-        <StatCard icon={<Check size={16} color={colors.amber} />} label="cards concluídos" value={`${totalCards}`} sub={`em ${totalDias} dia${totalDias !== 1 ? "s" : ""}`} />
+        <StatCard icon={<Flame size={16} color={colors.accent} />} label="sequência atual" value={`${current} dia${current !== 1 ? "s" : ""}`} />
+        <StatCard icon={<Trophy size={16} color={colors.accent} />} label="recorde" value={`${longest} dia${longest !== 1 ? "s" : ""}`} />
+        <StatCard icon={<Check size={16} color={colors.accent} />} label="cards concluídos" value={`${totalCards}`} sub={`em ${totalDias} dia${totalDias !== 1 ? "s" : ""}`} />
         <StatCard
-          icon={<BookOpen size={16} color={colors.amber} />}
+          icon={<BookOpen size={16} color={colors.accent} />}
           label="edital concluído"
           value={activeConcurso ? `${editalPct}%` : "—"}
           sub={activeConcurso ? `${editalDone}/${editalTotal} assuntos` : "nenhum concurso ativo"}
@@ -127,7 +127,7 @@ function MateriaStatRow({ stat }) {
         {novoCount} assunto{novoCount !== 1 ? "s" : ""} novo{novoCount !== 1 ? "s" : ""} concluído{novoCount !== 1 ? "s" : ""} · {revisaoCount} revisão{revisaoCount !== 1 ? "ões" : ""} de ciclo
       </div>
       {accuracyPct !== null && (
-        <div style={{ fontSize: 11.5, color: accuracyPct >= 70 ? colors.teal : colors.red, marginTop: 4 }}>
+        <div style={{ fontSize: 11.5, color: accuracyPct >= 70 ? colors.success : colors.red, marginTop: 4 }}>
           {questionsCorrect}/{questionsTotal} questões certas · {accuracyPct}% de acerto
         </div>
       )}
@@ -163,7 +163,7 @@ function TopicStatRow({ stat, onAddToToday }) {
           className="mono"
           style={{
             fontSize: 12.5, fontWeight: 700, flexShrink: 0, width: 40, textAlign: "right",
-            color: good ? colors.teal : colors.red,
+            color: good ? colors.success : colors.red,
           }}
         >
           {accuracyPct}%
@@ -175,7 +175,7 @@ function TopicStatRow({ stat, onAddToToday }) {
           title="estudar esse assunto hoje"
           style={{
             flexShrink: 0, display: "flex", alignItems: "center", padding: 4, borderRadius: 6, border: "none",
-            background: added ? colors.tealSoft : "transparent", color: added ? colors.teal : colors.textFaint,
+            background: added ? colors.successSoft : "transparent", color: added ? colors.success : colors.textFaint,
           }}
         >
           {added ? <Check size={14} /> : <Plus size={14} />}
@@ -196,7 +196,7 @@ function TopicStatRow({ stat, onAddToToday }) {
                   {formatDatePretty(h.date)} · {h.tipo === "revisao" ? "revisão" : "novo"}
                 </span>
                 {passPct !== null ? (
-                  <span className="mono" style={{ color: passPct >= 70 ? colors.teal : colors.red, fontWeight: 600 }}>
+                  <span className="mono" style={{ color: passPct >= 70 ? colors.success : colors.red, fontWeight: 600 }}>
                     {h.questionsCorrect}/{h.questionsTotal} · {passPct}%
                   </span>
                 ) : (

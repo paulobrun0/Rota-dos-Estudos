@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ListChecks, Trophy } from "lucide-react";
+import { ListChecks, Trophy } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { fetchRanking } from "../api/ranking.js";
 
@@ -22,11 +22,11 @@ function Bar({ avatar, label, value, max, highlight, suffix }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
       <Avatar src={avatar} name={label} size={20} />
-      <div style={{ width: 150, fontSize: 12.5, color: highlight ? colors.amber : colors.textMuted, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <div style={{ width: 150, fontSize: 12.5, color: highlight ? colors.accent : colors.textMuted, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {label}
       </div>
       <div style={{ flex: 1, background: colors.surface2, borderRadius: 6, height: 10, overflow: "hidden" }}>
-        <div style={{ width: `${pct}%`, background: highlight ? colors.amber : colors.teal, height: "100%", borderRadius: 6 }} />
+        <div style={{ width: `${pct}%`, background: highlight ? colors.accent : colors.success, height: "100%", borderRadius: 6 }} />
       </div>
       <div className="mono" style={{ minWidth: 28, textAlign: "right", fontSize: 12.5, color: colors.textMuted, flexShrink: 0 }}>{value}{suffix || ""}</div>
     </div>
@@ -85,13 +85,13 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
   return (
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
-        <Trophy size={18} color={colors.amber} /> ranking
+        <Trophy size={18} color={colors.accent} /> ranking
       </div>
       <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 20 }}>
         veja como você está em relação a outras pessoas estudando por aqui.
         {data && !data.isOptedIn && (
           <> você não aparece no ranking dos outros —{" "}
-            <button onClick={onGoToSettings} style={{ background: "none", border: "none", padding: 0, color: colors.amber, textDecoration: "underline", cursor: "pointer", font: "inherit" }}>
+            <button onClick={onGoToSettings} style={{ background: "none", border: "none", padding: 0, color: colors.accent, textDecoration: "underline", cursor: "pointer", font: "inherit" }}>
               mude isso em ajustes
             </button>.
           </>
@@ -134,8 +134,8 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
                 key={p}
                 onClick={() => setPeriod(p)}
                 style={{
-                  background: period === p ? colors.amberSoft : "transparent", color: period === p ? colors.amber : colors.textMuted,
-                  border: `1px solid ${period === p ? colors.amber : colors.border}`, borderRadius: 8, padding: "5px 10px", fontSize: 12,
+                  background: period === p ? colors.accentSoft : "transparent", color: period === p ? colors.accent : colors.textMuted,
+                  border: `1px solid ${period === p ? colors.accent : colors.border}`, borderRadius: 8, padding: "5px 10px", fontSize: 12,
                 }}
               >
                 {PERIOD_LABELS[p]}

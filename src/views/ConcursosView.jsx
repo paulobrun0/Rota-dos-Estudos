@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AlertTriangle, CalendarClock, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { AlertTriangle, CalendarClock, Pencil, Plus, RotateCcw, Trash2 } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { examCountdownInfo } from "../lib/examCountdown.js";
@@ -46,7 +46,7 @@ export function ConcursosView({ concursos, activeConcursoId, newConcursoName, se
   );
 }
 
-const BADGE_COLOR = { past: colors.textFaint, critical: colors.red, soon: colors.amber, normal: colors.textMuted };
+const BADGE_COLOR = { past: colors.textFaint, critical: colors.red, soon: colors.accent, normal: colors.textMuted };
 
 function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExamDateChange, onResetCycle, canDelete }) {
   const [editing, setEditing] = useState(false);
@@ -80,7 +80,7 @@ function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExam
   }
 
   return (
-    <div style={{ background: colors.surface, border: `1px solid ${isActive ? colors.amber : colors.border}`, borderLeft: `3px solid ${concurso.color}`, borderRadius: 12, padding: "14px 16px" }}>
+    <div style={{ background: colors.surface, border: `1px solid ${isActive ? colors.accent : colors.border}`, borderLeft: `3px solid ${concurso.color}`, borderRadius: 12, padding: "14px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         {editing ? (
@@ -96,7 +96,7 @@ function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExam
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div className="sg" style={{ fontSize: 15, fontWeight: 700 }}>{concurso.name}</div>
             {isActive && (
-              <span className="mono" style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: colors.amberSoft, color: colors.amber }}>ativo</span>
+              <span className="mono" style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: colors.accentSoft, color: colors.accent }}>ativo</span>
             )}
           </div>
         )}
@@ -152,11 +152,11 @@ function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExam
               onClick={() => setResetMode("keep")}
               style={{
                 flex: 1, textAlign: "left", padding: "10px 12px", borderRadius: 8, cursor: "pointer",
-                background: resetMode === "keep" ? colors.tealSoft : colors.surface2,
-                border: `1px solid ${resetMode === "keep" ? colors.teal : colors.border}`,
+                background: resetMode === "keep" ? colors.successSoft : colors.surface2,
+                border: `1px solid ${resetMode === "keep" ? colors.success : colors.border}`,
               }}
             >
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: resetMode === "keep" ? colors.teal : colors.text }}>manter histórico</div>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: resetMode === "keep" ? colors.success : colors.text }}>manter histórico</div>
               <div style={{ fontSize: 11, color: colors.textFaint, marginTop: 2 }}>guarda as passadas e o % de acerto de cada assunto</div>
             </button>
             <button

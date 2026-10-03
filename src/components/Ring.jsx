@@ -9,7 +9,7 @@ export function Ring({ pct, size = 88 }) {
     <svg width={size} height={size} style={{ flexShrink: 0 }}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={colors.surface2} strokeWidth={stroke} />
       <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none" stroke={colors.amber} strokeWidth={stroke}
+        cx={size / 2} cy={size / 2} r={r} fill="none" stroke={colors.accent} strokeWidth={stroke}
         strokeDasharray={c} strokeDashoffset={c - (c * pct) / 100} strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
         style={{ transition: "stroke-dashoffset 0.4s ease" }}

@@ -1,4 +1,5 @@
 import React from "react";
+import { Check, Clock, AlertTriangle } from "./Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { secondaryBtnStyle } from "../styles/shared.js";
 import { todayISO } from "../lib/date.js";
@@ -22,6 +23,7 @@ export function SaveStatus({ sync, data, onRetry }) {
   const problem = ["save-error", "conflict"].includes(sync.status);
   return (
     <div role="status" aria-live="polite" style={{ fontSize: 12, color: problem ? colors.red : colors.textFaint, paddingBottom: 14, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+      {problem ? <AlertTriangle size={16} /> : sync.status === "saved" ? <Check size={16} color={colors.success} /> : <Clock size={16} />}
       <span>{messages[sync.status]}</span>
       {problem && <span>{sync.error}</span>}
       {sync.status === "save-error" && <button style={secondaryBtnStyle} onClick={onRetry}>tentar salvar novamente</button>}

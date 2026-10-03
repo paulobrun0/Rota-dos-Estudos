@@ -5,7 +5,7 @@ const STORAGE_KEY = "ciclo-estudos-theme";
 function getInitialTheme() {
   const current = document.documentElement.dataset.theme;
   if (current === "light" || current === "dark") return current;
-  return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  return "light";
 }
 
 export function useTheme() {

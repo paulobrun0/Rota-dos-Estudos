@@ -1,7 +1,7 @@
 import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
 import { getTopicLinks } from "../lib/topicLinks.js";
 import React, { useState } from "react";
-import { CalendarClock, Check, ChevronLeft, ChevronRight, Clock, Eye, Flame, Link2, ListChecks, Pencil, Percent, RotateCw, StickyNote } from "lucide-react";
+import { CalendarClock, Check, ChevronLeft, ChevronRight, Clock, Eye, Flame, Link2, ListChecks, Pencil, Percent, RotateCw, StickyNote } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -14,7 +14,7 @@ import { QuizPractice } from "../components/QuizPractice.jsx";
 const EXAM_BADGE_STYLE = {
   past: { bg: colors.surface2, fg: colors.textFaint },
   critical: { bg: colors.redSoft, fg: colors.red },
-  soon: { bg: colors.amberSoft, fg: colors.amber },
+  soon: { bg: colors.accentSoft, fg: colors.accent },
   normal: { bg: colors.surface2, fg: colors.textMuted },
 };
 
@@ -30,9 +30,9 @@ function formatMinutes(mins) {
 
 function StatTile({ icon, label, value, sub }) {
   return (
-    <div style={{ minWidth: 0, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "14px 16px" }}>
+    <div className="stat-tile" style={{ minWidth: 0, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: "18px 20px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>{icon}<span style={{ fontSize: 12, color: colors.textMuted }}>{label}</span></div>
-      <div className="sg" style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
+      <div className="sg" style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
       {sub && <div style={{ fontSize: 11.5, color: colors.textFaint, marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -66,14 +66,14 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", rowGap: 10, marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={() => setSelectedDate(addDaysISO(selectedDate, -1))} style={navBtnStyle}><ChevronLeft size={16} /></button>
+          <button aria-label="dia anterior" onClick={() => setSelectedDate(addDaysISO(selectedDate, -1))} style={navBtnStyle}><ChevronLeft size={16} /></button>
           <div>
             <div className="sg" style={{ fontSize: 20, fontWeight: 700, textTransform: "capitalize" }}>
               {isToday ? "hoje" : formatDatePretty(selectedDate)}
             </div>
             {isToday && <div style={{ fontSize: 12.5, color: colors.textMuted, textTransform: "capitalize" }}>{formatDatePretty(selectedDate)}</div>}
           </div>
-          <button onClick={() => setSelectedDate(addDaysISO(selectedDate, 1))} style={navBtnStyle}><ChevronRight size={16} /></button>
+          <button aria-label="próximo dia" onClick={() => setSelectedDate(addDaysISO(selectedDate, 1))} style={navBtnStyle}><ChevronRight size={16} /></button>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {isToday && exam && (
@@ -82,12 +82,12 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
             </div>
           )}
           {isToday && streak > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", background: colors.amberSoft, color: colors.amber, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", background: colors.accentSoft, color: colors.accent, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
               <Flame size={14} /> {streak} dia{streak !== 1 ? "s" : ""}
             </div>
           )}
           {!isToday && (
-            <button onClick={() => setSelectedDate(todayISO())} style={{ ...navBtnStyle, width: "auto", padding: "0 12px", fontSize: 13, color: colors.amber }}>
+            <button onClick={() => setSelectedDate(todayISO())} style={{ ...navBtnStyle, width: "auto", padding: "0 12px", fontSize: 13, color: colors.accent }}>
               voltar para hoje
             </button>
           )}
@@ -95,18 +95,18 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
       </div>
 
       <div className="stat-grid" style={{ marginBottom: 20 }}>
-        <StatTile icon={<Flame size={16} color={colors.amber} />} label="sequência" value={`${streak} dia${streak !== 1 ? "s" : ""}`} />
+        <StatTile icon={<Flame size={16} color={colors.accent} />} label="sequência" value={`${streak} dia${streak !== 1 ? "s" : ""}`} />
         <StatTile
-          icon={<Percent size={16} color={colors.amber} />}
+          icon={<Percent size={16} color={colors.accent} />}
           label={isToday ? "desempenho hoje" : "desempenho"}
           value={desempenhoPct !== null ? `${desempenhoPct}%` : "—"}
           sub={qa.total > 0 ? `${qa.correct}/${qa.total} questões` : "sem questões"}
         />
-        <StatTile icon={<Clock size={16} color={colors.amber} />} label={isToday ? "horas estudadas" : "horas no dia"} value={formatMinutes(studyMinutesToday)} />
-        <StatTile icon={<ListChecks size={16} color={colors.amber} />} label="questões resolvidas" value={`${qa.total}`} sub={qa.total > 0 ? `${qa.correct} certas` : undefined} />
+        <StatTile icon={<Clock size={16} color={colors.accent} />} label={isToday ? "horas estudadas" : "horas no dia"} value={formatMinutes(studyMinutesToday)} />
+        <StatTile icon={<ListChecks size={16} color={colors.accent} />} label="questões resolvidas" value={`${qa.total}`} sub={qa.total > 0 ? `${qa.correct} certas` : undefined} />
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 20, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 14, padding: "18px 22px", marginBottom: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 20, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 18, padding: "22px 24px", marginBottom: 28 }}>
         <Ring pct={pct} />
         <div>
           <div className="sg" style={{ fontSize: 15, fontWeight: 600 }}>
@@ -136,14 +136,14 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
           <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
             <button
               onClick={() => setActiveSubTab("atividades")}
-              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "atividades" ? colors.amber : colors.border}`, color: activeSubTab === "atividades" ? colors.amber : colors.text }}
+              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "atividades" ? colors.accent : colors.border}`, color: activeSubTab === "atividades" ? colors.accent : colors.text }}
             >
               atividades
               {novos.length > 0 && <span className="mono" style={{ marginLeft: 6, fontSize: 11, color: colors.textFaint }}>{novos.filter((c) => c.feito).length}/{novos.length}</span>}
             </button>
             <button
               onClick={() => setActiveSubTab("reforcos")}
-              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "reforcos" ? colors.amber : colors.border}`, color: activeSubTab === "reforcos" ? colors.amber : colors.text }}
+              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "reforcos" ? colors.accent : colors.border}`, color: activeSubTab === "reforcos" ? colors.accent : colors.text }}
             >
               reforços
               {revisoes.length > 0 && <span className="mono" style={{ marginLeft: 6, fontSize: 11, color: colors.textFaint }}>{revisoes.filter((c) => c.feito).length}/{revisoes.length}</span>}
@@ -228,7 +228,7 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
     <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${materia.color}`, borderRadius: 12, padding: 16, marginBottom: 14, opacity: allDone && !resting ? 0.75 : 1 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div className="sg" style={{ fontSize: 15, fontWeight: 700, color: materia.color }}>{materia.name}</div>
+          <div className="sg" style={{ fontSize: 15, fontWeight: 700, color: colors.text }}>{materia.name}</div>
           <div style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
             {doneInGroup}/{cards.length} concluído{cards.length !== 1 ? "s" : ""}
             {totalMinutes > 0 ? ` · ${totalMinutes} min no total` : ""}
@@ -354,19 +354,19 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
   }
 
   return (
-    <div style={{ background: colors.surface2, borderRadius: 8, padding: "10px 12px", opacity: card.feito ? 0.55 : 1, border: forcedOpen ? `1px solid ${colors.amber}` : "1px solid transparent" }}>
+    <div style={{ background: colors.surface2, borderRadius: 8, padding: "10px 12px", opacity: card.feito ? 0.55 : 1, border: forcedOpen ? `1px solid ${colors.accent}` : "1px solid transparent" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <button
           onClick={handleCircleClick}
           aria-label={card.feito ? "marcar como não estudado" : awaitingReveal ? "virar card" : "marcar como estudado"}
           style={{
             width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-            border: `1.5px solid ${card.feito ? colors.amber : awaitingReveal ? colors.teal : colors.border}`,
-            background: card.feito ? colors.amber : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
+            border: `1.5px solid ${card.feito ? colors.accent : awaitingReveal ? colors.success : colors.border}`,
+            background: card.feito ? colors.accent : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
           }}
         >
-          {card.feito && <Check size={13} color={colors.bg} strokeWidth={3} />}
-          {awaitingReveal && <RotateCw size={11} color={colors.teal} />}
+          {card.feito && <Check size={13} color={colors.onAccent} strokeWidth={3} />}
+          {awaitingReveal && <RotateCw size={11} color={colors.success} />}
         </button>
         <div style={{ flex: "1 1 140px", minWidth: 0 }}>
           <div style={{ fontSize: 14, textDecoration: card.feito ? "line-through" : "none", color: colors.text }}>{topic.name}</div>
@@ -374,15 +374,15 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
             <div style={{ fontSize: 12, color: colors.textFaint, fontStyle: "italic", marginTop: 2 }}>{topic.notes}</div>
           )}
           {awaitingReveal && (
-            <div style={{ fontSize: 12, color: colors.teal, marginTop: 2 }}>tenta lembrar antes de virar o card</div>
+            <div style={{ fontSize: 12, color: colors.success, marginTop: 2 }}>tenta lembrar antes de virar o card</div>
           )}
         </div>
         <div
           className="mono"
           style={{
             fontSize: 10.5, padding: "2px 8px", borderRadius: 20, flexShrink: 0,
-            background: isRevisao ? colors.tealSoft : colors.amberSoft,
-            color: isRevisao ? colors.teal : colors.amber,
+            background: isRevisao ? colors.successSoft : colors.accentSoft,
+            color: isRevisao ? colors.success : colors.accent,
           }}
         >
           {isRevisao ? "revisão · ciclo" : "novo"}
@@ -391,12 +391,12 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
           <button
             onClick={() => setRevealed(true)}
             style={{
-              display: "flex", alignItems: "center", gap: 5, background: colors.tealSoft, border: `1px solid ${colors.teal}`,
+              display: "flex", alignItems: "center", gap: 5, background: colors.successSoft, border: `1px solid ${colors.success}`,
               borderRadius: 20, padding: "4px 10px", flexShrink: 0,
             }}
           >
-            <Eye size={12} color={colors.teal} />
-            <span className="mono" style={{ fontSize: 10.5, color: colors.teal }}>virar card</span>
+            <Eye size={12} color={colors.success} />
+            <span className="mono" style={{ fontSize: 10.5, color: colors.success }}>virar card</span>
           </button>
         )}
         <button
@@ -416,26 +416,26 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
           <button
             onClick={() => setPracticing((p) => !p)}
             style={{
-              background: practicing ? colors.tealSoft : "transparent", border: `1px solid ${practicing ? colors.teal : colors.border}`,
+              background: practicing ? colors.successSoft : "transparent", border: `1px solid ${practicing ? colors.success : colors.border}`,
               borderRadius: 20, padding: "3px 9px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
             }}
           >
-            <ListChecks size={11} color={colors.teal} />
-            <span className="mono" style={{ fontSize: 10.5, color: colors.teal }}>praticar ({questionsAvailable})</span>
+            <ListChecks size={11} color={colors.success} />
+            <span className="mono" style={{ fontSize: 10.5, color: colors.success }}>praticar ({questionsAvailable})</span>
           </button>
         )}
           <TopicLinkButtons topic={topic} />
         <button
           onClick={() => setLinkOpen((o) => !o)}
           aria-label="link do caderno de questões"
-          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasLink ? colors.teal : colors.textFaint }}
+          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasLink ? colors.success : colors.textFaint }}
         >
           <Link2 size={14} />
         </button>
         <button
           onClick={() => setNotesOpen((o) => !o)}
           aria-label="anotações do assunto"
-          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasNotes ? colors.amber : colors.textFaint }}
+          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasNotes ? colors.accent : colors.textFaint }}
         >
           <StickyNote size={14} />
         </button>
@@ -479,8 +479,8 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
       )}
 
       {isFlashcard && revealed && !notesOpen && (
-        <div style={{ marginTop: 10, background: colors.tealSoft, border: `1px solid ${colors.teal}`, borderRadius: 6, padding: "10px 12px" }}>
-          <div style={{ fontSize: 10.5, color: colors.teal, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>sua anotação</div>
+        <div style={{ marginTop: 10, background: colors.successSoft, border: `1px solid ${colors.success}`, borderRadius: 6, padding: "10px 12px" }}>
+          <div style={{ fontSize: 10.5, color: colors.success, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>sua anotação</div>
           <div style={{ fontSize: 13, color: colors.text, whiteSpace: "pre-wrap" }}>{topic.notes}</div>
         </div>
       )}
@@ -502,7 +502,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
 
       {showForm && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.border}` }}>
-          <span style={{ fontSize: 12, color: forcedOpen ? colors.amber : colors.textMuted }}>
+          <span style={{ fontSize: 12, color: forcedOpen ? colors.accent : colors.textMuted }}>
             {forcedOpen ? "tempo esgotado — fez questões desse assunto?" : "fez questões desse assunto?"}
           </span>
           <input

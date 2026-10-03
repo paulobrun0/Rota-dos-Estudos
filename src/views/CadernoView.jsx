@@ -45,14 +45,14 @@ export function CadernoView({ activeConcurso, updateTopicNotes, addTopicQuestion
 
   return (
     <div>
-      <h1 className="sg" style={{ fontSize: 20, margin: "0 0 6px" }}>caderno</h1>
+      <h2 className="sg" style={{ fontSize: 20, margin: "0 0 6px" }}>Revisar e aprender</h2>
       <p style={{ color: colors.textMuted, fontSize: 13.5 }}>revise seus erros, acompanhe as respostas e consulte suas anotações de {activeConcurso.name}.</p>
       <div aria-label="visão do caderno" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {[["erros", "erros para refazer"], ["historico", "histórico de questões"], ["anotacoes", "anotações"]].map(([value, label]) => (
-          <button key={value} aria-pressed={mode === value} onClick={() => changeMode(value)} style={{ ...secondaryBtnStyle, borderColor: mode === value ? colors.teal : colors.border }}>{label}</button>
+          <button key={value} aria-pressed={mode === value} onClick={() => changeMode(value)} style={{ ...secondaryBtnStyle, borderColor: mode === value ? colors.success : colors.border }}>{label}</button>
         ))}
       </div>
-      <input aria-label="buscar no caderno" value={search} onChange={(event) => changeSearch(event.target.value)} placeholder="buscar por matéria, assunto ou texto…" style={{ ...inputStyle, marginBottom: 16 }} />
+      <input aria-label="buscar no caderno" value={search} onChange={(event) => changeSearch(event.target.value)} placeholder="buscar por matéria, assunto ou texto…" style={{ ...inputStyle, width: "100%", maxWidth: 560, marginBottom: 16 }} />
       {mode === "anotacoes" ? (
         <div style={{ display: "grid", gap: 10 }}>
           {notes.length === 0 && <p style={{ color: colors.textFaint }}>nenhuma anotação encontrada. escreva nos assuntos em edital; elas aparecem aqui.</p>}
@@ -69,7 +69,7 @@ export function CadernoView({ activeConcurso, updateTopicNotes, addTopicQuestion
               <article key={entry.attemptId} style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 10, padding: 16 }}>
                 <div style={{ fontSize: 12, color: colors.textMuted }}>{entry.question.materia} • {entry.question.assunto} • {entry.question.banca}{entry.question.ano ? ` • ${entry.question.ano}` : ""}</div>
                 <p style={{ whiteSpace: "pre-wrap", color: colors.text, fontSize: 14 }}>{entry.question.enunciado}</p>
-                <p style={{ fontSize: 12, color: entry.correct ? colors.teal : colors.red }}>{entry.correct ? "última resposta correta" : "última resposta incorreta"} • {entry.correctAttempts}/{entry.attempts} acertos • {new Date(entry.answeredAt).toLocaleDateString("pt-BR")}</p>
+                <p style={{ fontSize: 12, color: entry.correct ? colors.success : colors.red }}>{entry.correct ? "última resposta correta" : "última resposta incorreta"} • {entry.correctAttempts}/{entry.attempts} acertos • {new Date(entry.answeredAt).toLocaleDateString("pt-BR")}</p>
                 <details style={{ fontSize: 13, color: colors.textMuted }}>
                   <summary>ver resposta e comentário</summary>
                   <p>sua resposta: {entry.selectedAnswer}</p><p>gabarito: {entry.question.gabarito}</p>
@@ -106,7 +106,7 @@ function CadernoEntry({ entry: e, updateTopicNotes }) {
           <span style={{ fontSize: 13.5, color: colors.text, fontWeight: 600, marginLeft: 8 }}>{e.topicName}</span>
         </div>
         {e.accuracyPct !== null && (
-          <span className="mono" style={{ fontSize: 11.5, fontWeight: 700, color: good ? colors.teal : colors.red, flexShrink: 0 }}>
+          <span className="mono" style={{ fontSize: 11.5, fontWeight: 700, color: good ? colors.success : colors.red, flexShrink: 0 }}>
             {e.accuracyPct}% de acerto
           </span>
         )}

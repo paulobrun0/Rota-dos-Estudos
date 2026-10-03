@@ -1,6 +1,6 @@
 import { uid } from "../lib/id.js";
 
-export const PALETTE = ["#E8A33D", "#4FD1C5", "#E8615F", "#7C9CF0", "#C97FEF", "#6FCF97", "#F2A9C5", "#F0C419", "#5FB0E8", "#F0885A"];
+export const PALETTE = ["#5865D9", "#25806B", "#C85472", "#4382B9", "#9461BB", "#568237", "#B35791", "#AF791B", "#347E91", "#BA6842"];
 
 export const defaultSettings = () => ({ materiasPerDay: 0, topicsPerDay: 2, minutesPerMateria: 30, restMinutes: 5, reviewsPerDay: 3 });
 

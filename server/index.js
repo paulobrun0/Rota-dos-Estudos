@@ -37,7 +37,7 @@ app.set("trust proxy", 1);
 // the file's on-disk line endings. A stale/wrong hash just breaks the theme
 // flash-prevention silently (CSP blocks it, no console-visible app crash),
 // not the app itself, but is worth keeping accurate.
-const THEME_SCRIPT_HASH = "'sha256-FTLGSifcjvisP4NXmqpyVK2XYL4H4Vg+psG8E/XjYCw='";
+const THEME_SCRIPT_HASH = "'sha256-05geoimW3mF4qbtoZhxt+B3Ygh5hdZ9MopOYCQlLvuI='";
 
 app.use((req, res, next) => {
   res.setHeader(

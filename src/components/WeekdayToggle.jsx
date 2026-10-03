@@ -27,9 +27,9 @@ export function WeekdayToggle({ value, onChange }) {
             title={day}
             style={{
               width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-              border: `1px solid ${active ? colors.amber : colors.border}`,
-              background: active ? colors.amberSoft : colors.surface2,
-              color: active ? colors.amber : colors.textMuted,
+              border: `1px solid ${active ? colors.accent : colors.border}`,
+              background: active ? colors.accentSoft : colors.surface2,
+              color: active ? colors.accent : colors.textMuted,
               fontSize: 12.5, fontWeight: 700, textTransform: "uppercase",
             }}
           >

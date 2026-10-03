@@ -1,7 +1,7 @@
 import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
 import { getTopicLinks } from "../lib/topicLinks.js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, GripVertical, Library, Link2, Plus, StickyNote, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, GripVertical, Library, Link2, Plus, StickyNote, Trash2, X } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
@@ -122,7 +122,7 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
         {bulkHintMatches && bulkHintMatches.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
             {bulkHintMatches.map((m) => (
-              <div key={m.materiaName} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", color: colors.amber, fontSize: 12.5 }}>
+              <div key={m.materiaName} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", color: colors.accent, fontSize: 12.5 }}>
                 <Library size={13} style={{ flexShrink: 0 }} />
                 <span>
                   o banco tem uma versão mais detalhada de "{m.materiaName}": {m.bankEntry.topics.length} assuntos (o texto colado só deu {m.importedCount}).
@@ -162,10 +162,10 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
 
       {concurso.materias.length > 0 && (
         <div style={{ display: "flex", gap: 14, marginBottom: 10 }}>
-          <button onClick={() => setExpandedIds(new Set(concurso.materias.map((m) => m.id)))} style={{ background: "transparent", border: "none", padding: 0, fontSize: 12.5, color: colors.amber, cursor: "pointer" }}>
+          <button onClick={() => setExpandedIds(new Set(concurso.materias.map((m) => m.id)))} style={{ background: "transparent", border: "none", padding: 0, fontSize: 12.5, color: colors.accent, cursor: "pointer" }}>
             expandir todas
           </button>
-          <button onClick={() => setExpandedIds(new Set())} style={{ background: "transparent", border: "none", padding: 0, fontSize: 12.5, color: colors.amber, cursor: "pointer" }}>
+          <button onClick={() => setExpandedIds(new Set())} style={{ background: "transparent", border: "none", padding: 0, fontSize: 12.5, color: colors.accent, cursor: "pointer" }}>
             recolher todas
           </button>
         </div>
@@ -348,7 +348,7 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
                       {selectedCount > 0 ? `${selectedCount}/${topics.length}` : topics.length} assunto{topics.length !== 1 ? "s" : ""}
                     </span>
                     {ownedCount > 0 && (
-                      <span style={{ fontSize: 10.5, color: colors.teal }}>
+                      <span style={{ fontSize: 10.5, color: colors.success }}>
                         {ownedCount === topics.length ? "já no edital" : `${ownedCount} já no edital`}
                       </span>
                     )}
@@ -365,7 +365,7 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
                           >
                             <input type="checkbox" checked={topicSelected} onChange={() => toggleTopic(m.id, topicName)} />
                             <span style={{ flex: 1, color: topicAlready ? colors.textFaint : colors.text }}>{topicName}</span>
-                            {topicAlready && <span style={{ fontSize: 10, color: colors.teal }}>já no edital</span>}
+                            {topicAlready && <span style={{ fontSize: 10, color: colors.success }}>já no edital</span>}
                           </label>
                         );
                       })}
@@ -402,7 +402,7 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
     <div
       data-materia-id={m.id}
       style={{
-        background: colors.surface, border: `1px solid ${isDropTarget ? colors.amber : colors.border}`,
+        background: colors.surface, border: `1px solid ${isDropTarget ? colors.accent : colors.border}`,
         borderLeft: `3px solid ${m.color}`, borderRadius: 10, padding: 16, marginBottom: 12,
         opacity: isDragging ? 0.4 : 1, transition: "opacity 0.1s, border-color 0.1s",
       }}
@@ -513,19 +513,19 @@ function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, up
               {t.questionsCorrect}/{t.questionsTotal} questões
             </span>
           )}
-          {t.mastered && <span style={{ fontSize: 11, color: colors.teal }}>dominado</span>}
+          {t.mastered && <span style={{ fontSize: 11, color: colors.success }}>dominado</span>}
           <TopicLinkButtons topic={t} />
           <button
             onClick={() => setLinkOpen((o) => !o)}
             aria-label="link do caderno de questões"
-            style={{ ...iconBtnStyle, color: hasLink ? colors.teal : colors.textFaint }}
+            style={{ ...iconBtnStyle, color: hasLink ? colors.success : colors.textFaint }}
           >
             <Link2 size={13} />
           </button>
           <button
             onClick={() => setNotesOpen((o) => !o)}
             aria-label="anotações do assunto"
-            style={{ ...iconBtnStyle, color: hasNotes ? colors.amber : colors.textFaint }}
+            style={{ ...iconBtnStyle, color: hasNotes ? colors.accent : colors.textFaint }}
           >
             <StickyNote size={13} />
           </button>

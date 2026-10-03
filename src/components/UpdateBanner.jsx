@@ -1,6 +1,6 @@
 import React from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { primaryBtnStyle } from "../styles/shared.js";
 
@@ -33,7 +33,7 @@ export function UpdateBanner() {
     <div
       style={{
         position: "fixed", bottom: 20, right: 20, zIndex: 1000, display: "flex", alignItems: "center", gap: 12,
-        background: colors.surface, border: `1px solid ${colors.amber}`, borderRadius: 12, padding: "12px 14px 12px 16px",
+        background: colors.surface, border: `1px solid ${colors.accent}`, borderRadius: 12, padding: "12px 14px 12px 16px",
         boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
       }}
     >

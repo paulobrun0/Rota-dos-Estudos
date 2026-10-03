@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, BellOff, Download, Eye, EyeOff, Moon, Sun, Upload, Volume2, VolumeX } from "lucide-react";
+import { Bell, BellOff, Download, Eye, EyeOff, Moon, Sun, Upload, Volume2, VolumeX } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { todayISO } from "../lib/date.js";
@@ -123,13 +123,13 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => setTheme("dark")}
-            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${theme === "dark" ? colors.amber : colors.border}`, color: theme === "dark" ? colors.amber : colors.text }}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${theme === "dark" ? colors.accent : colors.border}`, color: theme === "dark" ? colors.accent : colors.text }}
           >
             <Moon size={14} /> escuro
           </button>
           <button
             onClick={() => setTheme("light")}
-            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${theme === "light" ? colors.amber : colors.border}`, color: theme === "light" ? colors.amber : colors.text }}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${theme === "light" ? colors.accent : colors.border}`, color: theme === "light" ? colors.accent : colors.text }}
           >
             <Sun size={14} /> claro
           </button>
@@ -144,13 +144,13 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => setSoundEnabled(true)}
-            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${soundEnabled ? colors.amber : colors.border}`, color: soundEnabled ? colors.amber : colors.text }}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${soundEnabled ? colors.accent : colors.border}`, color: soundEnabled ? colors.accent : colors.text }}
           >
             <Volume2 size={14} /> ativado
           </button>
           <button
             onClick={() => setSoundEnabled(false)}
-            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${!soundEnabled ? colors.amber : colors.border}`, color: !soundEnabled ? colors.amber : colors.text }}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${!soundEnabled ? colors.accent : colors.border}`, color: !soundEnabled ? colors.accent : colors.text }}
           >
             <VolumeX size={14} /> desativado
           </button>
@@ -174,14 +174,14 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
             <button
               disabled={pushBusy || pushSubscribed === null}
               onClick={() => togglePush(true)}
-              style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${pushSubscribed ? colors.amber : colors.border}`, color: pushSubscribed ? colors.amber : colors.text }}
+              style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${pushSubscribed ? colors.accent : colors.border}`, color: pushSubscribed ? colors.accent : colors.text }}
             >
               <Bell size={14} /> ativado
             </button>
             <button
               disabled={pushBusy || pushSubscribed === null}
               onClick={() => togglePush(false)}
-              style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${pushSubscribed === false ? colors.amber : colors.border}`, color: pushSubscribed === false ? colors.amber : colors.text }}
+              style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${pushSubscribed === false ? colors.accent : colors.border}`, color: pushSubscribed === false ? colors.accent : colors.text }}
             >
               <BellOff size={14} /> desativado
             </button>
@@ -223,14 +223,14 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
           <button
             disabled={rankingBusy}
             onClick={() => toggleRanking(true)}
-            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${user?.showInRanking ? colors.amber : colors.border}`, color: user?.showInRanking ? colors.amber : colors.text }}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${user?.showInRanking ? colors.accent : colors.border}`, color: user?.showInRanking ? colors.accent : colors.text }}
           >
             <Eye size={14} /> apareço no ranking
           </button>
           <button
             disabled={rankingBusy}
             onClick={() => toggleRanking(false)}
-            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${!user?.showInRanking ? colors.amber : colors.border}`, color: !user?.showInRanking ? colors.amber : colors.text }}
+            style={{ ...secondaryBtnStyle, padding: "8px 14px", border: `1px solid ${!user?.showInRanking ? colors.accent : colors.border}`, color: !user?.showInRanking ? colors.accent : colors.text }}
           >
             <EyeOff size={14} /> fico de fora
           </button>
@@ -252,7 +252,7 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
           <input ref={fileInputRef} type="file" accept="application/json" onChange={handleFileChange} style={{ display: "none" }} />
         </div>
         {importError && <div style={{ color: colors.red, fontSize: 12.5, marginTop: 10 }}>{importError}</div>}
-        {importOk && <div style={{ color: colors.teal, fontSize: 12.5, marginTop: 10 }}>dados importados com sucesso.</div>}
+        {importOk && <div style={{ color: colors.success, fontSize: 12.5, marginTop: 10 }}>dados importados com sucesso.</div>}
       </div>
     </div>
   );

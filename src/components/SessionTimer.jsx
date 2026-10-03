@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Pause, Play, RotateCcw } from "lucide-react";
+import { Pause, Play, RotateCcw } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { fmtClock } from "../lib/date.js";
 import { iconBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
@@ -19,11 +19,11 @@ export function SessionTimer({ materiaId, totalMinutes, segments, locked, timers
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: finished ? colors.teal : colors.text, minWidth: 62 }}>
+      <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: finished ? colors.success : colors.text, minWidth: 62 }}>
         {fmtClock(secondsLeft)}
       </div>
       {locked ? (
-        <span style={{ fontSize: 12, color: colors.amber }}>responda as questões abaixo pra continuar</span>
+        <span style={{ fontSize: 12, color: colors.accent }}>responda as questões abaixo pra continuar</span>
       ) : (
         <>
           {!finished && !running && (
@@ -41,7 +41,7 @@ export function SessionTimer({ materiaId, totalMinutes, segments, locked, timers
               <RotateCcw size={14} />
             </button>
           )}
-          {finished && <span style={{ fontSize: 12, color: colors.teal }}>tempo esgotado</span>}
+          {finished && <span style={{ fontSize: 12, color: colors.success }}>tempo esgotado</span>}
         </>
       )}
     </div>

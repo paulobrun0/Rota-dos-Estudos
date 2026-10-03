@@ -7,7 +7,7 @@ import { isSafeStudyLink } from "../lib/planValidation.js";
 export function TopicLinkButtons({ topic }) {
   const links = getTopicLinks(topic);
   return STUDY_PLATFORMS.filter(({ key }) => links[key] && isSafeStudyLink(links[key])).map(({ key, label }) => (
-    <a key={key} href={links[key]} target="_blank" rel="noopener noreferrer" aria-label={`abrir ${label}`} style={{ color: colors.teal, fontSize: 11, padding: "4px 0" }}>{label}</a>
+    <a key={key} href={links[key]} target="_blank" rel="noopener noreferrer" aria-label={`abrir ${label}`} style={{ color: colors.success, fontSize: 11, padding: "4px 0" }}>{label}</a>
   ));
 }
 

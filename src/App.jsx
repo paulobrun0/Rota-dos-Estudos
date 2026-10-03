@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
   BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, NotebookText, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle, X,
-} from "lucide-react";
+} from "./components/Icons.jsx";
+import { Brand } from "./components/Brand.jsx";
 import { colors } from "./styles/colors.js";
 import { PALETTE, defaultSettings, makeConcurso } from "./data/model.js";
 import { addDaysISO, todayISO, weekStart } from "./lib/date.js";
@@ -700,19 +701,16 @@ export default function App({ user, onLogout, onUserUpdate }) {
   return (
     <div style={{ background: colors.bg, color: colors.text, minHeight: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
-        .sg { font-family: 'Space Grotesk', sans-serif; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
         input, textarea { font-family: inherit; }
         ::placeholder { color: ${colors.textFaint}; }
         button { cursor: pointer; }
         .mobile-topbar, .nav-backdrop { display: none; }
         @media (max-width: 860px) {
           .app-nav {
-            position: fixed; top: 0; left: 0; height: 100vh; z-index: 101;
-            background: ${colors.bg}; transform: translateX(-100%); transition: transform 0.2s ease;
+            display: none !important; position: fixed; top: 0; left: 0; height: 100vh; z-index: 101;
+            background: ${colors.surface}; transform: translateX(-100%); transition: transform 0.2s ease;
           }
-          .app-nav.open { transform: translateX(0); }
+          .app-nav.open { display: flex !important; transform: translateX(0); }
           .mobile-topbar {
             display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10;
             background: ${colors.bg}; border-bottom: 1px solid ${colors.border}; padding: 14px 16px;
@@ -730,17 +728,14 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
       <div className={`nav-backdrop${mobileNavOpen ? " open" : ""}`} onClick={() => setMobileNavOpen(false)} />
 
-      <nav className={`app-nav${mobileNavOpen ? " open" : ""}`} style={{ width: 210, minHeight: "100vh", boxSizing: "border-box", flexShrink: 0, borderRight: `1px solid ${colors.border}`, padding: "24px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
-        <div className="sg" style={{ fontSize: 17, fontWeight: 700, padding: "0 10px 16px", color: colors.text, display: "flex", alignItems: "center", gap: 8 }}>
-          <Sparkles size={18} color={colors.amber} />
-          ciclo de estudos
-        </div>
+      <nav className={`app-nav${mobileNavOpen ? " open" : ""}`} style={{ width: 248, minHeight: "100vh", boxSizing: "border-box", flexShrink: 0, borderRight: `1px solid ${colors.border}`, padding: "28px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ padding: "0 2px 26px" }}><Brand compact /></div>
 
         <button
           onClick={() => goTab("concursos")}
           style={{
-            display: "flex", alignItems: "center", gap: 8, background: colors.surface, border: `1px solid ${colors.border}`,
-            borderRadius: 8, padding: "9px 10px", marginBottom: 16, textAlign: "left",
+            display: "flex", alignItems: "center", gap: 8, background: colors.surface2, border: `1px solid ${colors.border}`,
+            color: colors.text, borderRadius: 12, padding: "12px 10px", marginBottom: 20, textAlign: "left",
           }}
         >
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: activeConcurso?.color || colors.textFaint, flexShrink: 0 }} />
@@ -753,19 +748,19 @@ export default function App({ user, onLogout, onUserUpdate }) {
           <ChevronRight size={14} color={colors.textFaint} />
         </button>
 
-        <NavItem icon={<CalendarDays size={16} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); goTab("dia"); }} />
-        <NavItem icon={<ListChecks size={16} />} label="semana" active={tab === "semana"} onClick={() => goTab("semana")} />
-        <NavItem icon={<BookOpen size={16} />} label="edital" active={tab === "edital"} onClick={() => goTab("edital")} />
-        <NavItem icon={<NotebookText size={16} />} label="caderno" active={tab === "caderno"} onClick={() => goTab("caderno")} />
-        <NavItem icon={<Target size={16} />} label="metas" active={tab === "metas"} onClick={() => goTab("metas")} />
-        <NavItem icon={<Flame size={16} />} label="progresso" active={tab === "progresso"} onClick={() => goTab("progresso")} />
-        <NavItem icon={<Trophy size={16} />} label="ranking" active={tab === "ranking"} onClick={() => goTab("ranking")} />
+        <NavItem icon={<CalendarDays size={20} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); goTab("dia"); }} />
+        <NavItem icon={<ListChecks size={20} />} label="semana" active={tab === "semana"} onClick={() => goTab("semana")} />
+        <NavItem icon={<BookOpen size={20} />} label="edital" active={tab === "edital"} onClick={() => goTab("edital")} />
+        <NavItem icon={<NotebookText size={20} />} label="caderno" active={tab === "caderno"} onClick={() => goTab("caderno")} />
+        <NavItem icon={<Target size={20} />} label="metas" active={tab === "metas"} onClick={() => goTab("metas")} />
+        <NavItem icon={<Flame size={20} />} label="progresso" active={tab === "progresso"} onClick={() => goTab("progresso")} />
+        <NavItem icon={<Trophy size={20} />} label="ranking" active={tab === "ranking"} onClick={() => goTab("ranking")} />
         <div style={{ height: 1, background: colors.border, margin: "8px 6px" }} />
-        <NavItem icon={<GraduationCap size={16} />} label="concursos" active={tab === "concursos"} onClick={() => goTab("concursos")} />
-        <NavItem icon={<UserCircle size={16} />} label="perfil" active={tab === "perfil"} onClick={() => goTab("perfil")} />
-        <NavItem icon={<Settings size={16} />} label="ajustes" active={tab === "ajustes"} onClick={() => goTab("ajustes")} />
+        <NavItem icon={<GraduationCap size={20} />} label="concursos" active={tab === "concursos"} onClick={() => goTab("concursos")} />
+        <NavItem icon={<UserCircle size={20} />} label="perfil" active={tab === "perfil"} onClick={() => goTab("perfil")} />
+        <NavItem icon={<Settings size={20} />} label="ajustes" active={tab === "ajustes"} onClick={() => goTab("ajustes")} />
         {user?.isAdmin && (
-          <NavItem icon={<ShieldCheck size={16} />} label="admin" active={tab === "admin"} onClick={() => goTab("admin")} />
+          <NavItem icon={<ShieldCheck size={20} />} label="admin" active={tab === "admin"} onClick={() => goTab("admin")} />
         )}
 
         <div style={{ flex: 1 }} />
@@ -776,8 +771,8 @@ export default function App({ user, onLogout, onUserUpdate }) {
             style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none", padding: "0 10px 6px", textAlign: "left" }}
           >
             <div style={{
-              width: 22, height: 22, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: colors.surface2,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 700, color: colors.textFaint,
+              width: 32, height: 32, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: colors.surface2,
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: colors.textFaint,
             }}>
               {user?.avatar ? <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (user?.username || user?.email || "?").slice(0, 2).toUpperCase()}
             </div>
@@ -799,13 +794,19 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <div className="mobile-topbar">
-          <button onClick={() => setMobileNavOpen(true)} style={{ background: "transparent", border: "none", color: colors.text, display: "flex" }}>
+          <button aria-label="abrir menu" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(!mobileNavOpen)} style={{ background: "transparent", border: "none", color: colors.text, display: "flex" }}>
             <Menu size={20} />
           </button>
           <span className="sg" style={{ fontSize: 15, fontWeight: 700 }}>{TAB_TITLES[tab] || "ciclo de estudos"}</span>
         </div>
 
-        <main className="app-main" style={{ flex: 1, minWidth: 0, padding: "28px 36px" }}>
+        <main className="app-main" style={{ flex: 1, minWidth: 0, padding: "32px 40px", maxWidth: 1320, width: "100%", margin: "0 auto" }}>
+        <header className="app-heading">
+          <div><div style={{ color: colors.accent, fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>seu espaço de estudo</div>
+          <h1 className="sg">{tab === "dia" ? "Cada passo conta." : TAB_TITLES[tab].charAt(0).toUpperCase() + TAB_TITLES[tab].slice(1)}</h1>
+          <p>{tab === "dia" ? "Seu plano de hoje, no seu ritmo." : "Organize seu caminho até a aprovação."}</p></div>
+          <span className="heading-label" style={{ background: colors.accentSoft, color: colors.accent, borderRadius: 12, padding: "10px 14px", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}><GraduationCap size={20} />{activeConcurso?.name || "Sua próxima conquista"}</span>
+        </header>
         <SaveStatus sync={sync} data={data} onRetry={retry} />
         {!data.studyDays && <StudyDaysBanner setStudyDays={setStudyDays} />}
         {tab === "concursos" && (

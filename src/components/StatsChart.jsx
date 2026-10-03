@@ -108,8 +108,8 @@ export function StatsChart({ activity, questionActivity }) {
             key={g}
             onClick={() => setGranularity(g)}
             style={{
-              background: granularity === g ? colors.tealSoft : "transparent", border: `1px solid ${granularity === g ? colors.teal : colors.border}`,
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, color: granularity === g ? colors.teal : colors.textMuted, flexShrink: 0,
+              background: granularity === g ? colors.successSoft : "transparent", border: `1px solid ${granularity === g ? colors.success : colors.border}`,
+              borderRadius: 20, padding: "5px 12px", fontSize: 12, color: granularity === g ? colors.success : colors.textMuted, flexShrink: 0,
             }}
           >
             {GRANULARITY_LABELS[g]}
@@ -135,7 +135,7 @@ export function StatsChart({ activity, questionActivity }) {
         <span><b style={{ color: colors.text }}>{totalQuestions}</b> questões</span>
         {overallAccuracy !== null && (
           <span>
-            <b style={{ color: overallAccuracy >= 70 ? colors.teal : colors.red }}>{overallAccuracy}%</b> de acerto
+            <b style={{ color: overallAccuracy >= 70 ? colors.success : colors.red }}>{overallAccuracy}%</b> de acerto
           </span>
         )}
       </div>
@@ -145,7 +145,7 @@ export function StatsChart({ activity, questionActivity }) {
           title="assuntos estudados"
           series={series}
           valueKey="cards"
-          colorFor={() => ({ base: colors.teal, hover: colors.teal })}
+          colorFor={() => ({ base: colors.success, hover: colors.success })}
           emptyHint="nenhum assunto estudado nesse período."
           formatValue={(b) => `${b.label}: ${b.cards} card${b.cards !== 1 ? "s" : ""}`}
         />
@@ -153,7 +153,7 @@ export function StatsChart({ activity, questionActivity }) {
           title="questões praticadas"
           series={series}
           valueKey="questionsTotal"
-          colorFor={(b) => (b.accuracyPct === null || b.accuracyPct >= 70 ? { base: colors.teal, hover: colors.teal } : { base: colors.red, hover: colors.red })}
+          colorFor={(b) => (b.accuracyPct === null || b.accuracyPct >= 70 ? { base: colors.success, hover: colors.success } : { base: colors.red, hover: colors.red })}
           emptyHint="nenhuma questão praticada nesse período."
           formatValue={(b) => `${b.label}: ${b.questionsCorrect}/${b.questionsTotal}${b.accuracyPct !== null ? ` · ${b.accuracyPct}%` : ""}`}
         />

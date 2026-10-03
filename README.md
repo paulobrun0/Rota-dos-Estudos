@@ -2,6 +2,32 @@
 
 Planejador de estudos para concursos com edital, ciclos por progresso, cronograma semanal, revisões espaçadas, questões e acompanhamento de atividade.
 
+## Interface
+
+Nova identidade em azul e índigo, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado.
+
+As capturas abaixo mostram a aplicação real com dados fictícios de demonstração. Nenhuma conta, questão de prova ou informação de usuário real foi usada nas imagens.
+
+### Seu plano de hoje
+
+![Painel de hoje com metas, sequência, desempenho e atividades em tema claro](docs/images/hoje.png)
+
+### Entrada
+
+![Tela de entrada com a nova identidade visual](docs/images/entrada.png)
+
+### Edital e caderno de erros
+
+![Edital com matérias e assuntos organizados](docs/images/edital.png)
+
+![Caderno de erros com histórico e opção de refazer a questão](docs/images/caderno.png)
+
+### Tema escuro e celular
+
+![Painel de hoje no tema escuro](docs/images/hoje-escuro.png)
+
+<img src="docs/images/hoje-mobile.png" alt="Painel de hoje adaptado para celular" width="390" />
+
 ## Funcionalidades
 
 - **Hoje:** assuntos novos e reforços, conclusão de cards, cronômetros e registro de questões.
