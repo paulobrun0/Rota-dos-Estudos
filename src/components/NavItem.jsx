@@ -6,6 +6,8 @@ export function NavItem({ icon, label, active, onClick }) {
     <button
       onClick={onClick}
       className="nav-item"
+      aria-label={label}
+      title={label}
       aria-current={active ? "page" : undefined}
       style={{
         display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
@@ -15,7 +17,7 @@ export function NavItem({ icon, label, active, onClick }) {
       }}
     >
       <span style={{ color: active ? colors.accent : colors.textMuted }}>{icon}</span>
-      {label}
+      <span className="nav-label">{label}</span>
     </button>
   );
 }

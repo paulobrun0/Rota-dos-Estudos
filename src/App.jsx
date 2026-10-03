@@ -7,6 +7,7 @@ import {
 } from "./components/Icons.jsx";
 import { Brand } from "./components/Brand.jsx";
 import { colors } from "./styles/colors.js";
+import { iconBtnStyle } from "./styles/shared.js";
 import { PALETTE, defaultSettings, makeConcurso } from "./data/model.js";
 import { addDaysISO, todayISO, weekStart } from "./lib/date.js";
 import { activeMateriaIds, advanceReview, buildCyclePlan, pickBatch, scheduleFirstReview } from "./lib/planner.js";
@@ -66,6 +67,15 @@ export default function App({ user, onLogout, onUserUpdate }) {
   const { data, setData, sync, retry, flush } = usePlanData(user.email);
   const [tab, setTab] = useState("painel");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(() => {
+    try { return localStorage.getItem("ritmo-nav-collapsed") === "true"; }
+    catch { return false; }
+  });
+  function toggleNavCollapsed() {
+    const next = !navCollapsed;
+    setNavCollapsed(next);
+    try { localStorage.setItem("ritmo-nav-collapsed", String(next)); } catch { /* Preference remains in memory. */ }
+  }
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [weekAnchor, setWeekAnchor] = useState(weekStart(todayISO()));
   const [bulkText, setBulkText] = useState("");
@@ -734,18 +744,20 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
       <div className={`nav-backdrop${mobileNavOpen ? " open" : ""}`} onClick={() => setMobileNavOpen(false)} />
 
-      <nav className={`app-nav${mobileNavOpen ? " open" : ""}`} style={{ width: 248, minHeight: "100vh", boxSizing: "border-box", flexShrink: 0, borderRight: `1px solid ${colors.border}`, padding: "28px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
-        <div style={{ padding: "0 2px 26px" }}><Brand compact /></div>
+      <nav aria-label="Navegação principal" className={`app-nav${mobileNavOpen ? " open" : ""}${navCollapsed ? " collapsed" : ""}`} style={{ width: 248, minHeight: "100vh", boxSizing: "border-box", flexShrink: 0, borderRight: `1px solid ${colors.border}`, padding: "28px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div className="nav-toggle-row"><button className="nav-toggle" aria-label={navCollapsed ? "expandir menu lateral" : "minimizar menu lateral"} aria-expanded={!navCollapsed} onClick={toggleNavCollapsed} title={navCollapsed ? "Expandir menu" : "Minimizar menu"} style={{ ...iconBtnStyle, color: colors.textMuted }}><ChevronRight size={18} style={{ transform: navCollapsed ? undefined : "rotate(180deg)" }} /></button></div>
+        <div className="nav-brand" style={{ padding: "0 2px 26px" }}><Brand compact /></div>
 
         <button
           onClick={() => goTab("concursos")}
+          className="nav-concurso" aria-label={`Concurso ativo: ${activeConcurso?.name || "nenhum concurso"}`} title={activeConcurso?.name || "Escolher concurso"}
           style={{
             display: "flex", alignItems: "center", gap: 8, background: colors.surface2, border: `1px solid ${colors.border}`,
             color: colors.text, borderRadius: 12, padding: "12px 10px", marginBottom: 20, textAlign: "left",
           }}
         >
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: activeConcurso?.color || colors.textFaint, flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="nav-context-label" style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10.5, color: colors.textFaint, textTransform: "uppercase", letterSpacing: 0.4 }}>estudando</div>
             <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {activeConcurso?.name || "nenhum concurso"}
@@ -785,7 +797,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             }}>
               {user?.avatar ? <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (user?.username || user?.email || "?").slice(0, 2).toUpperCase()}
             </div>
-            <div style={{ fontSize: 11, color: colors.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div className="nav-user-label" style={{ fontSize: 11, color: colors.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {user?.username || user?.email}
             </div>
           </button>

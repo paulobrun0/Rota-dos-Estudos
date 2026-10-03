@@ -8,7 +8,7 @@ Em **Edital** ou **Hoje**, use **Buscar questões** ao lado de um assunto. O nom
 
 ## Interface
 
-Identidade em azul profundo e turquesa, símbolo Q com check, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto. As colunas permanecem lado a lado no celular, com rolagem horizontal dentro da tabela.
+Identidade em azul profundo e turquesa, símbolo Q com check, ícones duotone, navegação lateral recolhível e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto. As colunas permanecem lado a lado e se ajustam à largura disponível, sem rolagem horizontal.
 
 As capturas abaixo mostram a aplicação real com dados fictícios de demonstração. Nenhuma conta, questão de prova ou informação de usuário real foi usada nas imagens.
 
@@ -27,6 +27,12 @@ As capturas abaixo mostram a aplicação real com dados fictícios de demonstra�
 ![Materiais vinculados ao assunto](docs/images/materiais.png)
 
 ![Prévia de modelo antes de criar um novo concurso](docs/images/importacao.png)
+
+### Menu lateral minimizado
+
+Use o botão de seta no topo do menu para recolher ou expandir. A preferência fica salva no navegador; no celular o menu continua abrindo pelo botão superior.
+
+![Menu recolhido com navegação por ícones](docs/images/menu-minimizado.png)
 
 ### Seu plano de hoje
 

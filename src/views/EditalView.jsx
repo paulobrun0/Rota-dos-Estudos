@@ -413,6 +413,7 @@ function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraf
       }}
     >
       <button
+        className="materia-heading"
         onClick={onToggleExpanded}
         aria-expanded={!collapsed}
         style={{
