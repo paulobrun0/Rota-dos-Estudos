@@ -1,3 +1,4 @@
+import { MaterialsEditor, MATERIAL_TYPES } from "./MaterialsEditor.jsx";
 import React, { useState } from "react";
 import { colors } from "../styles/colors.js";
 import { inputStyle, secondaryBtnStyle } from "../styles/shared.js";
@@ -6,13 +7,14 @@ import { isSafeStudyLink } from "../lib/planValidation.js";
 
 export function TopicLinkButtons({ topic }) {
   const links = getTopicLinks(topic);
-  return STUDY_PLATFORMS.filter(({ key }) => links[key] && isSafeStudyLink(links[key])).map(({ key, label }) => (
+  return <>{STUDY_PLATFORMS.filter(({ key }) => links[key] && isSafeStudyLink(links[key])).map(({ key, label }) => (
     <a key={key} href={links[key]} target="_blank" rel="noopener noreferrer" aria-label={`abrir ${label}`} style={{ color: colors.success, fontSize: 11, padding: "4px 0" }}>{label}</a>
-  ));
+  ))}{(topic.materials || []).filter(m => isSafeStudyLink(m.url) && m.url).map(m => <a key={m.id} href={m.url} target="_blank" rel="noopener noreferrer" title={m.name} style={{ color: colors.accent, fontSize: 11 }}>{MATERIAL_TYPES[m.type]}: {m.name}</a>)}</>;
 }
 
-export function TopicLinksEditor({ topic, onSave, onClose }) {
+export function TopicLinksEditor({ topic, onSave, onSaveMaterials, onClose }) {
   const [draft, setDraft] = useState(() => getTopicLinks(topic));
+  const [materials, setMaterials] = useState(() => topic.materials || []);
   const [error, setError] = useState("");
   const [term, setTerm] = useState(() => questionSearchTerm(topic));
   const [copyMessage, setCopyMessage] = useState("");
@@ -33,6 +35,7 @@ export function TopicLinksEditor({ topic, onSave, onClose }) {
       return;
     }
     onSave(links);
+    if (onSaveMaterials) onSaveMaterials(materials);
     onClose();
   }
   return (
@@ -55,6 +58,7 @@ export function TopicLinksEditor({ topic, onSave, onClose }) {
           <input type="url" value={draft[key] || ""} placeholder="https://…" onChange={(event) => setDraft((previous) => ({ ...previous, [key]: event.target.value }))} style={inputStyle} />
         </label>
       ))}
+      {onSaveMaterials && <MaterialsEditor materials={materials} onChange={setMaterials} />}
       {error && <p role="alert" style={{ color: colors.red }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button type="submit" style={secondaryBtnStyle}>salvar links</button>

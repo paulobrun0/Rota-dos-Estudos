@@ -1,3 +1,6 @@
+import { DashboardView } from "./views/DashboardView.jsx";
+import { RevisoesView } from "./views/RevisoesView.jsx";
+import { SimuladosView } from "./views/SimuladosView.jsx";
 import React, { useEffect, useState } from "react";
 import {
   BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, NotebookText, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle, X,
@@ -43,6 +46,9 @@ import { ProfileView } from "./views/ProfileView.jsx";
 const REVIEW_CARD_MINUTES = 3;
 
 const TAB_TITLES = {
+  painel: "painel",
+  revisoes: "revisões",
+  simulados: "simulados",
   dia: "hoje",
   semana: "semana",
   edital: "edital",
@@ -58,7 +64,7 @@ const TAB_TITLES = {
 
 export default function App({ user, onLogout, onUserUpdate }) {
   const { data, setData, sync, retry, flush } = usePlanData(user.email);
-  const [tab, setTab] = useState("dia");
+  const [tab, setTab] = useState("painel");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [weekAnchor, setWeekAnchor] = useState(weekStart(todayISO()));
@@ -456,7 +462,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
     });
   }
 
-  const { updateTopicNotes, updateTopicLink, setTopicQuestions, addTopicQuestions } = useTopicActions({ updateActive, setData, activeConcurso });
+  const { updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, addTopicQuestions } = useTopicActions({ updateActive, setData, activeConcurso });
 
   function updateSettings(field, value) {
     updateActive((c) => ({ ...c, settings: { ...c.settings, [field]: value } }));
@@ -748,9 +754,12 @@ export default function App({ user, onLogout, onUserUpdate }) {
           <ChevronRight size={14} color={colors.textFaint} />
         </button>
 
+        <NavItem icon={<GraduationCap size={20} />} label="painel" active={tab === "painel"} onClick={() => goTab("painel")} />
         <NavItem icon={<CalendarDays size={20} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); goTab("dia"); }} />
         <NavItem icon={<ListChecks size={20} />} label="semana" active={tab === "semana"} onClick={() => goTab("semana")} />
         <NavItem icon={<BookOpen size={20} />} label="edital" active={tab === "edital"} onClick={() => goTab("edital")} />
+        <NavItem icon={<CalendarDays size={20} />} label="revisões" active={tab === "revisoes"} onClick={() => goTab("revisoes")} />
+        <NavItem icon={<Target size={20} />} label="simulados" active={tab === "simulados"} onClick={() => goTab("simulados")} />
         <NavItem icon={<NotebookText size={20} />} label="caderno" active={tab === "caderno"} onClick={() => goTab("caderno")} />
         <NavItem icon={<Target size={20} />} label="metas" active={tab === "metas"} onClick={() => goTab("metas")} />
         <NavItem icon={<Flame size={20} />} label="progresso" active={tab === "progresso"} onClick={() => goTab("progresso")} />
@@ -821,6 +830,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
             renameConcurso={renameConcurso}
             setExamDate={setExamDate}
             resetCycle={resetCycle}
+            activeConcurso={activeConcurso}
+            onMetadata={(id, values) => setData(d => ({ ...d, concursos:d.concursos.map(c => c.id === id ? { ...c, ...values } : c) }))}
+            onImport={(concurso) => { setData(d => ({ ...d, concursos:[...d.concursos,concurso],activeConcursoId:concurso.id })); setTab("painel"); }}
           />
         )}
 
@@ -861,6 +873,11 @@ export default function App({ user, onLogout, onUserUpdate }) {
           <EmptyConcursoState onGo={() => setTab("concursos")} />
         )}
 
+        {tab === "painel" && activeConcurso && <DashboardView concurso={activeConcurso} onNavigate={goTab} />}
+        {tab === "revisoes" && activeConcurso && <RevisoesView key={activeConcurso.id} concurso={activeConcurso} addTopicToToday={addTopicToToday} onNavigate={goTab} />}
+        {tab === "simulados" && activeConcurso && <SimuladosView key={activeConcurso.id} concurso={activeConcurso}
+          onSave={exam => updateActive(c => ({ ...c, simulados:(c.simulados || []).some(e => e.id === exam.id) ? c.simulados.map(e => e.id === exam.id ? exam : e) : [...(c.simulados || []),exam] }))}
+          onRemove={id => updateActive(c => ({ ...c, simulados:(c.simulados || []).filter(e => e.id !== id) }))} />}
         {tab === "dia" && activeConcurso && (
           <DiaView
             concursoId={activeConcurso.id}
@@ -884,6 +901,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             pendingQuestions={pendingQuestions}
             updateTopicNotes={updateTopicNotes}
             updateTopicLink={updateTopicLink}
+            updateTopicMaterials={updateTopicMaterials}
             setTopicQuestions={setTopicQuestions}
             questionCounts={questionCounts}
             addTopicQuestions={addTopicQuestions}
@@ -925,6 +943,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             reorderMaterias={reorderMaterias}
             updateTopicNotes={updateTopicNotes}
             updateTopicLink={updateTopicLink}
+            updateTopicMaterials={updateTopicMaterials}
             topicDrafts={topicDrafts}
             setTopicDrafts={setTopicDrafts}
             contentBank={contentBank}

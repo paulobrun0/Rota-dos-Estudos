@@ -1,6 +1,6 @@
 # Questão de Ritmo
 
-Planejador de estudos para concursos com edital, ciclos por progresso, cronograma semanal, revisões espaçadas, questões e acompanhamento de atividade.
+Planejador de estudos para concursos com painel de desempenho, edital, ciclos por progresso, revisões, simulados e materiais organizados por assunto.
 
 ## Cadernos de questões externos
 
@@ -11,6 +11,22 @@ Em **Edital** ou **Hoje**, use **Buscar questões** ao lado de um assunto. O nom
 Identidade em azul profundo e turquesa, símbolo Q com check, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto.
 
 As capturas abaixo mostram a aplicação real com dados fictícios de demonstração. Nenhuma conta, questão de prova ou informação de usuário real foi usada nas imagens.
+
+### Painel, concursos e revisões
+
+![Painel com desempenho por matéria e ciclo de estudos](docs/images/painel.png)
+
+![Concursos com banca, cargo, fase e indicadores](docs/images/concursos.png)
+
+![Fila de revisões com prioridades e filtros](docs/images/revisoes.png)
+
+### Simulados, materiais e modelos
+
+![Evolução dos simulados e desempenho por matéria](docs/images/simulados.png)
+
+![Materiais vinculados ao assunto](docs/images/materiais.png)
+
+![Prévia de modelo antes de criar um novo concurso](docs/images/importacao.png)
 
 ### Seu plano de hoje
 
@@ -28,6 +44,10 @@ As capturas abaixo mostram a aplicação real com dados fictícios de demonstra�
 
 ### Tema escuro e celular
 
+![Painel no tema escuro](docs/images/painel-escuro.png)
+
+<img src="docs/images/painel-mobile.png" alt="Painel adaptado para celular" width="390" />
+
 ![Painel de hoje no tema escuro](docs/images/hoje-escuro.png)
 
 <img src="docs/images/hoje-mobile.png" alt="Painel de hoje adaptado para celular" width="390" />
@@ -36,20 +56,41 @@ As capturas abaixo mostram a aplicação real com dados fictícios de demonstra�
 
 ## Funcionalidades
 
+- **Painel:** visão por matéria, cobertura do edital, questões praticadas, último simulado e ciclo ou cronograma ao lado.
+- **Simulados:** registro manual por matéria, pesos, evolução das notas e comparação de desempenho; resultados separados das questões praticadas. A nota é a porcentagem ponderada de acertos, sem penalidade por erro.
+- **Materiais:** PDFs, vídeos, cadernos e outros links por assunto, salvos junto aos links externos.
+- **Modelos:** prévia, importação e exportação de estrutura do edital, sempre criando um novo concurso e preservando os existentes.
 - **Hoje:** assuntos novos e reforços, conclusão de cards, cronômetros e registro de questões.
 - **Semana:** previsão de matérias para 35 dias. A previsão é estimada: o ciclo avança conforme a conclusão real dos estudos.
 - **Edital:** cadastro manual, importação de texto numerado ou no formato `Matéria: assunto; assunto`, catálogo compartilhado de matérias, anotações e links por assunto.
 - **Metas:** matérias e assuntos por dia, duração de sessões, descanso e quantidade de revisões.
 - **Planejamento:** ciclo por progresso ou cronograma fixo por dia da semana. Pendências continuam no ciclo até serem concluídas.
-- **Revisões:** intervalos de 1, 3, 7, 15 e 30 dias, com limite diário configurável. As revisões vêm de todas as matérias, independentemente das matérias novas do dia.
+- **Revisões:** fila com filtros por vencimento, baixo desempenho e assunto; botão para incluir no plano de hoje. Intervalos de 1, 3, 7, 15 e 30 dias, com limite diário configurável. As revisões vêm de todas as matérias, independentemente das matérias novas do dia.
 - **Caderno:** erros para refazer, histórico por questão e anotações. Um erro deixa a lista de pendências quando a última resposta passa a ser correta; as tentativas anteriores continuam no histórico.
 - **Questões:** banco extraído de provas, seleção por matéria/assunto/banca, correção no servidor e registro individual de respostas. Cada tentativa tem identificador próprio para impedir duplicação em uma repetição da requisição.
 - **Links:** Qconcursos, Tec Concursos e outro caderno podem coexistir em cada assunto. Links antigos continuam disponíveis.
 - **Progresso:** atividade, sequência, minutos e desempenho. Dias de descanso configurados não interrompem a sequência.
-- **Concursos:** planos separados, data da prova e reinício de ciclo com opção de preservar o histórico do plano.
+- **Concursos:** cartões com banca, cargo, fase, edital, data da prova, cobertura e indicadores. Tempo de estudo estimado a partir das sessões concluídas e metas, identificado como estimativa. Reinício de ciclo com opção de preservar o histórico.
 - **Conta:** perfil, ranking opcional, senha, código de recuperação e uma sessão ativa por conta.
 - **Administração:** usuários, catálogo, recursos, auditoria e backups.
 - **PWA:** instalação, notificações opcionais e aviso de atualização. Os recursos de estudo dependem da API; instalar o PWA não fornece funcionamento completo offline.
+
+## Modelos de edital
+
+Em **Concursos**, escolha um modelo inicial, importe um JSON ou cole a estrutura. Confira a prévia e clique em **Importar como novo concurso**. Os exemplos de Área administrativa e Tribunais são pontos de partida; confira e adapte ao edital oficial. O exportador gera o mesmo formato, sem progresso ou simulados:
+
+```json
+{
+  "name": "Meu concurso",
+  "banca": "FGV",
+  "cargo": "Técnico",
+  "materias": [
+    { "name": "Português", "topics": [{ "name": "Crase" }] }
+  ]
+}
+```
+
+O importador aceita até 2 MiB, 200 matérias e 1.000 assuntos por matéria. Novos identificadores são gerados e o progresso começa zerado. Para recuperar o histórico de um plano, use o backup em **Ajustes**.
 
 ## Executar localmente
 

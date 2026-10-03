@@ -1,10 +1,14 @@
+import { EditalTemplateImporter } from "../components/EditalTemplateImporter.jsx";
+import { concursoSummary } from "../lib/studyInsights.js";
+import { isSafeStudyLink } from "../lib/planValidation.js";
+import { ProgressBar, Metric } from "../components/StudyPanels.jsx";
 import React, { useState } from "react";
 import { AlertTriangle, CalendarClock, Pencil, Plus, RotateCcw, Trash2 } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { examCountdownInfo } from "../lib/examCountdown.js";
 
-export function ConcursosView({ concursos, activeConcursoId, newConcursoName, setNewConcursoName, addConcurso, selectConcurso, removeConcurso, renameConcurso, setExamDate, resetCycle }) {
+export function ConcursosView({ concursos, activeConcursoId, newConcursoName, setNewConcursoName, addConcurso, selectConcurso, removeConcurso, renameConcurso, setExamDate, resetCycle, onMetadata, onImport, activeConcurso }) {
   return (
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>concursos</div>
@@ -27,7 +31,7 @@ export function ConcursosView({ concursos, activeConcursoId, newConcursoName, se
 
       {concursos.length === 0 && <div style={{ color: colors.textFaint, fontSize: 14 }}>nenhum concurso cadastrado ainda.</div>}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="concurso-grid">
         {concursos.map((c) => (
           <ConcursoCard
             key={c.id}
@@ -38,17 +42,19 @@ export function ConcursosView({ concursos, activeConcursoId, newConcursoName, se
             onRename={(name) => renameConcurso(c.id, name)}
             onExamDateChange={(date) => setExamDate(c.id, date)}
             onResetCycle={(keepHistory) => resetCycle(c.id, keepHistory)}
+            onMetadata={values => onMetadata(c.id, values)}
             canDelete={concursos.length > 1}
           />
         ))}
       </div>
+      <div style={{marginTop:24}}><EditalTemplateImporter onImport={onImport} activeConcurso={activeConcurso} /></div>
     </div>
   );
 }
 
 const BADGE_COLOR = { past: colors.textFaint, critical: colors.red, soon: colors.accent, normal: colors.textMuted };
 
-function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExamDateChange, onResetCycle, canDelete }) {
+function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExamDateChange, onResetCycle, canDelete, onMetadata }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(concurso.name);
   const [editingDate, setEditingDate] = useState(false);
@@ -56,6 +62,10 @@ function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExam
   const [resetMode, setResetMode] = useState("keep");
   const [resetConfirmText, setResetConfirmText] = useState("");
 
+  const summary = concursoSummary(concurso);
+  const [metadataOpen,setMetadataOpen] = useState(false);
+  const [meta,setMeta] = useState({banca:concurso.banca || "",cargo:concurso.cargo || "",stage:concurso.stage || "pre",editalUrl:concurso.editalUrl || ""});
+  const [metadataError,setMetadataError] = useState("");
   const totalTopics = concurso.materias.reduce((sum, m) => sum + m.topics.length, 0);
   const doneTopics = concurso.materias.reduce((sum, m) => sum + m.topics.filter((t) => t.status === "estudado").length, 0);
   const badgeInfo = examCountdownInfo(concurso.examDate);
@@ -81,7 +91,7 @@ function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExam
 
   return (
     <div style={{ background: colors.surface, border: `1px solid ${isActive ? colors.accent : colors.border}`, borderLeft: `3px solid ${concurso.color}`, borderRadius: 12, padding: "14px 16px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         {editing ? (
           <input
@@ -138,6 +148,12 @@ function ConcursoCard({ concurso, isActive, onSelect, onDelete, onRename, onExam
         )}
       </div>
 
+      <p className="dashboard-meta">{concurso.cargo || "Cargo não informado"} · {concurso.banca || "Banca não informada"}</p>
+      <div className="topic-status" style={{background:colors.accentSoft,color:colors.accent}}>{concurso.stage === "completed" ? "Concurso realizado" : concurso.stage === "post" ? "Pós-edital" : "Pré-edital"}</div>
+      <div className="concurso-stats"><Metric label="Questões" value={summary.questions} /><Metric label="Acertos" value={summary.accuracy === null ? "—" : `${summary.accuracy}%`} /><Metric label="Tempo estimado" value={`${Math.floor(summary.estimatedMinutes/60)}h${String(summary.estimatedMinutes%60).padStart(2,"0")}`} /></div>
+      <ProgressBar value={summary.coverage} label="Cobertura do edital" />
+      <div className="topic-actions" style={{marginTop:14}}><button onClick={()=>{setMeta({banca:concurso.banca||"",cargo:concurso.cargo||"",stage:concurso.stage||"pre",editalUrl:concurso.editalUrl||""});setMetadataOpen(o=>!o);}} style={secondaryBtnStyle}>Dados do concurso</button>{concurso.editalUrl && isSafeStudyLink(concurso.editalUrl) && <a href={concurso.editalUrl} target="_blank" rel="noopener noreferrer" style={{color:colors.accent,fontSize:12}}>Edital oficial ↗</a>}</div>
+      {metadataOpen && <form className="study-form" onSubmit={e=>{e.preventDefault();if(!isSafeStudyLink(meta.editalUrl)){setMetadataError("Use um link válido para o edital.");return;}onMetadata(meta);setMetadataOpen(false);setMetadataError("");}}><div className="form-grid"><label>Banca<input maxLength={120} value={meta.banca} onChange={e=>setMeta({...meta,banca:e.target.value})} style={inputStyle}/></label><label>Cargo<input maxLength={180} value={meta.cargo} onChange={e=>setMeta({...meta,cargo:e.target.value})} style={inputStyle}/></label><label>Fase<select aria-label="Fase" value={meta.stage} onChange={e=>setMeta({...meta,stage:e.target.value})} style={inputStyle}><option value="pre">Pré-edital</option><option value="post">Pós-edital</option><option value="completed">Realizado</option></select></label><label>Link do edital<input type="url" value={meta.editalUrl} onChange={e=>setMeta({...meta,editalUrl:e.target.value})} style={inputStyle}/></label></div>{metadataError&&<p role="alert">{metadataError}</p>}<div className="topic-actions"><button style={primaryBtnStyle}>Salvar dados</button><button type="button" onClick={()=>setMetadataOpen(false)} style={secondaryBtnStyle}>Cancelar</button></div></form>}
       {resetOpen && (
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${colors.border}` }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 12 }}>

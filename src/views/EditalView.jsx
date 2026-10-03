@@ -1,3 +1,4 @@
+import { filterTopics } from "../lib/studyInsights.js";
 import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
 import { getTopicLinks } from "../lib/topicLinks.js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -5,7 +6,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, GripVertical, Library, L
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, reorderMaterias, updateTopicNotes, updateTopicLink, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
+export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, reorderMaterias, updateTopicNotes, updateTopicLink, updateTopicMaterials, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
   // Drag state lives here (not in each card) since a drag needs to know
   // about every OTHER card too — which one the pointer is currently over,
   // to highlight it as the drop target. `dragState` also drives the little
@@ -23,6 +24,7 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
   // works independently — not being in this set just means collapsed,
   // which is why a newly added matéria starts collapsed with no extra
   // bookkeeping needed.
+  const [topicFilter, setTopicFilter] = useState({query:"", status:"all", sort:"original"});
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   function toggleExpanded(id) {
     setExpandedIds((prev) => {
@@ -171,10 +173,12 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
         </div>
       )}
 
+      <div className="filter-bar" style={{marginBottom:16}}><input aria-label="Buscar assunto no edital" placeholder="Buscar assunto" value={topicFilter.query} onChange={e=>setTopicFilter({...topicFilter,query:e.target.value})} style={inputStyle}/><select aria-label="Situação dos assuntos" value={topicFilter.status} onChange={e=>setTopicFilter({...topicFilter,status:e.target.value})} style={inputStyle}><option value="all">Todos os assuntos</option><option value="pending">Pendentes</option><option value="studied">Estudados</option><option value="due">Revisões previstas</option></select><select aria-label="Ordenar assuntos" value={topicFilter.sort} onChange={e=>setTopicFilter({...topicFilter,sort:e.target.value})} style={inputStyle}><option value="original">Ordem do edital</option><option value="accuracy">Menores acertos</option><option value="review">Próxima revisão</option><option value="name">Nome do assunto</option></select></div>
       {concurso.materias.map((m, index) => (
         <MateriaEditalCard
           key={m.id}
           materia={m}
+          topicFilter={topicFilter}
           isFirst={index === 0}
           isLast={index === concurso.materias.length - 1}
           topicDraft={topicDrafts[m.id] || ""}
@@ -183,12 +187,12 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
           removeMateria={removeMateria}
           removeTopic={removeTopic}
           moveMateria={moveMateria}
-          updateTopicNotes={updateTopicNotes}
+          updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
           updateTopicLink={updateTopicLink}
           onDragHandlePointerDown={(e) => startDrag(m, e)}
           isDragging={dragState?.id === m.id}
           isDropTarget={overId === m.id && dragState && dragState.id !== m.id}
-          isExpanded={expandedIds.has(m.id)}
+          isExpanded={expandedIds.has(m.id) || Boolean(topicFilter.query) || topicFilter.status !== "all"}
           onToggleExpanded={() => toggleExpanded(m.id)}
         />
       ))}
@@ -387,8 +391,9 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
   );
 }
 
-function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, onDragHandlePointerDown, isDragging, isDropTarget, isExpanded, onToggleExpanded }) {
+function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, updateTopicMaterials, onDragHandlePointerDown, isDragging, isDropTarget, isExpanded, onToggleExpanded }) {
   const collapsed = !isExpanded;
+  const visibleTopics = filterTopics(m.topics, topicFilter);
   const pendentes = m.topics.filter((t) => t.status === "pendente").length;
   const estudados = m.topics.length - pendentes;
 
@@ -465,10 +470,10 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
         <>
           {m.topics.length > 0 && (
             <div className="topic-table-wrap"><table className="topic-table" aria-label={`Assuntos de ${m.name}`}><thead><tr><th scope="col">Assunto</th><th scope="col">Situação</th><th scope="col">Questões</th><th scope="col">Cadernos</th><th scope="col">Ações</th></tr></thead><tbody>
-              {m.topics.map((t) => (
-                <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} updateTopicNotes={updateTopicNotes} updateTopicLink={updateTopicLink} />
+              {visibleTopics.map((t) => (
+                <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes} updateTopicLink={updateTopicLink} />
               ))}
-            </tbody></table></div>
+            </tbody></table>{!visibleTopics.length && <p className="muted" style={{padding:12}}>Nenhum assunto neste filtro.</p>}</div>
           )}
 
           <div style={{ display: "flex", gap: 8 }}>
@@ -489,7 +494,7 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
   );
 }
 
-function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink }) {
+function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink, updateTopicMaterials }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [draft, setDraft] = useState(t.notes || "");
   const hasNotes = (t.notes || "").trim().length > 0;
@@ -512,7 +517,7 @@ function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, up
       <td data-label="Ações"><div className="topic-actions"><button onClick={() => setNotesOpen(o => !o)} aria-label="anotações do assunto" aria-expanded={notesOpen} title="Anotações" style={{ ...iconBtnStyle, color: hasNotes ? colors.accent : colors.textFaint }}><StickyNote size={16} /></button><button onClick={() => removeTopic(materiaId, t.id)} aria-label={`excluir assunto ${t.name}`} title="Excluir assunto" style={iconBtnStyle}><X size={16} /></button></div></td>
     </tr>
     {(linkOpen || notesOpen) && <tr className="topic-detail"><td colSpan={5}>
-      {linkOpen && <TopicLinksEditor topic={t} onSave={(links) => updateTopicLink(materiaId, t.id, links)} onClose={() => setLinkOpen(false)} />}
+      {linkOpen && <TopicLinksEditor topic={t} onSaveMaterials={(materials) => updateTopicMaterials(materiaId, t.id, materials)} onSave={(links) => updateTopicLink(materiaId, t.id, links)} onClose={() => setLinkOpen(false)} />}
       {notesOpen && <label style={{ display: "grid", gap: 6, fontSize: 12, color: colors.textMuted }}>Anotações — {t.name}<textarea value={draft} onChange={e => setDraft(e.target.value)} onBlur={saveIfChanged} placeholder="observações, pegadinhas, pontos de atenção..." rows={3} style={{ ...inputStyle, width: "100%", resize: "vertical" }} /></label>}
     </td></tr>}
   </>;

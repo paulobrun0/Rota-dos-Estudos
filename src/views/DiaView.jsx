@@ -38,7 +38,7 @@ function StatTile({ icon, label, value, sub }) {
   );
 }
 
-export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
+export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
   const isToday = selectedDate === todayISO();
   const exam = examCountdownInfo(examDate);
   const examStyle = exam ? EXAM_BADGE_STYLE[exam.level] : null;
@@ -167,7 +167,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
                   sessionTimers={sessionTimers}
                   restTimers={restTimers}
                   pendingCardId={pendingQuestions[materiaId]}
-                  updateTopicNotes={updateTopicNotes}
+                  updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
                   updateTopicLink={updateTopicLink}
                   setTopicQuestions={setTopicQuestions}
                   questionCounts={questionCounts}
@@ -193,7 +193,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
                   sessionTimers={sessionTimers}
                   restTimers={restTimers}
                   pendingCardId={pendingQuestions[materiaId]}
-                  updateTopicNotes={updateTopicNotes}
+                  updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
                   updateTopicLink={updateTopicLink}
                   setTopicQuestions={setTopicQuestions}
                   questionCounts={questionCounts}
@@ -208,7 +208,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
   );
 }
 
-function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
+function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
   if (!materia) return null;
   // dailyPlans keeps history and isn't pruned when a topic is later deleted
   // from the matéria (see computeMateriaStats), so an old day's cards can
@@ -255,7 +255,7 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
               topic={topic}
               forcedOpen={card.id === pendingCardId}
               onToggle={(questions) => onToggle(card.id, questions)}
-              updateTopicNotes={updateTopicNotes}
+              updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
               updateTopicLink={updateTopicLink}
               setTopicQuestions={setTopicQuestions}
               materiaId={materia.id}
@@ -280,7 +280,7 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
   );
 }
 
-function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
+function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
   const [asking, setAsking] = useState(false);
   const [practicing, setPracticing] = useState(false);
   const [feitas, setFeitas] = useState("");
@@ -465,7 +465,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
         </div>
       )}
 
-      {linkOpen && <TopicLinksEditor topic={topic} onSave={(links) => updateTopicLink(materiaId, topic.id, links)} onClose={() => setLinkOpen(false)} />}
+      {linkOpen && <TopicLinksEditor topic={topic} onSaveMaterials={(materials) => updateTopicMaterials(materiaId, topic.id, materials)} onSave={(links) => updateTopicLink(materiaId, topic.id, links)} onClose={() => setLinkOpen(false)} />}
       {notesOpen && (
         <textarea
           value={notesDraft}

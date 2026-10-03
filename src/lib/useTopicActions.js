@@ -19,6 +19,10 @@ export function useTopicActions({ updateActive, setData, activeConcurso }) {
     changeTopic(materiaId, topicId, (topic) => { topic.links = links; delete topic.link; });
   }
 
+  function updateTopicMaterials(materiaId, topicId, materials) {
+    changeTopic(materiaId, topicId, topic => { topic.materials = materials; });
+  }
+
   function setTopicQuestions(materiaId, topicId, total, correct) {
     changeTopic(materiaId, topicId, (topic) => {
       topic.questionsTotal = Math.max(0, Math.trunc(total));
@@ -46,5 +50,5 @@ export function useTopicActions({ updateActive, setData, activeConcurso }) {
     });
   }
 
-  return { updateTopicNotes, updateTopicLink, setTopicQuestions, addTopicQuestions };
+  return { updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, addTopicQuestions };
 }

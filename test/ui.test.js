@@ -10,7 +10,7 @@ for (const key of ["window", "document", "HTMLElement", "localStorage", "navigat
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const { render, cleanup, screen, fireEvent, waitFor } = await import("@testing-library/react");
-let vite, App, QuizPractice, TopicLinksEditor, TopicLinkButtons, CadernoView;
+let vite, App, QuizPractice, TopicLinksEditor, TopicLinkButtons, CadernoView, SimuladosView, EditalTemplateImporter;
 const originalFetch = globalThis.fetch;
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const question = { id: 1, assunto: "Crase", materia: "Português", enunciado: "Escolha a alternativa", alternativas: ["A", "B"], gabarito: "A", banca: "FGV" };
@@ -22,6 +22,8 @@ before(async () => {
   const links = await vite.ssrLoadModule("/src/components/TopicLinks.jsx");
   TopicLinksEditor = links.TopicLinksEditor;
   TopicLinkButtons = links.TopicLinkButtons;
+  SimuladosView = (await vite.ssrLoadModule("/src/views/SimuladosView.jsx")).SimuladosView;
+  EditalTemplateImporter = (await vite.ssrLoadModule("/src/components/EditalTemplateImporter.jsx")).EditalTemplateImporter;
   CadernoView = (await vite.ssrLoadModule("/src/views/CadernoView.jsx")).CadernoView;
 });
 afterEach(() => { cleanup(); localStorage.clear(); globalThis.fetch = originalFetch; });
@@ -123,3 +125,32 @@ test("external question search uses the topic and offers a manual TEC fallback w
   fireEvent.click(screen.getByRole("button", { name: "salvar links" }));
   assert.equal(saved[0].tec, topic.links.tec);
 });
+
+test('a template preview does not import until confirmed and can be cancelled',()=>{
+ const imports=[];render(React.createElement(EditalTemplateImporter,{onImport:c=>imports.push(c)}));
+ fireEvent.click(screen.getByRole('button',{name:'Modelo inicial · Tribunais'}));assert.equal(imports.length,0);
+ fireEvent.click(screen.getByRole('button',{name:'Cancelar prévia'}));assert.equal(imports.length,0);
+ fireEvent.click(screen.getByRole('button',{name:'Modelo inicial · Tribunais'}));fireEvent.click(screen.getByRole('button',{name:'Importar como novo concurso'}));assert.equal(imports.length,1);assert.equal(imports[0].materias.length,3);
+});
+test('simulado entry persists only valid positive question counts with weights',()=>{
+ const saves=[];render(React.createElement(SimuladosView,{concurso:{banca:'FGV',materias:[{id:'m',name:'Português'}]},onSave:e=>saves.push(e)}));
+ fireEvent.click(screen.getByRole('button',{name:'Registrar simulado'}));fireEvent.change(screen.getByLabelText('Nome do simulado'),{target:{value:'Treino 1'}});
+ fireEvent.submit(screen.getByRole('button',{name:'Salvar simulado'}).closest('form'));assert.equal(saves.length,0);assert.ok(screen.getByRole('alert'));
+ fireEvent.change(screen.getByLabelText('Questões de Português'),{target:{value:'20'}});fireEvent.change(screen.getByLabelText('Acertos de Português'),{target:{value:'16'}});fireEvent.change(screen.getByLabelText('Peso de Português'),{target:{value:'2'}});
+ fireEvent.submit(screen.getByRole('button',{name:'Salvar simulado'}).closest('form'));assert.equal(saves.length,1);assert.equal(saves[0].rows[0].correct,16);assert.equal(saves[0].rows[0].weight,2);
+});
+test('materials are staged with the notebook editor and saved together',()=>{
+ const materials=[];render(React.createElement(TopicLinksEditor,{topic:{name:'Crase'},onSave(){},onSaveMaterials:m=>materials.push(m),onClose(){}}));
+ fireEvent.change(screen.getByLabelText('Nome do material'),{target:{value:'Aula de Crase'}});fireEvent.change(screen.getByLabelText('Link do material'),{target:{value:'https://example.com/aula.pdf'}});
+ fireEvent.click(screen.getByRole('button',{name:'Adicionar material à lista'}));assert.equal(materials.length,0);
+ fireEvent.click(screen.getByRole('button',{name:'salvar links'}));assert.equal(materials[0][0].name,'Aula de Crase');assert.equal(materials[0][0].type,'pdf');
+});
+
+ test('simulado deletion requires confirmation and passes the selected id',()=>{
+ const removed=[];const oldConfirm=window.confirm;
+ const concurso={materias:[],simulados:[{id:'exam',name:'Treino',date:'2026-10-03',minutes:30,rows:[{materiaId:'m',materiaName:'Português',total:20,correct:16,weight:1}]}]};
+ try{render(React.createElement(SimuladosView,{concurso,onRemove:id=>removed.push(id)}));
+ window.confirm=()=>false;fireEvent.click(screen.getByRole('button',{name:'Excluir',exact:true}));assert.equal(removed.length,0);
+ window.confirm=()=>true;fireEvent.click(screen.getByRole('button',{name:'Excluir',exact:true}));assert.deepEqual(removed,['exam']);
+ }finally{window.confirm=oldConfirm;}
+ });

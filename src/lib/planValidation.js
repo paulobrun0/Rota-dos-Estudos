@@ -57,6 +57,14 @@ function validateMaterias(materias) {
         requireValue(object(topic.links), "links inválidos");
         for (const link of Object.values(topic.links)) requireValue(isSafeStudyLink(link), "link precisa começar com http ou https");
       }
+      if (topic.materials !== undefined) {
+        distinct(topic.materials, "materiais");
+        for (const material of topic.materials) {
+          text(material.name, "nome do material");
+          requireValue(isSafeStudyLink(material.url) && Boolean(material.url), "link do material inválido");
+          requireValue(["pdf", "video", "notebook", "other"].includes(material.type), "tipo do material inválido");
+        }
+      }
       optionalCount(topic, "questionsTotal");
       optionalCount(topic, "questionsCorrect");
       requireValue((topic.questionsCorrect || 0) <= (topic.questionsTotal || 0), "acertos excedem o total de questões");
@@ -69,6 +77,24 @@ function validateMaterias(materias) {
 function validateConcurso(concurso) {
   requireValue(object(concurso), "concurso inválido");
   validateMaterias(concurso.materias);
+  for (const key of ["banca", "cargo"]) if (concurso[key] !== undefined) requireValue(typeof concurso[key] === "string", `${key} inválido`);
+  if (concurso.stage !== undefined) requireValue(["pre", "post", "completed"].includes(concurso.stage), "fase do concurso inválida");
+  if (concurso.editalUrl !== undefined) requireValue(isSafeStudyLink(concurso.editalUrl), "link do edital inválido");
+  if (concurso.simulados !== undefined) {
+    distinct(concurso.simulados, "simulados");
+    for (const exam of concurso.simulados) {
+      text(exam.name, "nome do simulado"); date(exam.date); count(exam.minutes, "tempo do simulado", false);
+      requireValue(typeof exam.banca === "string", "banca do simulado inválida");
+      requireValue(Array.isArray(exam.rows) && exam.rows.length > 0, "simulado sem matérias");
+      const ids = new Set();
+      for (const row of exam.rows) {
+        text(row.materiaId, "matéria do simulado"); text(row.materiaName, "nome da matéria do simulado");
+        requireValue(!ids.has(row.materiaId), "matéria repetida no simulado"); ids.add(row.materiaId);
+        count(row.total, "questões do simulado"); count(row.correct, "acertos do simulado"); count(row.weight, "peso", false);
+        requireValue(row.total > 0 && row.correct <= row.total && row.weight > 0, "resultado do simulado inválido");
+      }
+    }
+  }
   if (concurso.settings !== undefined) {
     requireValue(object(concurso.settings), "metas inválidas");
     for (const key of ["materiasPerDay", "topicsPerDay", "minutesPerMateria", "restMinutes", "reviewsPerDay"]) optionalCount(concurso.settings, key);

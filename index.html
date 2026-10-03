@@ -104,6 +104,46 @@
         .topic-table td::before { content: attr(data-label); display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 5px; font-weight: 400; }
         .topic-detail td { grid-column: 1 / -1; }
       }
+
+      .study-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; min-width: 0; }
+      .study-panel-heading { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px; }
+      .study-panel-heading h2 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+      .study-panel-heading button { margin-top: 0 !important; }
+      .study-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 14px; margin-bottom: 24px; }
+      .study-metric { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+      .study-metric > span, .study-metric small { color: var(--text-muted); font-size: 12px; }
+      .study-metric strong { font-size: 27px; color: var(--text); letter-spacing: -.04em; }
+      .dashboard-columns { display: grid; grid-template-columns: minmax(0,1fr) 310px; gap: 20px; align-items: start; }
+      .dashboard-columns > div, .dashboard-columns aside { min-width: 0; }
+      .dashboard-meta, .muted { font-size: 12px; line-height: 1.65; color: var(--text-muted); }
+      .insight-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-soft); font-size: 13px; }
+      .insight-row > div { min-width: 0; overflow-wrap: anywhere; }
+      .insight-row small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+      .cycle-row { display: flex; align-items: center; gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--border-soft); font-size: 12px; }
+      .cycle-row strong { flex: 1; min-width: 0; }
+      .cycle-row > span:last-child { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+      .cycle-number { background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 6px; font-weight: 700; }
+      .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .filter-bar input { min-width: 150px; flex: 2; }
+      .filter-bar select { min-width: 140px; flex: 1; }
+      .form-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; }
+      .form-grid label, .study-form > label { display: grid; gap: 6px; font-size: 12px; color: var(--text-muted); min-width: 0; }
+      .form-grid input, .form-grid select { width: 100%; min-width: 0; }
+      .study-form { border: 1px solid var(--border); background: var(--bg); border-radius: 10px; padding: 16px; margin: 14px 0; display: grid; gap: 12px; min-width: 0; }
+      .study-form h3 { margin: 0; }
+      .study-form summary { cursor: pointer; font-size: 13px; }
+      .score-chart { display: flex; gap: 16px; overflow-x: auto; padding: 20px 0; }
+      .score-column { flex: 0 0 90px; min-width: 65px; text-align: center; display: grid; gap: 7px; font-size: 13px; }
+      .score-column small { font-size: 10px; color: var(--text-muted); overflow-wrap: anywhere; }
+      .score-bar-track { height: 120px; display: flex; align-items: end; background: var(--surface2); border-radius: 6px; overflow: hidden; }
+      .score-bar-track > div { width: 100%; }
+      .concurso-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,330px),1fr)); gap: 16px; }
+      .concurso-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; margin: 16px 0; }
+      .concurso-stats .study-metric { padding: 10px; background: var(--surface2); border: 0; }
+      .concurso-stats .study-metric strong { font-size: 18px; }
+      .concurso-stats .study-metric > span { font-size: 10px; }
+      @media (max-width: 1100px) { .dashboard-columns { grid-template-columns: 1fr; } }
+      @media (max-width: 640px) { .study-panel { padding: 14px; } .study-metrics { grid-template-columns: 1fr 1fr; gap: 10px; } .study-metric { padding: 14px; } .study-metric strong { font-size: 23px; } .form-grid { grid-template-columns: 1fr; } }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
     </style>
     <script>
