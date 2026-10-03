@@ -2,6 +2,10 @@
 
 Planejador de estudos para concursos com edital, ciclos por progresso, cronograma semanal, revisões espaçadas, questões e acompanhamento de atividade.
 
+## Cadernos de questões externos
+
+Em **Edital** ou **Hoje**, use **Buscar questões** ao lado de um assunto. O nome já aparece preenchido e pode ser ajustado antes da busca. **Buscar no Qconcursos** abre questões por palavra-chave; confira os filtros de disciplina e assunto. Para o **TEC Concursos**, copie o assunto, abra a plataforma e escolha seus filtros. A criação e o salvamento do caderno são feitos na sua conta da plataforma externa. Depois cole a URL nos campos de cadernos e salve: o link ficará disponível diretamente naquele assunto, inclusive após recarregar a página. O aplicativo não recebe credenciais dessas plataformas e não sincroniza automaticamente as questões resolvidas nelas.
+
 ## Interface
 
 Identidade em azul profundo e turquesa, símbolo Q com check, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto.

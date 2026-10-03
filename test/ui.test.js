@@ -108,3 +108,18 @@ test("refazer in the caderno loads the current question and updates practice cou
   await screen.findByText(/nenhum erro pendente/);
   assert.deepEqual(counts, [["m", "t", 1, 1]]);
 });
+
+test("external question search uses the topic and offers a manual TEC fallback without overwriting notebooks", async () => {
+  const topic = { name: "5.7 Crase", links: { tec: "https://www.tecconcursos.com.br/questoes/cadernos/123" } };
+  const saved = [];
+  render(React.createElement(TopicLinksEditor, { topic, onSave: value => saved.push(value), onClose() {} }));
+  const field = screen.getByLabelText("Assunto para buscar");
+  assert.equal(field.value, "Crase");
+  fireEvent.change(field, { target: { value: "Crase & regência" } });
+  assert.equal(new URL(screen.getByRole("link", { name: /Buscar no Qconcursos/ }).href).searchParams.get("q"), "Crase & regência");
+  fireEvent.click(screen.getByRole("button", { name: "Copiar assunto para o TEC" }));
+  await waitFor(() => assert.match(screen.getByRole("status").textContent, /copie manualmente/));
+  assert.equal(saved.length, 0);
+  fireEvent.click(screen.getByRole("button", { name: "salvar links" }));
+  assert.equal(saved[0].tec, topic.links.tec);
+});
