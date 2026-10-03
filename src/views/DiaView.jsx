@@ -242,7 +242,7 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
 
       {resting && <RestTimer materiaId={materia.id} {...restTimers} />}
 
-      <div className="daily-topic-table">
+      <div className="daily-topic-table" tabIndex={0} role="region" aria-label={`Tabela de estudos de ${materia.name}`}>
         <div className="daily-topic-head" aria-hidden="true"><span></span><span>Assunto</span><span>Tipo</span><span>Questões</span><span>Ações e cadernos</span></div>
         {cards.map((card) => {
           const topic = topicById(materia, card.topicId);

@@ -8,7 +8,7 @@ Em **Edital** ou **Hoje**, use **Buscar questões** ao lado de um assunto. O nom
 
 ## Interface
 
-Identidade em azul profundo e turquesa, símbolo Q com check, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto.
+Identidade em azul profundo e turquesa, símbolo Q com check, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto. As colunas permanecem lado a lado no celular, com rolagem horizontal dentro da tabela.
 
 As capturas abaixo mostram a aplicação real com dados fictícios de demonstração. Nenhuma conta, questão de prova ou informação de usuário real foi usada nas imagens.
 
@@ -172,24 +172,13 @@ A aplicação confia em um proxy reverso. Ajuste essa configuração em `server/
 
 ### Oracle: deploy automático da main
 
-A instalação principal é `https://app.paulobruno.dev`, na Oracle. A Cloudflare cuida do domínio. A API roda como usuário `opc`, pelo serviço systemd `rota-app`, em `/home/opc/app`, usando `/usr/local/bin/node` (22.13 ou superior).
+A aplicação principal está em `https://app.paulobruno.dev`, hospedada na Oracle. A Cloudflare cuida do domínio.
 
-O workflow já inclui **Deploy Oracle**, executado após **Test and build** em pushes para `main` e execuções manuais. Ele fica desativado até a configuração abaixo estar completa. Os arquivos são entregues por SSH; a VM não precisa ter Git instalado.
+O workflow inclui **Deploy Oracle**, executado após **Test and build** em pushes para `main` e execuções manuais. Os arquivos de release são entregues por SSH, com os dados persistentes preservados. Uma execução cujo commit deixou de ser a ponta da `main` é ignorada na etapa de entrega.
 
-Em **Settings > Secrets and variables > Actions** do repositório:
+O deploy prepara as dependências antes de parar a aplicação, guarda uma cópia da instalação e um snapshot SQLite consistente, atualiza código e build e verifica o identificador do commit publicado e a saúde da API. Se falhar, tenta retornar ao código e às dependências anteriores. O banco atual permanece intacto; os snapshots permitem recuperação manual pelo procedimento acima.
 
-1. Na aba **Secrets**, crie `ORACLE_SSH_KEY` com uma chave SSH privada autorizada para o usuário `opc`. Prefira uma chave dedicada à automação. Ela deve ser cadastrada somente como secret; nunca em commits, issues ou no chat.
-2. Crie `ORACLE_KNOWN_HOSTS` com a entrada correspondente à VM no arquivo `known_hosts` de uma conexão SSH que você já verificou. O workflow exige verificação da identidade do servidor e não aceita hosts desconhecidos automaticamente.
-3. Na aba **Variables**, crie `ORACLE_DEPLOY_ENABLED` com valor `true`. Esse é o último passo de ativação. `ORACLE_HOST` e `ORACLE_USER` são opcionais; os padrões são `150.230.72.89` e `opc`.
-4. Abra **Actions > Tests and deploy > Run workflow**, selecione `main` e execute. Depois, cada envio para `main` também publica na Oracle. Uma execução cujo commit deixou de ser a ponta da `main` é ignorada na etapa de entrega.
-
-A porta SSH deve ser acessível pelo runner do GitHub. O usuário precisa executar `systemctl stop rota-app` e `systemctl start rota-app` via `sudo` sem senha; configure permissão limitada a esses comandos se necessário. O script requer `npm`, `rsync`, `tar`, `curl`, `cmp` e `flock`, além do Node e do systemd. A configuração existente deve ter um `JWT_SECRET` próprio de pelo menos 32 caracteres e o banco deve existir.
-
-O deploy instala dependências em uma pasta de release antes de parar o serviço. Confere o diretório do systemd e valida a configuração existente sem imprimir segredos. Com o serviço parado, guarda uma cópia completa da instalação e um snapshot SQLite consistente em `/home/opc/.rota-deploy-backups/`. Atualiza código, dependências e build, preservando `.env`, banco e backups existentes. Verifica o identificador do commit publicado e a resposta da API em localhost.
-
-Se a atualização ou a verificação de saúde falhar, tenta retornar ao código/dependências anteriores e iniciar o serviço. O banco atual permanece intacto; migrações são aditivas. O snapshot é preservado para restauração manual, que deve seguir o procedimento descrito acima. Falhas no retorno também são reportadas nos logs. O deploy não troca chaves JWT, não modifica o serviço systemd nem provisiona infraestrutura da Oracle.
-
-Os arquivos de release e backup são mantidos para recuperação. Monitore o espaço da VM e defina uma política de retenção para `/home/opc/.rota-releases/` e `/home/opc/.rota-deploy-backups/`.
+A configuração de acesso e a localização dos dados são mantidas na infraestrutura de implantação. Monitore o espaço disponível e defina uma política de retenção para releases e backups.
 
 ### GitHub Pages
 

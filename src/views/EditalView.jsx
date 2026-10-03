@@ -469,7 +469,7 @@ function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraf
       {!collapsed && (
         <>
           {m.topics.length > 0 && (
-            <div className="topic-table-wrap"><table className="topic-table" aria-label={`Assuntos de ${m.name}`}><thead><tr><th scope="col">Assunto</th><th scope="col">Situação</th><th scope="col">Questões</th><th scope="col">Cadernos</th><th scope="col">Ações</th></tr></thead><tbody>
+            <div className="topic-table-wrap" tabIndex={0} role="region" aria-label={`Tabela de assuntos de ${m.name}`}><table className="topic-table edital-topics-table" aria-label={`Assuntos de ${m.name}`}><thead><tr><th scope="col">Assunto</th><th scope="col">Situação</th><th scope="col">Questões</th><th scope="col">Cadernos</th><th scope="col">Ações</th></tr></thead><tbody>
               {visibleTopics.map((t) => (
                 <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes} updateTopicLink={updateTopicLink} />
               ))}
