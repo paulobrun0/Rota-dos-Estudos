@@ -122,7 +122,7 @@ export function LoginForm({ onAuthed, noticeMessage }) {
     <div className="auth-shell">
       <section className="auth-story">
         <Brand />
-        <h1 className="sg">Sua aprovação<br /><span style={{ color: colors.accent }}>começa na rota.</span></h1>
+        <h1 className="sg">Sua aprovação<br /><span style={{ color: colors.accent }}>ganha ritmo aqui.</span></h1>
         <p>Transforme um edital inteiro em passos possíveis. Organize seus estudos, revise o que importa e veja sua evolução.</p>
         <div className="auth-features"><span><BookOpen size={20} color={colors.accent} />Planeje</span><span><NotebookText size={20} color={colors.accent} />Pratique</span><span><Target size={20} color={colors.accent} />Evolua</span></div>
       </section>

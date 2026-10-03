@@ -242,7 +242,8 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
 
       {resting && <RestTimer materiaId={materia.id} {...restTimers} />}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="daily-topic-table">
+        <div className="daily-topic-head" aria-hidden="true"><span></span><span>Assunto</span><span>Tipo</span><span>Questões</span><span>Ações e cadernos</span></div>
         {cards.map((card) => {
           const topic = topicById(materia, card.topicId);
           return (
@@ -354,8 +355,8 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
   }
 
   return (
-    <div style={{ background: colors.surface2, borderRadius: 8, padding: "10px 12px", opacity: card.feito ? 0.55 : 1, border: forcedOpen ? `1px solid ${colors.accent}` : "1px solid transparent" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+    <div className="daily-topic-item" style={{ border: forcedOpen ? `1px solid ${colors.accent}` : undefined }}>
+      <div className="daily-topic-row">
         <button
           onClick={handleCircleClick}
           aria-label={card.feito ? "marcar como não estudado" : awaitingReveal ? "virar card" : "marcar como estudado"}
@@ -387,18 +388,6 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
         >
           {isRevisao ? "revisão · ciclo" : "novo"}
         </div>
-        {awaitingReveal && (
-          <button
-            onClick={() => setRevealed(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: 5, background: colors.successSoft, border: `1px solid ${colors.success}`,
-              borderRadius: 20, padding: "4px 10px", flexShrink: 0,
-            }}
-          >
-            <Eye size={12} color={colors.success} />
-            <span className="mono" style={{ fontSize: 10.5, color: colors.success }}>virar card</span>
-          </button>
-        )}
         <button
           onClick={openQuestionsEdit}
           style={{ background: "transparent", border: "none", padding: "4px 2px", display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}
@@ -412,6 +401,19 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
           )}
           <Pencil size={10.5} color={colors.textFaint} />
         </button>
+        <div className="topic-actions daily-actions">
+        {awaitingReveal && (
+          <button
+            onClick={() => setRevealed(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 5, background: colors.successSoft, border: `1px solid ${colors.success}`,
+              borderRadius: 20, padding: "4px 10px", flexShrink: 0,
+            }}
+          >
+            <Eye size={12} color={colors.success} />
+            <span className="mono" style={{ fontSize: 10.5, color: colors.success }}>virar card</span>
+          </button>
+        )}
         {questionsAvailable > 0 && (
           <button
             onClick={() => setPracticing((p) => !p)}
@@ -439,6 +441,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
         >
           <StickyNote size={14} />
         </button>
+        </div>
       </div>
 
       {questionsEditOpen && (

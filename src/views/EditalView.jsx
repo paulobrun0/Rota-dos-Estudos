@@ -464,11 +464,11 @@ function MateriaEditalCard({ materia: m, isFirst, isLast, topicDraft, setTopicDr
       {!collapsed && (
         <>
           {m.topics.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+            <div className="topic-table-wrap"><table className="topic-table" aria-label={`Assuntos de ${m.name}`}><thead><tr><th scope="col">Assunto</th><th scope="col">Situação</th><th scope="col">Questões</th><th scope="col">Cadernos</th><th scope="col">Ações</th></tr></thead><tbody>
               {m.topics.map((t) => (
                 <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} updateTopicNotes={updateTopicNotes} updateTopicLink={updateTopicLink} />
               ))}
-            </div>
+            </tbody></table></div>
           )}
 
           <div style={{ display: "flex", gap: 8 }}>
@@ -503,50 +503,17 @@ function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, up
 
 
 
-  return (
-    <div style={{ background: colors.surface2, borderRadius: 6, padding: "6px 8px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13.5 }}>
-        <span style={{ color: t.status === "estudado" ? colors.textMuted : colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {t.questionsTotal > 0 && (
-            <span className="mono" style={{ fontSize: 10.5, color: colors.textFaint }}>
-              {t.questionsCorrect}/{t.questionsTotal} questões
-            </span>
-          )}
-          {t.mastered && <span style={{ fontSize: 11, color: colors.success }}>dominado</span>}
-          <TopicLinkButtons topic={t} />
-          <button
-            onClick={() => setLinkOpen((o) => !o)}
-            aria-label="link do caderno de questões"
-            style={{ ...iconBtnStyle, color: hasLink ? colors.success : colors.textFaint }}
-          >
-            <Link2 size={13} />
-          </button>
-          <button
-            onClick={() => setNotesOpen((o) => !o)}
-            aria-label="anotações do assunto"
-            style={{ ...iconBtnStyle, color: hasNotes ? colors.accent : colors.textFaint }}
-          >
-            <StickyNote size={13} />
-          </button>
-          <button onClick={() => removeTopic(materiaId, t.id)} style={iconBtnStyle}><X size={13} /></button>
-        </div>
-      </div>
-
+  return <>
+    <tr>
+      <td data-label="Assunto" style={{ color: colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}</td>
+      <td data-label="Situação"><span className="topic-status" style={{ color: t.mastered ? colors.success : t.status === "estudado" ? colors.accent : colors.textMuted, background: t.status === "estudado" ? colors.accentSoft : colors.surface2 }}>{t.mastered ? "dominado" : t.status === "estudado" ? "estudado" : "pendente"}</span></td>
+      <td data-label="Questões"><span className="mono">{t.questionsTotal > 0 ? `${t.questionsCorrect}/${t.questionsTotal}` : "—"}</span>{t.questionsTotal > 0 && <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 3 }}>{Math.round(t.questionsCorrect / t.questionsTotal * 100)}% de acertos</div>}</td>
+      <td data-label="Cadernos"><div className="topic-actions"><TopicLinkButtons topic={t} /><button onClick={() => setLinkOpen(o => !o)} aria-label="link do caderno de questões" aria-expanded={linkOpen} title="Editar links dos cadernos" style={{ ...iconBtnStyle, color: hasLink ? colors.success : colors.textFaint }}><Link2 size={16} /></button></div></td>
+      <td data-label="Ações"><div className="topic-actions"><button onClick={() => setNotesOpen(o => !o)} aria-label="anotações do assunto" aria-expanded={notesOpen} title="Anotações" style={{ ...iconBtnStyle, color: hasNotes ? colors.accent : colors.textFaint }}><StickyNote size={16} /></button><button onClick={() => removeTopic(materiaId, t.id)} aria-label={`excluir assunto ${t.name}`} title="Excluir assunto" style={iconBtnStyle}><X size={16} /></button></div></td>
+    </tr>
+    {(linkOpen || notesOpen) && <tr className="topic-detail"><td colSpan={5}>
       {linkOpen && <TopicLinksEditor topic={t} onSave={(links) => updateTopicLink(materiaId, t.id, links)} onClose={() => setLinkOpen(false)} />}
-      {notesOpen && (
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={saveIfChanged}
-          placeholder="observações, pegadinhas, pontos de atenção..."
-          rows={2}
-          style={{
-            width: "100%", marginTop: 6, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 6,
-            color: colors.text, fontSize: 12.5, padding: 8, resize: "vertical", boxSizing: "border-box",
-          }}
-        />
-      )}
-    </div>
-  );
+      {notesOpen && <label style={{ display: "grid", gap: 6, fontSize: 12, color: colors.textMuted }}>Anotações — {t.name}<textarea value={draft} onChange={e => setDraft(e.target.value)} onBlur={saveIfChanged} placeholder="observações, pegadinhas, pontos de atenção..." rows={3} style={{ ...inputStyle, width: "100%", resize: "vertical" }} /></label>}
+    </td></tr>}
+  </>;
 }

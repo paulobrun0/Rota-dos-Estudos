@@ -1,10 +1,10 @@
-# Rota dos Estudos
+# Questão de Ritmo
 
 Planejador de estudos para concursos com edital, ciclos por progresso, cronograma semanal, revisões espaçadas, questões e acompanhamento de atividade.
 
 ## Interface
 
-Nova identidade em azul e índigo, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado.
+Identidade em azul profundo e turquesa, símbolo Q com check, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto.
 
 As capturas abaixo mostram a aplicação real com dados fictícios de demonstração. Nenhuma conta, questão de prova ou informação de usuário real foi usada nas imagens.
 
@@ -27,6 +27,8 @@ As capturas abaixo mostram a aplicação real com dados fictícios de demonstra�
 ![Painel de hoje no tema escuro](docs/images/hoje-escuro.png)
 
 <img src="docs/images/hoje-mobile.png" alt="Painel de hoje adaptado para celular" width="390" />
+
+<img src="docs/images/edital-mobile.png" alt="Assuntos do edital com colunas adaptadas para celular" width="390" />
 
 ## Funcionalidades
 

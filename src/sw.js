@@ -14,7 +14,7 @@ self.addEventListener("activate", (event) => {
 precacheAndRoute(self.__WB_MANIFEST);
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Rota dos Estudos", body: "Você tem novidades no seu plano." };
+  let data = { title: "Questão de Ritmo", body: "Você tem novidades no seu plano." };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch {

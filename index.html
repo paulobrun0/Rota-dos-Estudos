@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#F4F6FB" />
+    <meta name="theme-color" content="#F3F7F8" />
     <link rel="icon" type="image/png" href="./favicon.png" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Rota dos Estudos" />
-    <title>Rota dos Estudos — seu próximo passo</title>
+    <meta name="apple-mobile-web-app-title" content="Questão de Ritmo" />
+    <title>Questão de Ritmo — cada questão, um passo à frente</title>
     <style>
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; height: 100%; }
@@ -18,23 +18,23 @@
 
       :root {
         color-scheme: light;
-        --bg: #F4F6FB; --surface: #FFFFFF; --surface2: #EDF1FA;
-        --border: #DCE3F0; --border-soft: #E9EDF5;
-        --text: #18243D; --text-muted: #52627B; --text-faint: #65748B;
-        --accent: #4554D4; --accent-soft: #E9ECFF; --on-accent: #FFFFFF;
+        --bg: #F3F7F8; --surface: #FFFFFF; --surface2: #EAF2F4;
+        --border: #D5E3E8; --border-soft: #E5EEF1;
+        --text: #152B4A; --text-muted: #4F657A; --text-faint: #62778A;
+        --accent: #087F75; --accent-soft: #DFF5F0; --on-accent: #FFFFFF;
         --success: #167451; --success-soft: #E3F4ED;
         --red: #BF3650; --red-soft: #FCE9EE;
-        --heat-1: #D5DAFF; --heat-2: #9DA8F2;
+        --heat-1: #B7E7DD; --heat-2: #6DC9B9;
       }
       :root[data-theme="dark"] {
         color-scheme: dark;
-        --bg: #101827; --surface: #172236; --surface2: #202E45;
-        --border: #31405A; --border-soft: #26354D;
-        --text: #EDF2FF; --text-muted: #B1BED3; --text-faint: #97A8C2;
-        --accent: #ADB7FF; --accent-soft: #2B365D; --on-accent: #182142;
+        --bg: #101D2D; --surface: #172B40; --surface2: #20384F;
+        --border: #354F66; --border-soft: #294257;
+        --text: #EEF6FA; --text-muted: #B6CAD6; --text-faint: #9BB5C5;
+        --accent: #64DBCA; --accent-soft: #193F43; --on-accent: #102F35;
         --success: #7BDBAF; --success-soft: #193C34;
         --red: #FFA2B5; --red-soft: #442937;
-        --heat-1: #34416A; --heat-2: #6273B1;
+        --heat-1: #225657; --heat-2: #32988F;
       }
       body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: var(--text); }
       button, input, textarea, select { font: inherit; }
@@ -72,6 +72,37 @@
         .app-heading { margin-bottom: 20px; }
         .app-heading h1 { font-size: 22px; }
         .app-heading .heading-label { display: none !important; }
+      }
+
+      .topic-table-wrap { margin: 14px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+      .topic-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+      .topic-table th { background: var(--surface2); color: var(--text-muted); font-size: 11px; letter-spacing: .025em; padding: 12px; font-weight: 600; }
+      .topic-table td { padding: 13px 12px; border-top: 1px solid var(--border-soft); vertical-align: middle; }
+      .topic-table td:first-child { width: 40%; line-height: 1.5; }
+      .topic-table tbody tr:hover { background: var(--bg); }
+      .topic-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+      .topic-actions button { min-width: 28px; min-height: 28px; }
+      .topic-status { display: inline-block; border-radius: 6px; font-size: 11px; padding: 4px 8px; }
+      .topic-detail { background: var(--surface2); }
+      .daily-topic-head, .daily-topic-row { display: grid; grid-template-columns: 24px minmax(150px, 1fr) 100px 80px minmax(120px, .7fr); gap: 12px; align-items: center; }
+      .daily-topic-head { font-size: 11px; color: var(--text-muted); padding: 10px 12px; background: var(--surface2); }
+      .daily-topic-table { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+      .daily-topic-item { padding: 13px 12px; border-top: 1px solid var(--border-soft); }
+      .daily-topic-row > :nth-child(3) { justify-self: start; }
+      @media (max-width: 1100px) {
+        .daily-topic-head { display: none; }
+        .daily-topic-row { grid-template-columns: 24px minmax(0, 1fr) auto; }
+        .daily-topic-row > :nth-child(4) { grid-column: 2; justify-self: start; }
+        .daily-actions { grid-column: 2 / -1; }
+      }
+      @media (max-width: 640px) {
+        .topic-table thead { display: none; }
+        .topic-table, .topic-table tbody { display: block; }
+        .topic-table tr { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); padding: 10px; gap: 10px; }
+        .topic-table td { display: block; border: 0; padding: 0; min-width: 0; }
+        .topic-table td:first-child { width: auto; grid-column: 1 / -1; font-weight: 600; }
+        .topic-table td::before { content: attr(data-label); display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 5px; font-weight: 400; }
+        .topic-detail td { grid-column: 1 / -1; }
       }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
     </style>
