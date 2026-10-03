@@ -1,5 +1,5 @@
 import React from "react";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { primaryBtnStyle } from "../styles/shared.js";
 

@@ -7,6 +7,7 @@
 // server/db.js) is evaluated, which is why the import is dynamic: a static
 // `import` would be hoisted ahead of these assignments.
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { after, before, describe, test } from "node:test";
@@ -141,6 +142,13 @@ describe("session lifecycle", () => {
 
     const freshCheck = await api("/api/me", { cookie: device2 });
     assert.equal(freshCheck.status, 200);
+  });
+
+  test("an older session cannot log out the current session", async () => {
+    const { email, password, cookie: older } = await registerFresh();
+    const login = await api("/api/login", { method: "POST", body: { email, password } });
+    assert.equal((await api("/api/logout", { method: "POST", cookie: older })).status, 401);
+    assert.equal((await api("/api/me", { cookie: login.cookie })).status, 200);
   });
 
   test("logout clears the server-side session, so the old cookie stops working", async () => {
@@ -299,4 +307,16 @@ describe("POST /api/me/change-email", () => {
     assert.equal(res.body.email, newEmail);
     assert.equal((await api("/api/login", { method: "POST", body: { email: newEmail, password } })).status, 200);
   });
+});
+
+// Theme initialization must work under the production CSP without allowing
+// arbitrary inline scripts. A visual update must keep this hash in sync.
+test("CSP permits only the current inline theme initialization script", async () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\r\n/g, "\n");
+  const hash = createHash("sha256").update(script).digest("base64");
+  const response = await fetch(`${baseUrl}/api/me`);
+  const policy = response.headers.get("content-security-policy");
+  const scripts = policy.split(";").find((directive) => directive.trim().startsWith("script-src"));
+  assert.equal(scripts.trim(), `script-src 'self' 'sha256-${hash}'`);
 });

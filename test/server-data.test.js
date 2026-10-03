@@ -30,6 +30,10 @@ after(() => {
 });
 
 async function api(path, { method = "GET", body, cookie } = {}) {
+  if (path === "/api/data" && method === "PUT" && body?.revision === undefined && cookie) {
+    const current = await api(path, { cookie });
+    body = { ...body, revision: current.body.revision };
+  }
   const headers = { "Content-Type": "application/json" };
   if (cookie) headers.Cookie = cookie;
   const res = await fetch(`${baseUrl}${path}`, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
@@ -94,6 +98,29 @@ describe("GET/PUT /api/data", () => {
     const get = await api("/api/data", { cookie });
     assert.equal(get.body.value, payload);
   });
+  test("rejects malformed JSON and unexpected structure without replacing stored data", async () => {
+    const { cookie } = await registerFresh();
+    const value = JSON.stringify({ concursos: [] });
+    await api("/api/data", { method: "PUT", cookie, body: { value, revision: 0 } });
+    for (const invalid of ["{oops", "null", JSON.stringify({ hello: "world" }), JSON.stringify({ concursos: [{ id: "c", name: "C", materias: "oops" }] })]) {
+      assert.equal((await api("/api/data", { method: "PUT", cookie, body: { value: invalid, revision: 1 } })).status, 400);
+    }
+    assert.equal((await api("/api/data", { cookie })).body.value, value);
+  });
+
+  test("stale revisions and missing revisions never overwrite the current plan", async () => {
+    const { cookie } = await registerFresh();
+    const value = JSON.stringify({ concursos: [] });
+    const first = await api("/api/data", { method: "PUT", cookie, body: { value, revision: 0 } });
+    assert.equal(first.body.revision, 1);
+    const stale = await api("/api/data", { method: "PUT", cookie, body: { value: JSON.stringify({ concursos: [], activity: { "2026-10-03": 1 } }), revision: 0 } });
+    assert.equal(stale.status, 409);
+    assert.equal(stale.body.code, "PLAN_CONFLICT");
+    const missing = await fetch(`${baseUrl}/api/data`, { method: "PUT", headers: { Cookie: cookie, "Content-Type": "application/json" }, body: JSON.stringify({ value }) });
+    assert.equal(missing.status, 428);
+    assert.equal((await api("/api/data", { cookie })).body.revision, 1);
+  });
+
 });
 
 describe("GET /api/health", () => {
@@ -184,7 +211,12 @@ describe("GET /api/questions/counts", () => {
 
 describe("GET /api/ranking", () => {
   async function setPlanData(cookie, value) {
-    const res = await api("/api/data", { method: "PUT", cookie, body: { value: JSON.stringify(value) } });
+    const valid = { ...value, concursos: (value.concursos || []).map((c, i) => ({
+      ...c, id: `concurso-${i}`, name: "Meu concurso", materias: c.materias.map((m, j) => ({
+        ...m, id: `materia-${j}`, topics: m.topics.map((t, k) => ({ ...t, id: `topic-${k}`, name: `Assunto ${k}` })),
+      })),
+    })) };
+    const res = await api("/api/data", { method: "PUT", cookie, body: { value: JSON.stringify(valid) } });
     assert.equal(res.status, 200);
   }
 

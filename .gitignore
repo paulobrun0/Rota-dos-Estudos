@@ -3,7 +3,7 @@ dist/
 .env
 .env.*
 !.env.example
-server/*.sqlite
+server/*.sqlite*
 server/backups/
 .claude/settings.local.json
 

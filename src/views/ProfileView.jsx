@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { KeyRound, LogOut, Mail, Trash2, Upload, User } from "lucide-react";
+import { KeyRound, LogOut, Mail, Trash2, Upload, User } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { updateProfile, changePassword, changeEmail, logoutAllDevices, readImageAsDataUrl } from "../api/profile.js";
@@ -16,7 +16,7 @@ function Card({ title, description, children }) {
 
 function Feedback({ error, ok }) {
   if (error) return <div style={{ color: colors.red, fontSize: 12.5, marginTop: 10 }}>{error}</div>;
-  if (ok) return <div style={{ color: colors.teal, fontSize: 12.5, marginTop: 10 }}>{ok}</div>;
+  if (ok) return <div style={{ color: colors.success, fontSize: 12.5, marginTop: 10 }}>{ok}</div>;
   return null;
 }
 

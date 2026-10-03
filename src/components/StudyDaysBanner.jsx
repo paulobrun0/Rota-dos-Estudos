@@ -12,8 +12,8 @@ export function StudyDaysBanner({ setStudyDays }) {
   const [selected, setSelected] = useState(WEEKDAY_KEYS);
 
   return (
-    <div style={{ background: colors.surface, border: `1px solid ${colors.amber}`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
-      <div style={{ fontSize: 13.5, fontWeight: 700, color: colors.amber, marginBottom: 4 }}>quantos dias por semana você estuda?</div>
+    <div style={{ background: colors.surface, border: `1px solid ${colors.accent}`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 700, color: colors.accent, marginBottom: 4 }}>quantos dias por semana você estuda?</div>
       <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
         marque os dias — num dia de fora, sua sequência não quebra, só espera você voltar. dá pra mudar depois em ajustes.
       </div>

@@ -1,5 +1,7 @@
+import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
+import { getTopicLinks } from "../lib/topicLinks.js";
 import React, { useState } from "react";
-import { CalendarClock, Check, ChevronLeft, ChevronRight, Clock, ExternalLink, Eye, Flame, Link2, ListChecks, Pencil, Percent, RotateCw, StickyNote } from "lucide-react";
+import { CalendarClock, Check, ChevronLeft, ChevronRight, Clock, Eye, Flame, Link2, ListChecks, Pencil, Percent, RotateCw, StickyNote } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { inputStyle, navBtnStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { addDaysISO, formatDatePretty, todayISO } from "../lib/date.js";
@@ -12,7 +14,7 @@ import { QuizPractice } from "../components/QuizPractice.jsx";
 const EXAM_BADGE_STYLE = {
   past: { bg: colors.surface2, fg: colors.textFaint },
   critical: { bg: colors.redSoft, fg: colors.red },
-  soon: { bg: colors.amberSoft, fg: colors.amber },
+  soon: { bg: colors.accentSoft, fg: colors.accent },
   normal: { bg: colors.surface2, fg: colors.textMuted },
 };
 
@@ -28,15 +30,15 @@ function formatMinutes(mins) {
 
 function StatTile({ icon, label, value, sub }) {
   return (
-    <div style={{ minWidth: 0, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "14px 16px" }}>
+    <div className="stat-tile" style={{ minWidth: 0, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: "18px 20px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>{icon}<span style={{ fontSize: 12, color: colors.textMuted }}>{label}</span></div>
-      <div className="sg" style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
+      <div className="sg" style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
       {sub && <div style={{ fontSize: 11.5, color: colors.textFaint, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
 
-export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
+export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
   const isToday = selectedDate === todayISO();
   const exam = examCountdownInfo(examDate);
   const examStyle = exam ? EXAM_BADGE_STYLE[exam.level] : null;
@@ -64,14 +66,14 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", rowGap: 10, marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={() => setSelectedDate(addDaysISO(selectedDate, -1))} style={navBtnStyle}><ChevronLeft size={16} /></button>
+          <button aria-label="dia anterior" onClick={() => setSelectedDate(addDaysISO(selectedDate, -1))} style={navBtnStyle}><ChevronLeft size={16} /></button>
           <div>
             <div className="sg" style={{ fontSize: 20, fontWeight: 700, textTransform: "capitalize" }}>
               {isToday ? "hoje" : formatDatePretty(selectedDate)}
             </div>
             {isToday && <div style={{ fontSize: 12.5, color: colors.textMuted, textTransform: "capitalize" }}>{formatDatePretty(selectedDate)}</div>}
           </div>
-          <button onClick={() => setSelectedDate(addDaysISO(selectedDate, 1))} style={navBtnStyle}><ChevronRight size={16} /></button>
+          <button aria-label="próximo dia" onClick={() => setSelectedDate(addDaysISO(selectedDate, 1))} style={navBtnStyle}><ChevronRight size={16} /></button>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {isToday && exam && (
@@ -80,12 +82,12 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
             </div>
           )}
           {isToday && streak > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", background: colors.amberSoft, color: colors.amber, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", background: colors.accentSoft, color: colors.accent, borderRadius: 20, padding: "6px 12px", fontSize: 12.5, fontWeight: 600 }}>
               <Flame size={14} /> {streak} dia{streak !== 1 ? "s" : ""}
             </div>
           )}
           {!isToday && (
-            <button onClick={() => setSelectedDate(todayISO())} style={{ ...navBtnStyle, width: "auto", padding: "0 12px", fontSize: 13, color: colors.amber }}>
+            <button onClick={() => setSelectedDate(todayISO())} style={{ ...navBtnStyle, width: "auto", padding: "0 12px", fontSize: 13, color: colors.accent }}>
               voltar para hoje
             </button>
           )}
@@ -93,18 +95,18 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
       </div>
 
       <div className="stat-grid" style={{ marginBottom: 20 }}>
-        <StatTile icon={<Flame size={16} color={colors.amber} />} label="sequência" value={`${streak} dia${streak !== 1 ? "s" : ""}`} />
+        <StatTile icon={<Flame size={16} color={colors.accent} />} label="sequência" value={`${streak} dia${streak !== 1 ? "s" : ""}`} />
         <StatTile
-          icon={<Percent size={16} color={colors.amber} />}
+          icon={<Percent size={16} color={colors.accent} />}
           label={isToday ? "desempenho hoje" : "desempenho"}
           value={desempenhoPct !== null ? `${desempenhoPct}%` : "—"}
           sub={qa.total > 0 ? `${qa.correct}/${qa.total} questões` : "sem questões"}
         />
-        <StatTile icon={<Clock size={16} color={colors.amber} />} label={isToday ? "horas estudadas" : "horas no dia"} value={formatMinutes(studyMinutesToday)} />
-        <StatTile icon={<ListChecks size={16} color={colors.amber} />} label="questões resolvidas" value={`${qa.total}`} sub={qa.total > 0 ? `${qa.correct} certas` : undefined} />
+        <StatTile icon={<Clock size={16} color={colors.accent} />} label={isToday ? "horas estudadas" : "horas no dia"} value={formatMinutes(studyMinutesToday)} />
+        <StatTile icon={<ListChecks size={16} color={colors.accent} />} label="questões resolvidas" value={`${qa.total}`} sub={qa.total > 0 ? `${qa.correct} certas` : undefined} />
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 20, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 14, padding: "18px 22px", marginBottom: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 20, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 18, padding: "22px 24px", marginBottom: 28 }}>
         <Ring pct={pct} />
         <div>
           <div className="sg" style={{ fontSize: 15, fontWeight: 600 }}>
@@ -134,14 +136,14 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
           <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
             <button
               onClick={() => setActiveSubTab("atividades")}
-              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "atividades" ? colors.amber : colors.border}`, color: activeSubTab === "atividades" ? colors.amber : colors.text }}
+              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "atividades" ? colors.accent : colors.border}`, color: activeSubTab === "atividades" ? colors.accent : colors.text }}
             >
               atividades
               {novos.length > 0 && <span className="mono" style={{ marginLeft: 6, fontSize: 11, color: colors.textFaint }}>{novos.filter((c) => c.feito).length}/{novos.length}</span>}
             </button>
             <button
               onClick={() => setActiveSubTab("reforcos")}
-              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "reforcos" ? colors.amber : colors.border}`, color: activeSubTab === "reforcos" ? colors.amber : colors.text }}
+              style={{ ...secondaryBtnStyle, padding: "8px 16px", border: `1px solid ${activeSubTab === "reforcos" ? colors.accent : colors.border}`, color: activeSubTab === "reforcos" ? colors.accent : colors.text }}
             >
               reforços
               {revisoes.length > 0 && <span className="mono" style={{ marginLeft: 6, fontSize: 11, color: colors.textFaint }}>{revisoes.filter((c) => c.feito).length}/{revisoes.length}</span>}
@@ -154,6 +156,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
             ) : (
               novosMateriaIds.map((materiaId) => (
                 <MateriaGroupCard
+                  concursoId={concursoId}
                   key={materiaId}
                   materia={materiaById(materiaId)}
                   minutesPerMateria={minutesPerMateria}
@@ -180,6 +183,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
             ) : (
               revisoesMateriaIds.map((materiaId) => (
                 <MateriaGroupCard
+                  concursoId={concursoId}
                   key={materiaId}
                   materia={materiaById(materiaId)}
                   cards={revisoesGroups[materiaId]}
@@ -204,7 +208,7 @@ export function DiaView({ selectedDate, setSelectedDate, plan, doneCount, totalC
   );
 }
 
-function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
+function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
   if (!materia) return null;
   // dailyPlans keeps history and isn't pruned when a topic is later deleted
   // from the matéria (see computeMateriaStats), so an old day's cards can
@@ -224,7 +228,7 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicBy
     <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderLeft: `3px solid ${materia.color}`, borderRadius: 12, padding: 16, marginBottom: 14, opacity: allDone && !resting ? 0.75 : 1 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div className="sg" style={{ fontSize: 15, fontWeight: 700, color: materia.color }}>{materia.name}</div>
+          <div className="sg" style={{ fontSize: 15, fontWeight: 700, color: colors.text }}>{materia.name}</div>
           <div style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
             {doneInGroup}/{cards.length} concluído{cards.length !== 1 ? "s" : ""}
             {totalMinutes > 0 ? ` · ${totalMinutes} min no total` : ""}
@@ -243,6 +247,8 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicBy
           const topic = topicById(materia, card.topicId);
           return (
             <TopicRow
+              concursoId={concursoId}
+              materiaName={materia.name}
               key={card.id}
               card={card}
               topic={topic}
@@ -252,7 +258,7 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicBy
               updateTopicLink={updateTopicLink}
               setTopicQuestions={setTopicQuestions}
               materiaId={materia.id}
-              questionsAvailable={questionCounts[topic.name] || 0}
+              questionsAvailable={questionCounts[JSON.stringify([materia.name, topic.name])] || 0}
               addTopicQuestions={addTopicQuestions}
             />
           );
@@ -273,7 +279,7 @@ function MateriaGroupCard({ materia, minutesPerMateria, cards: rawCards, topicBy
   );
 }
 
-function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
+function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
   const [asking, setAsking] = useState(false);
   const [practicing, setPracticing] = useState(false);
   const [feitas, setFeitas] = useState("");
@@ -284,7 +290,6 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
   const [editTotal, setEditTotal] = useState(String(topic.questionsTotal || ""));
   const [editCorrect, setEditCorrect] = useState(String(topic.questionsCorrect || ""));
   const [linkOpen, setLinkOpen] = useState(false);
-  const [linkDraft, setLinkDraft] = useState(topic.link || "");
   // A review card with a saved note becomes a flashcard: the note stays
   // hidden until the user actively asks to see it, so there's a real moment
   // of trying to recall first — a review that shows the answer immediately
@@ -294,13 +299,11 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
   const isRevisao = card.tipo === "revisao";
   const showForm = asking || forcedOpen;
   const hasNotes = (topic.notes || "").trim().length > 0;
-  const hasLink = (topic.link || "").trim().length > 0;
+  const hasLink = Object.values(getTopicLinks(topic)).some(Boolean);
   const isFlashcard = isRevisao && hasNotes && !card.feito;
   const awaitingReveal = isFlashcard && !revealed;
 
-  function saveLinkIfChanged() {
-    if (linkDraft !== (topic.link || "")) updateTopicLink(materiaId, topic.id, linkDraft.trim());
-  }
+
   const hasQuestions = (topic.questionsTotal || 0) > 0;
 
   function saveNotesIfChanged() {
@@ -351,19 +354,19 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
   }
 
   return (
-    <div style={{ background: colors.surface2, borderRadius: 8, padding: "10px 12px", opacity: card.feito ? 0.55 : 1, border: forcedOpen ? `1px solid ${colors.amber}` : "1px solid transparent" }}>
+    <div style={{ background: colors.surface2, borderRadius: 8, padding: "10px 12px", opacity: card.feito ? 0.55 : 1, border: forcedOpen ? `1px solid ${colors.accent}` : "1px solid transparent" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <button
           onClick={handleCircleClick}
           aria-label={card.feito ? "marcar como não estudado" : awaitingReveal ? "virar card" : "marcar como estudado"}
           style={{
             width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-            border: `1.5px solid ${card.feito ? colors.amber : awaitingReveal ? colors.teal : colors.border}`,
-            background: card.feito ? colors.amber : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
+            border: `1.5px solid ${card.feito ? colors.accent : awaitingReveal ? colors.success : colors.border}`,
+            background: card.feito ? colors.accent : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
           }}
         >
-          {card.feito && <Check size={13} color={colors.bg} strokeWidth={3} />}
-          {awaitingReveal && <RotateCw size={11} color={colors.teal} />}
+          {card.feito && <Check size={13} color={colors.onAccent} strokeWidth={3} />}
+          {awaitingReveal && <RotateCw size={11} color={colors.success} />}
         </button>
         <div style={{ flex: "1 1 140px", minWidth: 0 }}>
           <div style={{ fontSize: 14, textDecoration: card.feito ? "line-through" : "none", color: colors.text }}>{topic.name}</div>
@@ -371,15 +374,15 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
             <div style={{ fontSize: 12, color: colors.textFaint, fontStyle: "italic", marginTop: 2 }}>{topic.notes}</div>
           )}
           {awaitingReveal && (
-            <div style={{ fontSize: 12, color: colors.teal, marginTop: 2 }}>tenta lembrar antes de virar o card</div>
+            <div style={{ fontSize: 12, color: colors.success, marginTop: 2 }}>tenta lembrar antes de virar o card</div>
           )}
         </div>
         <div
           className="mono"
           style={{
             fontSize: 10.5, padding: "2px 8px", borderRadius: 20, flexShrink: 0,
-            background: isRevisao ? colors.tealSoft : colors.amberSoft,
-            color: isRevisao ? colors.teal : colors.amber,
+            background: isRevisao ? colors.successSoft : colors.accentSoft,
+            color: isRevisao ? colors.success : colors.accent,
           }}
         >
           {isRevisao ? "revisão · ciclo" : "novo"}
@@ -388,12 +391,12 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
           <button
             onClick={() => setRevealed(true)}
             style={{
-              display: "flex", alignItems: "center", gap: 5, background: colors.tealSoft, border: `1px solid ${colors.teal}`,
+              display: "flex", alignItems: "center", gap: 5, background: colors.successSoft, border: `1px solid ${colors.success}`,
               borderRadius: 20, padding: "4px 10px", flexShrink: 0,
             }}
           >
-            <Eye size={12} color={colors.teal} />
-            <span className="mono" style={{ fontSize: 10.5, color: colors.teal }}>virar card</span>
+            <Eye size={12} color={colors.success} />
+            <span className="mono" style={{ fontSize: 10.5, color: colors.success }}>virar card</span>
           </button>
         )}
         <button
@@ -413,33 +416,26 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
           <button
             onClick={() => setPracticing((p) => !p)}
             style={{
-              background: practicing ? colors.tealSoft : "transparent", border: `1px solid ${practicing ? colors.teal : colors.border}`,
+              background: practicing ? colors.successSoft : "transparent", border: `1px solid ${practicing ? colors.success : colors.border}`,
               borderRadius: 20, padding: "3px 9px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
             }}
           >
-            <ListChecks size={11} color={colors.teal} />
-            <span className="mono" style={{ fontSize: 10.5, color: colors.teal }}>praticar ({questionsAvailable})</span>
+            <ListChecks size={11} color={colors.success} />
+            <span className="mono" style={{ fontSize: 10.5, color: colors.success }}>praticar ({questionsAvailable})</span>
           </button>
         )}
-        {hasLink && (
-          <a
-            href={topic.link} target="_blank" rel="noreferrer" aria-label="abrir caderno de questões"
-            style={{ display: "flex", alignItems: "center", padding: 4, color: colors.teal }}
-          >
-            <ExternalLink size={14} />
-          </a>
-        )}
+          <TopicLinkButtons topic={topic} />
         <button
           onClick={() => setLinkOpen((o) => !o)}
           aria-label="link do caderno de questões"
-          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasLink ? colors.teal : colors.textFaint }}
+          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasLink ? colors.success : colors.textFaint }}
         >
           <Link2 size={14} />
         </button>
         <button
           onClick={() => setNotesOpen((o) => !o)}
           aria-label="anotações do assunto"
-          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasNotes ? colors.amber : colors.textFaint }}
+          style={{ background: "transparent", border: "none", padding: 4, display: "flex", alignItems: "center", color: hasNotes ? colors.accent : colors.textFaint }}
         >
           <StickyNote size={14} />
         </button>
@@ -466,21 +462,7 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
         </div>
       )}
 
-      {linkOpen && (
-        <input
-          autoFocus
-          value={linkDraft}
-          onChange={(e) => setLinkDraft(e.target.value)}
-          onBlur={saveLinkIfChanged}
-          onKeyDown={(e) => { if (e.key === "Enter") { saveLinkIfChanged(); setLinkOpen(false); } }}
-          placeholder="link do caderno de questões (ex: TecConcursos)"
-          style={{
-            width: "100%", marginTop: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 6,
-            color: colors.text, fontSize: 12.5, padding: "8px 10px", boxSizing: "border-box",
-          }}
-        />
-      )}
-
+      {linkOpen && <TopicLinksEditor topic={topic} onSave={(links) => updateTopicLink(materiaId, topic.id, links)} onClose={() => setLinkOpen(false)} />}
       {notesOpen && (
         <textarea
           value={notesDraft}
@@ -497,8 +479,8 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
       )}
 
       {isFlashcard && revealed && !notesOpen && (
-        <div style={{ marginTop: 10, background: colors.tealSoft, border: `1px solid ${colors.teal}`, borderRadius: 6, padding: "10px 12px" }}>
-          <div style={{ fontSize: 10.5, color: colors.teal, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>sua anotação</div>
+        <div style={{ marginTop: 10, background: colors.successSoft, border: `1px solid ${colors.success}`, borderRadius: 6, padding: "10px 12px" }}>
+          <div style={{ fontSize: 10.5, color: colors.success, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>sua anotação</div>
           <div style={{ fontSize: 13, color: colors.text, whiteSpace: "pre-wrap" }}>{topic.notes}</div>
         </div>
       )}
@@ -506,9 +488,13 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
       {practicing && (
         <QuizPractice
           assunto={topic.name}
+          materia={materiaName}
+          concursoId={concursoId}
+          materiaId={materiaId}
+          topicId={topic.id}
+          onAnswer={(correct) => addTopicQuestions(materiaId, topic.id, 1, correct ? 1 : 0)}
           disponivel={questionsAvailable}
           onFinish={(total, correct) => {
-            if (total > 0) addTopicQuestions(materiaId, topic.id, total, correct);
             setPracticing(false);
           }}
         />
@@ -516,7 +502,7 @@ function TopicRow({ card, topic, onToggle, forcedOpen, updateTopicNotes, updateT
 
       {showForm && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.border}` }}>
-          <span style={{ fontSize: 12, color: forcedOpen ? colors.amber : colors.textMuted }}>
+          <span style={{ fontSize: 12, color: forcedOpen ? colors.accent : colors.textMuted }}>
             {forcedOpen ? "tempo esgotado — fez questões desse assunto?" : "fez questões desse assunto?"}
           </span>
           <input

@@ -5,14 +5,16 @@ export function NavItem({ icon, label, active, onClick }) {
   return (
     <button
       onClick={onClick}
+      className="nav-item"
+      aria-current={active ? "page" : undefined}
       style={{
-        display: "flex", alignItems: "center", gap: 10, padding: "9px 10px",
-        borderRadius: 8, border: "none", background: active ? colors.surface2 : "transparent",
-        color: active ? colors.text : colors.textMuted, fontSize: 14, fontWeight: 500,
+        display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+        borderRadius: 12, border: "none", background: active ? colors.accentSoft : "transparent",
+        color: active ? colors.accent : colors.textMuted, fontSize: 14, fontWeight: 500,
         textAlign: "left", width: "100%",
       }}
     >
-      <span style={{ color: active ? colors.amber : colors.textFaint }}>{icon}</span>
+      <span style={{ color: active ? colors.accent : colors.textMuted }}>{icon}</span>
       {label}
     </button>
   );

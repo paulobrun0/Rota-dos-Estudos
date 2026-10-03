@@ -16,17 +16,22 @@ export default function AuthGate() {
   const [user, setUser] = useState(null);
   const [kickedReason, setKickedReason] = useState("");
 
-  useEffect(() => {
+  function checkSession() {
+    setStatus("loading");
     fetchCurrentUser()
       .then((u) => { setUser(u); setStatus("authed"); })
-      .catch(() => setStatus("anon"));
-  }, []);
+      .catch((error) => {
+        if (error.status === 401) setStatus("anon");
+        else { setKickedReason(error.message); setStatus("error"); }
+      });
+  }
+  useEffect(checkSession, []);
 
   useEffect(() => {
     if (status !== "authed") return;
     const id = setInterval(() => {
       fetchCurrentUser().catch((e) => {
-        if (e.code === "SESSION_SUPERSEDED" || e.code === "MAINTENANCE" || e.code === "SUSPENDED" || e.code === "SESSION_INVALID") {
+        if (e.status === 401 || e.code === "SESSION_SUPERSEDED" || e.code === "MAINTENANCE" || e.code === "SUSPENDED" || e.code === "SESSION_INVALID") {
           setKickedReason(e.message);
           setUser(null);
           setStatus("anon");
@@ -55,8 +60,9 @@ export default function AuthGate() {
     try {
       setUser(await fetchCurrentUser());
       setStatus("authed");
-    } catch {
-      setStatus("anon");
+    } catch (error) {
+      setKickedReason(error.message);
+      setStatus(error.status === 401 ? "anon" : "error");
     }
   }
 
@@ -67,6 +73,8 @@ export default function AuthGate() {
         carregando...
       </div>
     );
+  } else if (status === "error") {
+    content = <div style={{ padding: 32, minHeight: "100vh", background: colors.bg, color: colors.text }}><p role="alert">Não foi possível conectar ao servidor: {kickedReason}</p><button onClick={checkSession}>tentar novamente</button></div>;
   } else if (status === "anon") {
     content = <LoginForm onAuthed={handleAuthed} noticeMessage={kickedReason} />;
   } else {

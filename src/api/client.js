@@ -7,6 +7,7 @@ export async function apiRequest(path, options = {}) {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(body.error || "erro inesperado");
+    err.status = res.status;
     // A few endpoints (see server/index.js's requireCurrentUser) send a
     // machine-readable `code` alongside the message — e.g. SESSION_SUPERSEDED
     // when a later login elsewhere invalidated this session — so callers can

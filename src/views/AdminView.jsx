@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Ban, Check, DatabaseBackup, Download, Flame, History, KeyRound, Pencil, RefreshCw, Search, ShieldCheck, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
+import { Ban, Check, DatabaseBackup, Download, Flame, History, KeyRound, Pencil, RefreshCw, Search, ShieldCheck, SlidersHorizontal, Trash2, Users, X } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { inputStyle, secondaryBtnStyle } from "../styles/shared.js";
 import {
@@ -75,7 +75,7 @@ function EmailCell({ user, isSelf, onSave }) {
             onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setDraft(user.email); setEditing(false); setErr(""); } }}
             style={{ ...inputStyle, padding: "4px 8px", fontSize: 12.5 }}
           />
-          <button onClick={save} disabled={saving} style={actionBtnStyle(colors.teal)}><Check size={14} /></button>
+          <button onClick={save} disabled={saving} style={actionBtnStyle(colors.success)}><Check size={14} /></button>
           <button onClick={() => { setDraft(user.email); setEditing(false); setErr(""); }} style={actionBtnStyle(colors.textFaint)}><X size={14} /></button>
         </div>
         {err && <div style={{ fontSize: 11, color: colors.red }}>{err}</div>}
@@ -87,7 +87,7 @@ function EmailCell({ user, isSelf, onSave }) {
     <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
       <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.email}</span>
       {isSelf && (
-        <span className="mono" style={{ fontSize: 10, padding: "2px 6px", borderRadius: 20, background: colors.amberSoft, color: colors.amber, flexShrink: 0 }}>você</span>
+        <span className="mono" style={{ fontSize: 10, padding: "2px 6px", borderRadius: 20, background: colors.accentSoft, color: colors.accent, flexShrink: 0 }}>você</span>
       )}
       <button onClick={() => setEditing(true)} aria-label="editar email" title="editar email" style={actionBtnStyle(colors.textFaint)}>
         <Pencil size={11} />
@@ -105,7 +105,7 @@ function Switch({ checked, onChange, disabled }) {
       disabled={disabled}
       style={{
         width: 38, height: 22, borderRadius: 20, border: "none", flexShrink: 0, position: "relative",
-        background: checked ? colors.teal : colors.border, opacity: disabled ? 0.5 : 1, transition: "background 0.15s",
+        background: checked ? colors.success : colors.border, opacity: disabled ? 0.5 : 1, transition: "background 0.15s",
       }}
     >
       <span
@@ -437,7 +437,7 @@ export function AdminView({ currentUserEmail, onUserUpdate }) {
               display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: "pointer",
               padding: "8px 4px 10px", marginRight: 14, fontSize: 13, fontWeight: 600,
               color: section === key ? colors.text : colors.textFaint,
-              borderBottom: `2px solid ${section === key ? colors.teal : "transparent"}`,
+              borderBottom: `2px solid ${section === key ? colors.success : "transparent"}`,
             }}
           >
             <Icon size={14} /> {label}
@@ -472,7 +472,7 @@ export function AdminView({ currentUserEmail, onUserUpdate }) {
       )}
 
       {section === "usuarios" && resetResult && (
-        <div style={{ background: colors.surface, border: `1px solid ${colors.amber}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16, position: "relative" }}>
+        <div style={{ background: colors.surface, border: `1px solid ${colors.accent}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16, position: "relative" }}>
           <button onClick={() => setResetResult(null)} style={{ ...actionBtnStyle(colors.textFaint), position: "absolute", top: 8, right: 8 }}><X size={14} /></button>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>nova senha gerada para {resetResult.email}</div>
           <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 8 }}>copie e repasse com segurança — não fica salva em lugar nenhum além daqui.</div>
@@ -530,13 +530,13 @@ export function AdminView({ currentUserEmail, onUserUpdate }) {
                       if (isSelf) onUserUpdate((prev) => ({ ...prev, email }));
                     })}
                   />
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, color: u.currentStreak > 0 ? colors.amber : colors.textFaint, fontSize: 12.5 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, color: u.currentStreak > 0 ? colors.accent : colors.textFaint, fontSize: 12.5 }}>
                     <Flame size={13} /> {u.currentStreak}
                   </div>
                   <div style={{ color: colors.textMuted, fontSize: 12 }}>{formatDate(u.createdAt)}</div>
                   <div style={{ color: colors.textMuted, fontSize: 12 }}>{formatDate(u.lastLoginAt)}</div>
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                    {u.isAdmin && <span className="mono" style={{ fontSize: 10, padding: "2px 6px", borderRadius: 20, background: colors.amberSoft, color: colors.amber }}>admin</span>}
+                    {u.isAdmin && <span className="mono" style={{ fontSize: 10, padding: "2px 6px", borderRadius: 20, background: colors.accentSoft, color: colors.accent }}>admin</span>}
                     {u.isSuspended && <span className="mono" style={{ fontSize: 10, padding: "2px 6px", borderRadius: 20, background: colors.redSoft, color: colors.red }}>suspenso</span>}
                     {!u.isAdmin && !u.isSuspended && <span style={{ fontSize: 12, color: colors.textFaint }}>—</span>}
                   </div>
@@ -546,7 +546,7 @@ export function AdminView({ currentUserEmail, onUserUpdate }) {
                       disabled={busyIds.has(u.id) || (isSelf && u.isAdmin)}
                       aria-label={u.isAdmin ? "remover admin" : "tornar admin"}
                       title={u.isAdmin ? "remover admin" : "tornar admin"}
-                      style={actionBtnStyle(u.isAdmin ? colors.amber : colors.textFaint)}
+                      style={actionBtnStyle(u.isAdmin ? colors.accent : colors.textFaint)}
                     >
                       <ShieldCheck size={15} />
                     </button>

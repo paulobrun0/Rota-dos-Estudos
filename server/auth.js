@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+const configuredSecret = process.env.JWT_SECRET;
+if (process.env.NODE_ENV === "production" && (!configuredSecret || configuredSecret.length < 32 || ["dev-secret-change-me", "replace-with-a-long-random-string"].includes(configuredSecret))) {
+  throw new Error("JWT_SECRET precisa ser um segredo próprio de pelo menos 32 caracteres em produção");
+}
+const SECRET = configuredSecret || "dev-secret-change-me";
 export const COOKIE_NAME = "token";
 
 // Excludes visually ambiguous characters (0/O, 1/I/L) so a hand-copied code

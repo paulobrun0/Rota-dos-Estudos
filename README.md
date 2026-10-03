@@ -1,214 +1,154 @@
-# Ciclo de Estudos
+# Rota dos Estudos
 
-Um planejador de estudos para concursos, criado para transformar um edital extenso em uma rotina clara, distribuída e sustentável.
+Planejador de estudos para concursos com edital, ciclos por progresso, cronograma semanal, revisões espaçadas, questões e acompanhamento de atividade.
 
-A aplicação organiza matérias e assuntos em ciclos, monta o plano diário automaticamente, acompanha o progresso e evita que um assunto reapareça antes da hora.
+## Interface
 
-## Visão geral
+Nova identidade em azul e índigo, ícones duotone, navegação lateral e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado.
 
-- Planejamento diário baseado nas suas metas.
-- Distribuição automática de matérias e assuntos.
-- Ciclos sem repetição prematura de assuntos.
-- Revisão quando o assunto reaparece em um novo ciclo.
-- Acompanhamento de sequência, recorde e atividade.
-- Suporte a vários concursos no mesmo aplicativo.
-- Login por usuário, com dados salvos num banco local por conta.
-- Deploy do front-end preparado para GitHub Pages.
+As capturas abaixo mostram a aplicação real com dados fictícios de demonstração. Nenhuma conta, questão de prova ou informação de usuário real foi usada nas imagens.
+
+### Seu plano de hoje
+
+![Painel de hoje com metas, sequência, desempenho e atividades em tema claro](docs/images/hoje.png)
+
+### Entrada
+
+![Tela de entrada com a nova identidade visual](docs/images/entrada.png)
+
+### Edital e caderno de erros
+
+![Edital com matérias e assuntos organizados](docs/images/edital.png)
+
+![Caderno de erros com histórico e opção de refazer a questão](docs/images/caderno.png)
+
+### Tema escuro e celular
+
+![Painel de hoje no tema escuro](docs/images/hoje-escuro.png)
+
+<img src="docs/images/hoje-mobile.png" alt="Painel de hoje adaptado para celular" width="390" />
 
 ## Funcionalidades
 
-### Hoje
+- **Hoje:** assuntos novos e reforços, conclusão de cards, cronômetros e registro de questões.
+- **Semana:** previsão de matérias para 35 dias. A previsão é estimada: o ciclo avança conforme a conclusão real dos estudos.
+- **Edital:** cadastro manual, importação de texto numerado ou no formato `Matéria: assunto; assunto`, catálogo compartilhado de matérias, anotações e links por assunto.
+- **Metas:** matérias e assuntos por dia, duração de sessões, descanso e quantidade de revisões.
+- **Planejamento:** ciclo por progresso ou cronograma fixo por dia da semana. Pendências continuam no ciclo até serem concluídas.
+- **Revisões:** intervalos de 1, 3, 7, 15 e 30 dias, com limite diário configurável. As revisões vêm de todas as matérias, independentemente das matérias novas do dia.
+- **Caderno:** erros para refazer, histórico por questão e anotações. Um erro deixa a lista de pendências quando a última resposta passa a ser correta; as tentativas anteriores continuam no histórico.
+- **Questões:** banco extraído de provas, seleção por matéria/assunto/banca, correção no servidor e registro individual de respostas. Cada tentativa tem identificador próprio para impedir duplicação em uma repetição da requisição.
+- **Links:** Qconcursos, Tec Concursos e outro caderno podem coexistir em cada assunto. Links antigos continuam disponíveis.
+- **Progresso:** atividade, sequência, minutos e desempenho. Dias de descanso configurados não interrompem a sequência.
+- **Concursos:** planos separados, data da prova e reinício de ciclo com opção de preservar o histórico do plano.
+- **Conta:** perfil, ranking opcional, senha, código de recuperação e uma sessão ativa por conta.
+- **Administração:** usuários, catálogo, recursos, auditoria e backups.
+- **PWA:** instalação, notificações opcionais e aviso de atualização. Os recursos de estudo dependem da API; instalar o PWA não fornece funcionamento completo offline.
 
-A visão diária reúne o que precisa ser estudado na data selecionada:
+## Executar localmente
 
-- Navegação entre dias.
-- Percentual de conclusão.
-- Cards agrupados por matéria.
-- Marcação de assuntos concluídos.
-- Indicador de assuntos novos ou em revisão de ciclo.
-- Cronômetro individual por matéria.
-- Atalho para voltar ao dia atual.
-
-Ao concluir um assunto novo, ele deixa de ser pendente e passa a fazer parte do histórico de estudos.
-
-### Semana
-
-A visão semanal apresenta cinco semanas consecutivas, totalizando 35 dias planejados:
-
-- Semana atual e semanas futuras na mesma tela.
-- Consulta rápida sem avançar manualmente pelas setas.
-- Quantidade de cards por dia.
-- Progresso diário.
-- Acesso direto ao plano de qualquer data.
-
-As setas continuam disponíveis para navegar para semanas anteriores ou posteriores.
-
-### Edital
-
-Cadastre o conteúdo que será estudado de duas formas:
-
-1. Adicionando matérias e assuntos manualmente.
-2. Importando várias matérias de uma vez.
-
-Formato da importação em lote:
-
-```text
-Direito Administrativo: Regime Jurídico; Poderes Administrativos; Atos Administrativos
-Português: Crase; Ortografia; Interpretação de Texto
-Informática: Windows; Internet; Segurança da Informação
-```
-
-Cada linha representa uma matéria. Separe os assuntos usando ponto e vírgula.
-
-Também é possível:
-
-- Adicionar assuntos individualmente.
-- Remover assuntos.
-- Remover matérias.
-- Evitar duplicidades por nome.
-
-### Metas
-
-Defina como o plano deve ser distribuído:
-
-- **Matérias por dia:** quantas matérias entram na rotação diária.
-- **Assuntos por matéria:** quantos assuntos novos são planejados por aparição da matéria.
-- **Minutos por matéria:** duração sugerida para cada sessão.
-
-Quando as metas mudam, os próximos 35 dias são recalculados automaticamente.
-
-### Ciclos e revisões
-
-O planejamento usa uma reserva compartilhada para impedir repetições antecipadas:
-
-1. Os assuntos pendentes são distribuídos uma vez.
-2. Cada matéria avança conforme a rotação configurada.
-3. Quando todos os assuntos daquela matéria forem consumidos, começa um novo ciclo.
-4. No novo ciclo, os assuntos reaparecem como revisão de ciclo.
-
-Não há revisões automáticas em 1, 3, 7 ou 15 dias. O aplicativo não agenda uma revisão por data: a revisão acontece quando o assunto voltar naturalmente no ciclo.
-
-### Progresso
-
-Acompanhe a consistência dos estudos com:
-
-- Sequência atual.
-- Maior sequência registrada.
-- Total de cards concluídos.
-- Dias com atividade.
-- Mapa visual de atividade das últimas 18 semanas.
-
-### Concursos
-
-Organize vários objetivos de estudo no mesmo lugar:
-
-- Criar concursos diferentes.
-- Alternar entre concursos.
-- Renomear concursos.
-- Excluir concursos.
-- Manter matérias, metas e planos separados por concurso.
-
-## Tecnologias
-
-**Front-end**
-- React + Vite
-- Lucide React (ícones)
-- JavaScript/JSX
-- CSS inline e estilos locais do componente
-
-**Back-end** (local, veja [Autenticação e banco de dados](#autenticação-e-banco-de-dados))
-- Node.js + Express
-- SQLite embutido do Node (`node:sqlite`, sem dependências nativas)
-- Autenticação por sessão: senha com hash (bcrypt) + cookie httpOnly assinado (JWT)
-
-## Como executar localmente
-
-Pré-requisito: Node.js 22.5+ (usa o módulo `node:sqlite`).
+Use **Node.js 22.13 ou superior**. `.nvmrc` indica a versão principal usada no CI.
 
 ```bash
-npm install
-cp .env.example .env   # gere um JWT_SECRET próprio antes de usar em produção
+npm ci
+cp .env.example .env
+# Preencha JWT_SECRET com um segredo gerado para esta instalação.
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 npm run dev
 ```
 
-Isso sobe o front-end e a API juntos. Abra o endereço exibido pelo Vite, normalmente:
-
-```text
-http://localhost:5173/
-```
-
-## Scripts disponíveis
+O Vite normalmente abre em `http://localhost:5173`. A API usa a porta 4000 e o proxy de desenvolvimento encaminha `/api` para ela. Para VAPID, gere as chaves indicadas em `.env.example` e preencha as duas variáveis; notificações são opcionais.
 
 ```bash
-npm run dev         # front-end (Vite) + API (Express), juntos
-npm run dev:client  # só o front-end
-npm run dev:server  # só a API
-npm run build        # gera a versão de produção do front-end em dist/
-npm run preview      # serve a versão de produção do front-end localmente
+npm run dev:client  # Vite
+npm run dev:server  # API com reinício em alterações de código
+npm test           # testes unitários e de integração com banco isolado
+npm run build      # frontend e service worker em dist/
+npm run check      # testes e build
+npm start          # API e frontend compilado, na mesma origem
+npm run preview    # prévia estática do build; não inicia a API
 ```
 
-## Publicação no GitHub Pages
+## Proteção do progresso
 
-O projeto já possui um workflow em `.github/workflows/deploy.yml`.
+A aplicação só permite salvar depois de carregar o plano com sucesso. Uma falha de leitura mostra uma mensagem e a opção de tentar novamente, sem substituir dados por um plano novo.
 
-Para publicar:
+O salvamento usa uma fila com uma requisição por vez e agrupa alterações próximas. A tela informa quando está aguardando, salvando, salvo ou com erro. Falhas transitórias têm até três novas tentativas automáticas; também é possível tentar manualmente ou ao reconectar.
 
-1. Crie um repositório vazio no GitHub.
-2. Envie o projeto para a branch `main`.
-3. No repositório, abra **Settings > Pages**.
-4. Em **Build and deployment**, selecione **GitHub Actions**.
-5. A cada push na `main`, o GitHub instalará as dependências, executará o build e publicará a aplicação.
+Cada gravação exige a versão lida pelo navegador. Se outra aba salvar primeiro, a API retorna `409 PLAN_CONFLICT` e preserva o plano do servidor. A aba em conflito mantém as alterações locais e oferece um download antes de recarregar. Repetir uma gravação já confirmada no servidor, cuja resposta foi perdida, não cria uma nova versão desnecessária.
 
-Exemplo de primeiro envio:
+Alterações pendentes também ficam no armazenamento local do navegador, separadas por conta. Ao reabrir, a aplicação primeiro consulta o servidor e recupera a cópia local; uma versão incompatível é apresentada como conflito e nunca sobrescreve automaticamente o servidor. Se o navegador bloquear ou ficar sem espaço no armazenamento local, as alterações permanecem na memória da aba e o aviso ao sair continua ativo. Em um computador compartilhado, baixe ou conclua o salvamento das pendências e limpe os dados do site antes de entregar o dispositivo.
+
+A API e o importador de backups validam a estrutura do plano, listas, contagens e links. JSON sem a estrutura esperada é rejeitado. Backups antigos de um único concurso continuam aceitos.
+
+## Dados e recuperação
+
+O SQLite guarda contas, planos, histórico individual de questões, catálogo, questões, notificações e auditoria. `SQLITE_PATH` e `BACKUP_DIR` podem apontar para volumes persistentes; sem configuração, ficam em `server/data.sqlite` e `server/backups`.
+
+O JSON exportado em Ajustes contém concursos, planos, anotações e histórico de atividade. O histórico individual de respostas às questões pertence à conta no servidor e é preservado pelo **backup SQLite completo**, não pelo JSON do plano. Importar JSON não apaga esse histórico de respostas. Os ids de concursos/assuntos do backup mantêm o vínculo com ele.
+
+O código de recuperação é mostrado no cadastro e substituído após o uso. Guarde-o com segurança: sem ele e sem a senha, a recuperação exige intervenção administrativa. Não há envio por e-mail implementado.
+
+## Backups e restauração
+
+A API cria um snapshot consistente com `VACUUM INTO` ao iniciar e a cada 12 horas, além do acionamento manual pelo administrador. São mantidos os 14 arquivos mais recentes.
+
+Para proteger contra perda do servidor, monte um volume de backup externo e configure `BACKUP_REPLICA_DIR`. A aplicação copia cada snapshot, compara SHA-256 e publica o arquivo por renomeação, mantendo também 14 réplicas. O código não provisiona armazenamento remoto: essa variável precisa apontar para o volume que você efetivamente montou. Falhas de cópia são registradas, e o snapshot local é preservado.
+
+Para restaurar:
+
+1. Pare a API e mantenha-a parada durante a restauração.
+2. Escolha um snapshot SQLite local ou uma cópia da réplica.
+3. Execute:
 
 ```bash
-git init
-git add .
-git commit -m "Configura projeto"
-git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/ciclo-foco.git
-git push -u origin main
+npm run restore -- --source /caminho/backup.sqlite --target /caminho/data.sqlite --server-stopped
 ```
 
-O Vite está configurado com `base: "./"`, permitindo que a aplicação funcione no endereço de projeto do GitHub Pages sem precisar alterar o nome do repositório.
+4. Inicie a API e confira o login e o plano restaurado.
 
-## Estrutura principal
+A ferramenta verifica a integridade e as tabelas antes de substituir o banco. O banco anterior e seus arquivos auxiliares são preservados com sufixo `.before-restore-*` para retorno à versão anterior. O arquivo de origem permanece intacto. Os testes exercitam restauração e rejeição de arquivos inválidos; faça também um ensaio com uma cópia do seu backup de produção.
+
+## Produção
+
+Para login e dados funcionarem, hospede a API e o build **na mesma origem**, com HTTPS e um volume persistente para o SQLite. O Express serve `dist/` e `/api`.
+
+```bash
+npm ci
+npm run check
+NODE_ENV=production npm start
+```
+
+Configure um `JWT_SECRET` próprio com pelo menos 32 caracteres. Em produção, a API recusa iniciar sem ele ou com o exemplo antigo. O cookie usa `httpOnly`, `sameSite=lax` e `secure` em produção.
+
+A aplicação confia em um proxy reverso. Ajuste essa configuração em `server/index.js` se a topologia real usar uma quantidade diferente de proxies. Use um supervisor de processos para reiniciar a API e mantenha as variáveis e os volumes fora do repositório.
+
+### GitHub Pages
+
+O workflow `.github/workflows/deploy.yml` roda testes e build no Node indicado em `.nvmrc`. Só publica depois da aprovação dessas etapas, em pushes/execuções manuais da `main`. Pull requests são verificados sem publicação.
+
+Em **Settings > Pages**, selecione **GitHub Actions**. Em proteção da branch, exija o check **Test and build** antes de mesclar alterações.
+
+GitHub Pages publica apenas arquivos estáticos e não executa Express/SQLite. A aplicação usa `/api` na mesma origem, portanto essa publicação isolada não oferece login funcional. Para a aplicação completa, use a hospedagem descrita acima. O manifesto PWA usa caminhos relativos para também respeitar instalações em subdiretórios.
+
+## Estrutura
 
 ```text
-.
-├── .github/workflows/deploy.yml  # deploy automático do front-end no GitHub Pages
-├── index.html                    # documento HTML principal
-├── vite.config.js                # configuração do Vite (inclui proxy de /api para a API local)
-├── package.json                  # scripts e dependências
-├── server/                       # API local (Express + SQLite)
-│   ├── index.js                  # rotas: auth (register/login/logout/me/reset-password) e dados do plano
-│   ├── auth.js                   # emissão/validação do JWT de sessão
-│   └── db.js                     # schema e conexão SQLite
-└── src/                          # aplicação React
-    ├── main.jsx                  # ponto de entrada
-    ├── App.jsx                   # componente raiz: estado do plano, navegação entre abas
-    ├── auth/                     # tela de login/registro e o "gate" de autenticação
-    ├── api/                      # cliente HTTP e chamadas à API do plano
-    ├── views/                    # uma view por aba (dia, semana, edital, metas, concursos, progresso)
-    ├── components/                # componentes pequenos reutilizados entre views
-    ├── lib/                      # funções puras: datas, motor de rotação/ciclos, sequências
-    ├── data/                     # forma dos dados e migração de versões antigas
-    └── styles/                   # paleta de cores e estilos compartilhados
+server/
+  index.js          # configuração, autenticação, administração e ranking
+  routes/data.js    # plano validado e gravação com controle de versão
+  routes/questions.js # questões, respostas e histórico por conta
+  db.js             # SQLite e evolução de schema sem ignorar erros inesperados
+  backup.js         # snapshots, réplica e retenção
+  restore.js        # restauração offline validada
+src/
+  App.jsx           # navegação e coordenação do planejamento
+  api/              # chamadas HTTP
+  lib/              # planejador, validação, fila de persistência e hooks
+  views/            # telas de estudo, caderno, configurações e administração
+  components/       # cronômetros, quiz, links e estado de salvamento
+  data/             # modelo e migração de planos antigos
+test/               # testes unitários, API, DOM, conflitos, recuperação e backups
 ```
 
-## Autenticação e banco de dados
-
-Cada usuário tem seu próprio plano de estudos, protegido por login. A API local (`server/`) guarda:
-
-- Contas de usuário (email + senha com hash).
-- Um registro por usuário com todo o plano (concursos, matérias, metas, planos diários e histórico de atividade).
-
-**Recuperação de senha:** sem servidor de e-mail configurado (etapa local), a recuperação usa um código gerado no cadastro — mostrado uma única vez, na hora, para o usuário guardar por conta própria. Perder o código sem ter salvo a senha significa perder o acesso àquela conta; não há como reenviá-lo. Ao redefinir a senha, um novo código substitui o anterior (uso único). Quando a API for hospedada, esse fluxo pode ser trocado por reset via e-mail.
-
-O banco (`server/data.sqlite`) e o segredo de sessão (`.env`) não são versionados — cada máquina tem os seus. Essa é uma etapa **local** intencionalmente: antes de hospedar a API em algum serviço externo (ex: Supabase), a ideia é validar o fluxo de login/dados rodando localmente.
-
-Importante: o deploy no GitHub Pages publica só o front-end. Sem a API hospedada em algum lugar, a versão publicada não terá login funcional — isso é o próximo passo, não uma limitação do código atual.
-
-## Licença
-
-Este projeto ainda não possui uma licença definida.
+As versões das dependências principais estão fixadas; `package-lock.json` deve acompanhar qualquer atualização. O projeto ainda não possui uma licença definida.

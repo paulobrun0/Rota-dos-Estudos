@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
 import { navBtnStyle } from "../styles/shared.js";
 import { addDaysISO, daysSinceEpoch, fromISO, todayISO, weekStart } from "../lib/date.js";
@@ -15,7 +15,7 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
         <button onClick={() => setWeekAnchor(addDaysISO(weekAnchor, -7))} style={navBtnStyle}><ChevronLeft size={16} /></button>
         <div className="sg" style={{ fontSize: 20, fontWeight: 700 }}>semana</div>
         <button onClick={() => setWeekAnchor(addDaysISO(weekAnchor, 7))} style={navBtnStyle}><ChevronRight size={16} /></button>
-        <button onClick={() => setWeekAnchor(weekStart(today))} style={{ ...navBtnStyle, width: "auto", padding: "0 12px", fontSize: 13, color: colors.amber, marginLeft: 4 }}>
+        <button onClick={() => setWeekAnchor(weekStart(today))} style={{ ...navBtnStyle, width: "auto", padding: "0 12px", fontSize: 13, color: colors.accent, marginLeft: 4 }}>
           semana atual
         </button>
       </div>
@@ -61,7 +61,7 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
                     onClick={() => onOpenDay(iso)}
                     style={{
                       textAlign: "left", background: isToday ? colors.surface2 : colors.surface,
-                      border: `1px solid ${isToday ? colors.amber : colors.border}`, borderRadius: 12,
+                      border: `1px solid ${isToday ? colors.accent : colors.border}`, borderRadius: 12,
                       padding: "12px 10px", minHeight: 108, display: "flex", flexDirection: "column", gap: 8,
                     }}
                   >
@@ -77,9 +77,9 @@ export function SemanaView({ concurso, weekAnchor, setWeekAnchor, weekDays, onOp
                       <div style={{ fontSize: 11.5, color: colors.textFaint }}>vazio</div>
                     ) : (
                       <div>
-                        <div className="mono" style={{ fontSize: 13, color: done === total ? colors.teal : colors.text }}>{done}/{total}</div>
+                        <div className="mono" style={{ fontSize: 13, color: done === total ? colors.success : colors.text }}>{done}/{total}</div>
                         <div style={{ height: 4, background: colors.borderSoft, borderRadius: 2, marginTop: 4 }}>
-                          <div style={{ height: 4, width: `${total ? (done / total) * 100 : 0}%`, background: colors.amber, borderRadius: 2 }} />
+                          <div style={{ height: 4, width: `${total ? (done / total) * 100 : 0}%`, background: colors.accent, borderRadius: 2 }} />
                         </div>
                       </div>
                     )}
