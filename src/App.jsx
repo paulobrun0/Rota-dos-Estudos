@@ -1,3 +1,5 @@
+import { UnifiedPlanView } from "./views/UnifiedPlanView.jsx";
+import { saveUnifiedPlan, completeUnifiedCard } from "./lib/unifiedPlan.js";
 import { ConciliacaoView } from "./views/ConciliacaoView.jsx";
 import { buildPracticeIndex, decorateConcurso, linkEquivalentTopics, removeManualEquivalence } from "./lib/editalCompatibility.js";
 import { applySharedSkip } from "./lib/sharedSkip.js";
@@ -52,6 +54,7 @@ const REVIEW_CARD_MINUTES = 3;
 const TAB_TITLES = {
   painel: "painel",
   conciliar: "conciliar editais",
+  integrado: "plano integrado",
   revisoes: "revisões",
   simulados: "simulados",
   dia: "hoje",
@@ -796,6 +799,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         <NavItem icon={<Flame size={20} />} label="progresso" active={tab === "progresso"} onClick={() => goTab("progresso")} />
         <NavItem icon={<Trophy size={20} />} label="ranking" active={tab === "ranking"} onClick={() => goTab("ranking")} />
         <div style={{ height: 1, background: colors.border, margin: "8px 6px" }} />
+        <NavItem icon={<ListChecks size={20} />} label="plano integrado" active={tab === "integrado"} onClick={() => goTab("integrado")} />
         <NavItem icon={<BookOpen size={20} />} label="conciliar editais" active={tab === "conciliar"} onClick={() => goTab("conciliar")} />
         <NavItem icon={<GraduationCap size={20} />} label="concursos" active={tab === "concursos"} onClick={() => goTab("concursos")} />
         <NavItem icon={<UserCircle size={20} />} label="perfil" active={tab === "perfil"} onClick={() => goTab("perfil")} />
@@ -902,11 +906,16 @@ export default function App({ user, onLogout, onUserUpdate }) {
 
         {tab === "admin" && user?.isAdmin && <AdminView currentUserEmail={user.email} onUserUpdate={onUserUpdate} />}
 
-        {tab !== "conciliar" && tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && tab !== "admin" && tab !== "ranking" && tab !== "perfil" && !activeConcurso && (
+        {tab !== "integrado" && tab !== "conciliar" && tab !== "concursos" && tab !== "progresso" && tab !== "ajustes" && tab !== "admin" && tab !== "ranking" && tab !== "perfil" && !activeConcurso && (
           <EmptyConcursoState onGo={() => setTab("concursos")} />
         )}
 
-        {tab === "conciliar" && <ConciliacaoView concursos={data.concursos} activeConcursoId={data.activeConcursoId} practiceArchive={data.practiceArchive} availableHours={data.availableHoursPerWeek} studyDays={data.studyDays}
+        {tab === "integrado" && <UnifiedPlanView data={data}
+          onHours={value => setData(d => ({ ...d, availableHoursPerWeek: value }))}
+          onSettings={settings => setData(d => ({ ...d, unifiedSettings: settings }))}
+          onGenerate={settings => { const iso = todayISO(); const next = saveUnifiedPlan(data, settings, iso); setData(d => d === data ? next : saveUnifiedPlan(d, settings, iso)); }}
+          onComplete={(id, questions) => { const iso = todayISO(); const next = completeUnifiedCard(data, iso, id, questions); setData(d => d === data ? next : completeUnifiedCard(d, iso, id, questions)); }} />}
+        {tab === "conciliar" && <ConciliacaoView concursos={data.concursos} activeConcursoId={data.activeConcursoId} practiceArchive={data.practiceArchive} availableHours={data.availableHoursPerWeek} studyDays={data.studyDays} onNavigate={goTab}
           onHours={value => setData(d => ({ ...d, availableHoursPerWeek: value }))}
           onWeight={(concursoId, materiaId, weight) => setData(d => ({ ...d, concursos: d.concursos.map(c => c.id !== concursoId ? c : ({ ...c, materias: c.materias.map(m => m.id !== materiaId ? m : ({ ...m, weight })) })) }))}
           onLink={(left, right) => setData(d => linkEquivalentTopics(d, left, right, `shared:${uid()}`))}

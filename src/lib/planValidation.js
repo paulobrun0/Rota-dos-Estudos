@@ -150,6 +150,36 @@ export function validatePlanData(raw) {
     requireValue(Array.isArray(raw.materias), "faltam concursos ou matérias");
     validateConcurso(raw);
   }
+  const concursoIds = value => {
+    requireValue(Array.isArray(value) && value.every(id => typeof id === "string" && id.trim()) && new Set(value).size === value.length, "seleção de concursos inválida");
+  };
+  const reference = ref => {
+    requireValue(object(ref), "referência integrada inválida");
+    for (const field of ["concursoId", "materiaId", "topicId"]) text(ref[field], field);
+  };
+  if (raw.unifiedSettings !== undefined) {
+    requireValue(object(raw.unifiedSettings), "configuração integrada inválida"); concursoIds(raw.unifiedSettings.concursoIds);
+    count(raw.unifiedSettings.minutesPerTopic, "minutos por assunto", false);
+    requireValue(raw.unifiedSettings.minutesPerTopic >= 5 && raw.unifiedSettings.minutesPerTopic <= 180, "tempo por assunto deve estar entre 5 e 180");
+  }
+  if (raw.unifiedPlans !== undefined) {
+    requireValue(object(raw.unifiedPlans), "planos integrados inválidos");
+    for (const [iso, plan] of Object.entries(raw.unifiedPlans)) {
+      date(iso); requireValue(object(plan), "plano integrado inválido"); concursoIds(plan.concursoIds);
+      count(plan.minutesBudget, "carga diária"); optionalCount(plan, "remainingCandidates"); distinct(plan.cards, "estudos integrados");
+      for (const card of plan.cards) {
+        for (const field of ["key", "materiaName", "topicName"]) text(card[field], field);
+        requireValue(Array.isArray(card.concursoNames) && card.concursoNames.length > 0 && card.concursoNames.every(name => typeof name === "string" && name.trim()), "nomes dos editais inválidos");
+        count(card.minutes, "tempo do estudo", false); requireValue(card.minutes > 0, "tempo do estudo deve ser positivo");
+        requireValue(["novo", "revisao"].includes(card.tipo) && typeof card.feito === "boolean", "etapa integrada inválida");
+        requireValue(Array.isArray(card.refs) && card.refs.length > 0, "estudo integrado sem assuntos");
+        card.refs.forEach(reference); requireValue(new Set(card.refs.map(ref => JSON.stringify([ref.concursoId, ref.materiaId, ref.topicId]))).size === card.refs.length, "referência integrada duplicada");
+        if (card.hasDueReview !== undefined) requireValue(typeof card.hasDueReview === "boolean", "prioridade de revisão inválida");
+        if (card.source !== undefined) reference(card.source);
+        if (card.deadline != null) date(card.deadline);
+      }
+    }
+  }
   if (raw.availableHoursPerWeek != null) { count(raw.availableHoursPerWeek, "horas por semana", false); requireValue(raw.availableHoursPerWeek > 0 && raw.availableHoursPerWeek <= 168, "horas por semana devem estar entre 0 e 168"); }
   if (raw.practiceArchive !== undefined) {
     distinct(raw.practiceArchive, "histórico preservado");

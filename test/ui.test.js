@@ -193,3 +193,25 @@ test('deleting a source edital preserves practice in the account and after reloa
  await waitFor(()=>assert.equal(stored.practiceArchive?.length,1));assert.equal(stored.concursos.length,1);assert.equal(stored.practiceArchive[0].topic.questionsTotal,80);assert.deepEqual(stored.activity,{});assert.ok(screen.getByText('Histórico preservado'));
  cleanup();render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'hoje',exact:true}));assert.ok(await screen.findByText('80 questões em outros editais · 80% de acertos',{exact:true}));assert.ok(screen.getByRole('button',{name:'Pular assunto já praticado',exact:true}));
 });
+
+test('integrated plan generates one shared row and saves one completion across editais after reload',async()=>{
+ const {makeConcurso}=await import('../src/data/model.js');const a=makeConcurso('Integrado A',0),b=makeConcurso('Integrado B',1);a.id='a';b.id='b';
+ a.materias=[{id:'am',name:'Português',topics:[{id:'at',name:'Crase',status:'pendente'}]}];b.materias=[{id:'bm',name:'Língua Portuguesa',topics:[{id:'bt',name:'Crase',status:'pendente'}]}];
+ let stored={concursos:[a,b],activeConcursoId:'a',availableHoursPerWeek:7,activity:{},questionActivity:{},studyMinutes:{}};let revision=1;
+ globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);assert.equal(body.revision,revision);stored=JSON.parse(body.value);return response({revision:++revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};
+ const props={user:{email:'unified@example.com'},onLogout(){},onUserUpdate(){}};render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'plano integrado',exact:true}));
+ fireEvent.click(screen.getByRole('button',{name:'Gerar plano de hoje'}));await waitFor(()=>assert.ok(stored.unifiedPlans));assert.equal(screen.getAllByRole('button',{name:'Concluir Crase'}).length,1);assert.ok(screen.getByText('Conteúdo comum'));
+ fireEvent.click(screen.getByRole('button',{name:'Concluir Crase'}));fireEvent.change(screen.getByLabelText('Questões do estudo integrado'),{target:{value:'10'}});fireEvent.change(screen.getByLabelText('Acertos do estudo integrado'),{target:{value:'8'}});fireEvent.click(screen.getByRole('button',{name:'Salvar conclusão'}));
+ await waitFor(()=>assert.equal(Object.values(stored.activity).reduce((n,v)=>n+v,0),1));assert.equal(Object.values(stored.questionActivity).reduce((n,v)=>n+v.total,0),10);assert.equal(stored.concursos[0].materias[0].topics[0].questionsTotal,10);assert.equal(stored.concursos[1].materias[0].topics[0].questionsTotal,undefined);assert.equal(stored.concursos[1].materias[0].topics[0].status,'estudado');
+ fireEvent.click(screen.getByRole('button',{name:'Atualizar plano de hoje'}));assert.equal(screen.queryByRole('button',{name:'Concluir Crase'}),null);
+ cleanup();render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'plano integrado',exact:true}));assert.ok(await screen.findByText('Concluído',{exact:true}));
+});
+
+test('integrated plan reports missing availability and cancels recording without completion',async()=>{
+ const UnifiedPlanView=(await vite.ssrLoadModule('/src/views/UnifiedPlanView.jsx')).UnifiedPlanView;
+ const {saveUnifiedPlan}=await import('../src/lib/unifiedPlan.js');
+ const today=(await import('../src/lib/date.js')).todayISO();const settings={concursoIds:['a','b'],minutesPerTopic:30};const data={concursos:[{id:'a',name:'A',materias:[{id:'m1',name:'Português',topics:[{id:'t1',name:'Crase',status:'pendente'}]}]},{id:'b',name:'B',materias:[{id:'m2',name:'Português',topics:[{id:'t2',name:'Crase',status:'pendente'}]}]}]};
+ const completed=[];const props={data,onHours(){},onSettings(){},onGenerate:s=>saveUnifiedPlan(data,s,today),onComplete:(...args)=>completed.push(args)};
+ const view=render(React.createElement(UnifiedPlanView,props));fireEvent.click(screen.getByRole('button',{name:'Gerar plano de hoje'}));assert.match(screen.getByRole('alert').textContent,/horas/);
+ const saved=saveUnifiedPlan({...data,availableHoursPerWeek:7},settings,today);view.rerender(React.createElement(UnifiedPlanView,{...props,data:saved}));fireEvent.click(screen.getByRole('button',{name:'Concluir Crase'}));fireEvent.click(screen.getByRole('button',{name:'Cancelar',exact:true}));assert.equal(completed.length,0);
+});

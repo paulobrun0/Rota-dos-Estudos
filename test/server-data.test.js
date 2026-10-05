@@ -345,3 +345,14 @@ test('preserved topic history survives API reload and malformed archives cannot 
   assert.equal((await api('/api/data',{method:'PUT',cookie:user.cookie,body:{value:JSON.stringify(invalid)}})).status,400);
   assert.deepEqual(JSON.parse((await api('/api/data',{cookie:user.cookie})).body.value),saved);
 });
+
+test('integrated daily plan and one shared completion survive API reload with revision protection',async()=>{
+ const {saveUnifiedPlan,completeUnifiedCard}=await import('../src/lib/unifiedPlan.js');
+ const user=await registerFresh(),other=await registerFresh();const today='2026-10-05';
+ const data={concursos:[{id:'ua',name:'A',materias:[{id:'ma',name:'Português',topics:[{id:'ta',name:'Crase',status:'pendente'}]}]},{id:'ub',name:'B',materias:[{id:'mb',name:'Língua Portuguesa',topics:[{id:'tb',name:'Crase',status:'pendente'}]}]}],activeConcursoId:'ua',availableHoursPerWeek:7,studyDays:['seg'],activity:{},questionActivity:{}};
+ let saved=saveUnifiedPlan(data,{concursoIds:['ua','ub'],minutesPerTopic:30},today);saved=completeUnifiedCard(saved,today,saved.unifiedPlans[today].cards[0].id,{total:20,correct:16});
+ assert.equal((await api('/api/data',{method:'PUT',cookie:user.cookie,body:{value:JSON.stringify(saved)}})).status,200);
+ const loaded=JSON.parse((await api('/api/data',{cookie:user.cookie})).body.value);assert.deepEqual(loaded,saved);assert.deepEqual(loaded.questionActivity[today],{total:20,correct:16});assert.equal(loaded.activity[today],1);assert.equal(loaded.unifiedPlans[today].cards.length,1);assert.equal((await api('/api/data',{cookie:other.cookie})).body.value,null);
+ const invalid=structuredClone(saved);invalid.unifiedPlans[today].cards[0].refs=[];
+ assert.equal((await api('/api/data',{method:'PUT',cookie:user.cookie,body:{value:JSON.stringify(invalid)}})).status,400);assert.deepEqual(JSON.parse((await api('/api/data',{cookie:user.cookie})).body.value),saved);
+});

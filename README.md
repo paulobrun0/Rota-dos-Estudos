@@ -2,6 +2,12 @@
 
 Planejador de estudos para concursos com painel de desempenho, edital, ciclos por progresso, revisões, simulados e materiais organizados por assunto.
 
+## Plano integrado para vários editais
+
+Em **Plano integrado**, selecione pelo menos dois concursos em preparação, informe suas horas semanais e o tempo por assunto novo. **Gerar plano de hoje** reúne assuntos equivalentes em uma única linha, mostra quais editais cada estudo atende e respeita a carga diária dividida pelos dias de estudo de Ajustes. Revisões vencidas têm prioridade; peso, desempenho compartilhado, prazo da prova e pendências anteriores orientam a seleção. Assuntos exclusivos também participam da carga.
+
+**Concluir** registra a atividade, o tempo estimado e as questões uma única vez. A etapa é aproveitada nos assuntos equivalentes selecionados e as revisões permanecem agendadas; não são criadas questões ou atividades por edital. **Atualizar plano de hoje** recalcula as pendências sem apagar conclusões. Concursos realizados ou com prova passada não entram em novos planos. As horas e o tempo são estimativas; a seleção não garante cobertura completa até a prova. O plano integrado é uma alternativa aos planos individuais: escolha um deles para executar sua rotina.
+
 ## Conciliar editais e aproveitar a prática
 
 Abra **Conciliar editais** e escolha dois concursos. A tela mostra assuntos em comum, porcentagem de cobertura de cada edital, sobreposição global (interseção ÷ união) e assuntos exclusivos. Os denominadores contam assuntos distintos, evitando inflar a comparação com entradas repetidas. A tela também mostra cobertura ponderada, pesos configuráveis por assunto e uma estimativa de carga até a primeira prova. Informe as horas semanais disponíveis para os dois editais e ajuste os pesos em **Ajustar importância das matérias**. A estimativa deduplica assuntos comuns e usa minutos por matéria ÷ assuntos por dia; revisões, prática e imprevistos precisam de reserva adicional.

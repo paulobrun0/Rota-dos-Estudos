@@ -5,7 +5,7 @@ import { buildPracticeIndex, compareEditais, flattenEdital, sharedPractice } fro
 import { Panel, Metric } from '../components/StudyPanels.jsx';
 import { SharedPractice } from '../components/SharedPractice.jsx';
 import { inputStyle, primaryBtnStyle, secondaryBtnStyle } from '../styles/shared.js';
-export function ConciliacaoView({ concursos, activeConcursoId, onLink, onUnlink, onSkip, onUndo, practiceArchive = [], availableHours, onHours, onWeight, studyDays }) {
+export function ConciliacaoView({ concursos, activeConcursoId, onLink, onUnlink, onSkip, onUndo, practiceArchive = [], availableHours, onHours, onWeight, studyDays, onNavigate }) {
   const [leftId, setLeftId] = useState(activeConcursoId || concursos[0]?.id || '');
   const [rightId, setRightId] = useState(concursos.find(c => c.id !== leftId)?.id || '');
   const [leftTopic, setLeftTopic] = useState(''), [rightTopic, setRightTopic] = useState('');
@@ -27,7 +27,7 @@ export function ConciliacaoView({ concursos, activeConcursoId, onLink, onUnlink,
   function sharedTopic(row) { return { ...row.topic, crossStudy: sharedPractice(index, row.key, row.concursoId) }; }
   function controls(row) { const ref = { concursoId: row.concursoId, materiaId: row.materiaId, topicId: row.topicId }; return <><SharedPractice topic={sharedTopic(row)} onSkip={() => onSkip(ref)} onUndo={() => onUndo(ref)} />{row.topic.equivalenceKey && <button type="button" style={{ ...secondaryBtnStyle, minWidth: 0, maxWidth: "100%", overflowWrap: "anywhere" }} onClick={() => onUnlink(ref)}>Remover vínculo manual</button>}</>; }
   return <div>
-    <Panel title="Conciliar editais"><div className="form-grid"><label>Primeiro edital<select aria-label="Primeiro edital" value={leftId} onChange={e => { setLeftId(e.target.value); setLeftTopic(''); }} style={inputStyle}>{options}</select></label><label>Segundo edital<select aria-label="Segundo edital" value={rightId} onChange={e => { setRightId(e.target.value); setRightTopic(''); }} style={inputStyle}>{options}</select></label></div>
+    <Panel title="Conciliar editais" action={onNavigate && <button type="button" style={secondaryBtnStyle} onClick={() => onNavigate("integrado")}>Montar plano integrado</button>}><div className="form-grid"><label>Primeiro edital<select aria-label="Primeiro edital" value={leftId} onChange={e => { setLeftId(e.target.value); setLeftTopic(''); }} style={inputStyle}>{options}</select></label><label>Segundo edital<select aria-label="Segundo edital" value={rightId} onChange={e => { setRightId(e.target.value); setRightTopic(''); }} style={inputStyle}>{options}</select></label></div>
       <p className="muted">Comparamos assuntos distintos da mesma matéria, ignorando acentos, pontuação e numeração. Nomes diferentes podem ser vinculados abaixo. A coincidência de conteúdo não garante viabilidade de preparação: considere datas, banca, pesos e profundidade.</p>
       {!comparison && <p role="alert">Escolha dois editais diferentes.</p>}
     </Panel>
