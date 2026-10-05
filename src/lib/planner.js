@@ -1,3 +1,4 @@
+import { studyPriority } from "./studyPriorities.js";
 import { uid } from "./id.js";
 import { addDaysISO, fromISO, todayISO } from "./date.js";
 
@@ -35,23 +36,10 @@ export function advanceReview(topic, today) {
   topic.nextReviewDate = nextStep < REVIEW_INTERVALS_DAYS.length ? addDaysISO(today, REVIEW_INTERVALS_DAYS[nextStep]) : null;
 }
 
-// Which topics are due for a spaced review today, across every matéria in
-// the concurso (not just whichever are in today's rotation window — the
-// whole point is surfacing matérias that would otherwise sit untouched
-// until their turn comes back around). Capped at `reviewsPerDay` and sorted
-// weakest-accuracy-first (a topic under 70% correct cuts in line ahead of
-// one that's merely more overdue), most-overdue as the tiebreaker — so on a
-// day with more due than the cap, the leftover ones simply stay due (their
-// nextReviewDate doesn't move) and surface again tomorrow ahead of anything
-// newly due — spreading a backlog across the next several days instead of
-// dumping it all on one, while making sure a genuinely weak topic isn't
-// left waiting behind a strong one just because the strong one happens to
-// be a day or two more overdue.
-// A topic with no nextReviewDate at all (studied before this feature
-// existed) counts as due, so old progress eventually enters the schedule
-// instead of being invisible to review forever. A topic with no question
-// data yet (never answered any) sorts as if at 70% — neither jumping the
-// line nor getting stuck behind topics with a confirmed weakness.
+// Due reviews are capped at reviewsPerDay. Their priority combines performance,
+// materia weight and overdue days; shared counts are used when supplied by the
+// caller. Unselected reviews remain due. Legacy studied topics without a date
+// enter the schedule; topics without question data use a neutral 70% accuracy.
 export function pickDueReviews(materias, today, reviewsPerDay, usedTopicIds) {
   if (reviewsPerDay <= 0) return [];
   const due = [];
@@ -60,14 +48,14 @@ export function pickDueReviews(materias, today, reviewsPerDay, usedTopicIds) {
       if (t.status !== "estudado" || usedTopicIds.has(t.id)) continue;
       if (t.nextReviewDate === undefined || (t.nextReviewDate !== null && t.nextReviewDate <= today)) {
         const accuracyPct = t.questionsTotal > 0 ? Math.round((t.questionsCorrect / t.questionsTotal) * 100) : null;
-        due.push({ materiaId: m.id, topicId: t.id, dueDate: t.nextReviewDate || "", accuracyPct });
+        due.push({ materiaId: m.id, topicId: t.id, dueDate: t.nextReviewDate || "", accuracyPct, priority: studyPriority(m, t, today).score });
       }
     }
   }
   due.sort((a, b) => {
     const scoreA = a.accuracyPct ?? 70;
     const scoreB = b.accuracyPct ?? 70;
-    return scoreA !== scoreB ? scoreA - scoreB : a.dueDate.localeCompare(b.dueDate);
+    return b.priority - a.priority || (scoreA !== scoreB ? scoreA - scoreB : a.dueDate.localeCompare(b.dueDate));
   });
   return due.slice(0, reviewsPerDay);
 }

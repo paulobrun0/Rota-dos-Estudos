@@ -19,8 +19,10 @@ export function flattenEdital(concurso) {
     materiaName: materia.name, topicId: topic.id, topic, key: topicIdentity(materia, topic),
   })));
 }
-export function buildPracticeIndex(concursos) {
-  const rows = (concursos || []).flatMap(flattenEdital).filter(r => r.key);
+export function buildPracticeIndex(concursos, archive = []) {
+  const live = (concursos || []).flatMap(flattenEdital);
+  const ids = new Set(live.map(r => JSON.stringify([r.concursoId, r.materiaId, r.topicId])));
+  const rows = [...live, ...archive.filter(r => !ids.has(JSON.stringify([r.concursoId, r.materiaId, r.topicId])))].filter(r => r.key);
   const parents = new Map();
   function root(key) {
     if (!parents.has(key)) parents.set(key, key);
@@ -49,6 +51,7 @@ export function sharedPractice(index, key, concursoId) {
   const sum = (items, field) => items.reduce((n, r) => n + (r.topic[field] || 0), 0);
   return { key, total: sum(rows, 'questionsTotal'), correct: sum(rows, 'questionsCorrect'),
     otherTotal: sum(others, 'questionsTotal'), otherCorrect: sum(others, 'questionsCorrect'),
+    lastOtherPracticeDate: others.filter(r => r.topic.questionsTotal > 0).flatMap(r => [r.topic.lastPracticeDate, ...(r.topic.history || []).filter(h => h.questionsTotal > 0).map(h => h.date)]).filter(Boolean).sort().at(-1) || null,
     sources: [...new Set(others.filter(r => r.topic.questionsTotal > 0).map(r => r.concursoName))] };
 }
 export function decorateConcurso(concurso, index) {
@@ -69,12 +72,12 @@ export function compareEditais(a, b, index = buildPracticeIndex([a, b])) {
     rightOnly: [...right].filter(([key]) => !left.has(key)).map(([, row]) => row) };
 }
 export function linkEquivalentTopics(data, left, right, equivalenceKey) {
-  const index = buildPracticeIndex(data.concursos);
+  const index = buildPracticeIndex(data.concursos, data.practiceArchive);
   const find = ref => [...index.values()].flat().find(r => r.concursoId === ref.concursoId && r.materiaId === ref.materiaId && r.topicId === ref.topicId);
   const a = find(left), b = find(right);
   if (!a || !b || a.concursoId === b.concursoId) throw new Error('Selecione assuntos de dois editais diferentes.');
   const keys = new Set([a.key, b.key]);
-  return { ...data, concursos: data.concursos.map(c => ({ ...c, materias: c.materias.map(m => ({
+  return { ...data, practiceArchive: (data.practiceArchive || []).map(row => keys.has(index.aliases.get(row.key) || row.key) ? { ...row, topic: { ...row.topic, equivalenceKey } } : row), concursos: data.concursos.map(c => ({ ...c, materias: c.materias.map(m => ({
     ...m, topics: m.topics.map(t => keys.has(index.aliases.get(topicIdentity(m, t)) || topicIdentity(m, t)) ? { ...t, equivalenceKey } : t),
   })) })) };
 }

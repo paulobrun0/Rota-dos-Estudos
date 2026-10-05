@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { preservePractice } from "./practiceHistory.js";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchPlanData, savePlanData } from "../api/planData.js";
 import { defaultData, makeConcurso, migrate } from "../data/model.js";
 import { parsePlanData } from "./planValidation.js";
@@ -15,7 +16,8 @@ function decode(value) {
 }
 
 export function usePlanData(accountKey) {
-  const [data, setData] = useState(null);
+  const [data, setRawData] = useState(null);
+  const setData = useCallback(update => setRawData(previous => typeof update === "function" ? preservePractice(previous, update(previous)) : update), []);
   const [sync, setSync] = useState({ status: "loading", error: "", dirty: false });
   const controller = useRef(null);
 
@@ -26,7 +28,7 @@ export function usePlanData(accountKey) {
       write: (value) => localStorage.setItem(key, JSON.stringify(value)),
       clear: (value) => { if (JSON.parse(localStorage.getItem(key) || "null")?.value === value) localStorage.removeItem(key); },
     };
-    const instance = createPlanPersistence({ cache, read: fetchPlanData, write: savePlanData, decode, onData: setData, onState: setSync });
+    const instance = createPlanPersistence({ cache, read: fetchPlanData, write: savePlanData, decode, onData: setRawData, onState: setSync });
     controller.current = instance;
     void instance.load();
     return () => instance.dispose();

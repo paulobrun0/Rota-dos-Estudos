@@ -158,7 +158,7 @@ test('materials are staged with the notebook editor and saved together',()=>{
 
 test('comparing editais exposes distinct coverage and skip only after a user click',()=>{
  const skips=[];const concursos=[{id:'a',name:'Tribunal',materias:[{id:'am',name:'Português',topics:[{id:'at',name:'Crase',status:'estudado',questionsTotal:20,questionsCorrect:16},{id:'other',name:'Pontuação',status:'pendente'}]}]},{id:'b',name:'Prefeitura',materias:[{id:'bm',name:'Língua Portuguesa',topics:[{id:'bt',name:'1. Crase',status:'pendente'}]}]}];
- render(React.createElement(ConciliacaoView,{concursos,activeConcursoId:'a',onSkip:ref=>skips.push(ref),onUndo(){},onLink(){},onUnlink(){}}));assert.equal(skips.length,0);assert.equal(screen.getAllByText('50%',{exact:true}).length,2);assert.ok(screen.getByText('100%',{exact:true}));
+ render(React.createElement(ConciliacaoView,{concursos,activeConcursoId:'a',onSkip:ref=>skips.push(ref),onUndo(){},onLink(){},onUnlink(){}}));assert.equal(skips.length,0);assert.equal(screen.getAllByText('50%',{exact:true}).length,3);assert.equal(screen.getAllByText('100%',{exact:true}).length,2);
  fireEvent.click(screen.getByRole('button',{name:'Pular assunto já praticado',exact:true}));assert.deepEqual(skips,[{concursoId:'b',materiaId:'bm',topicId:'bt'}]);assert.equal(concursos[1].materias[0].topics[0].status,'pendente');
  fireEvent.change(screen.getByLabelText('Segundo edital',{exact:true}),{target:{value:'a'}});assert.match(screen.getByRole('alert').textContent,/dois editais diferentes/);
 });
@@ -172,4 +172,24 @@ test('question completion in one edital is visible in another, saves once and pe
  await waitFor(()=>assert.equal(stored.concursos[1].materias[0].topics[0].questionsTotal,5));fireEvent.click(screen.getByRole('button',{name:'conciliar editais',exact:true}));assert.ok(await screen.findByText('19/25',{exact:true}));assert.ok(screen.getByText('5 questões em outros editais · 60% de acertos',{exact:true}));
  fireEvent.click(screen.getByRole('button',{name:'Pular assunto já praticado',exact:true}));await waitFor(()=>assert.equal(stored.concursos[0].materias[0].topics[0].skippedFromShared,true));assert.equal(Object.values(stored.questionActivity).reduce((n,b)=>n+b.total,0),5);assert.equal(Object.values(stored.activity).reduce((n,c)=>n+c,0),1);assert.equal(stored.concursos[0].materias[0].topics[0].questionsTotal,20);assert.ok(stored.concursos.every(c=>c.materias.every(m=>m.topics.every(t=>t.crossStudy===undefined))));
  cleanup();render(React.createElement(App,{user:{email:'shared@example.com'},onLogout(){},onUserUpdate(){}}));await screen.findByRole('button',{name:'conciliar editais',exact:true});fireEvent.click(screen.getByRole('button',{name:'conciliar editais',exact:true}));await screen.findByRole('button',{name:'Voltar a estudar',exact:true});
+});
+
+test('conciliation saves weekly availability and materia weights through explicit controls',()=>{
+ const hours=[],weights=[];const concursos=[{id:'a',name:'A',examDate:'2026-12-01',materias:[{id:'am',name:'Português',topics:[{id:'at',name:'Crase',status:'pendente'}]}]},{id:'b',name:'B',materias:[{id:'bm',name:'Português',topics:[{id:'bt',name:'Crase',status:'pendente'}]}]}];
+ render(React.createElement(ConciliacaoView,{concursos,activeConcursoId:'a',onHours:n=>hours.push(n),onWeight:(...args)=>weights.push(args)}));
+ fireEvent.change(screen.getByLabelText('Horas disponíveis por semana'),{target:{value:'10'}});assert.deepEqual(hours,[10]);
+ fireEvent.click(screen.getByText('Ajustar importância das matérias'));const input=screen.getByLabelText('Peso de Português em A');fireEvent.change(input,{target:{value:'3'}});fireEvent.blur(input);assert.deepEqual(weights,[['a','am',3]]);
+ fireEvent.change(input,{target:{value:'-1'}});fireEvent.blur(input);assert.equal(weights.length,1);
+});
+
+test('deleting a source edital preserves practice in the account and after reloading',async()=>{
+ const {makeConcurso}=await import('../src/data/model.js');const a=makeConcurso('Fonte',0),b=makeConcurso('Destino',1);a.id='a';b.id='b';
+ a.materias=[{id:'am',name:'Português',topics:[{id:'at',name:'Crase',status:'pendente',questionsTotal:80,questionsCorrect:64,lastPracticeDate:'2026-10-03'}]}];
+ b.materias=[{id:'bm',name:'Português',topics:[{id:'bt',name:'Crase',status:'pendente'}]}];
+ let stored={concursos:[a,b],activeConcursoId:'b',activity:{},questionActivity:{},studyMinutes:{}};let revision=1;
+ globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);assert.equal(body.revision,revision);stored=JSON.parse(body.value);return response({revision:++revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};
+ const props={user:{email:'archive@example.com'},onLogout(){},onUserUpdate(){}};
+ render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'concursos',exact:true}));fireEvent.click(screen.getAllByRole('button',{name:'excluir concurso'})[0]);
+ await waitFor(()=>assert.equal(stored.practiceArchive?.length,1));assert.equal(stored.concursos.length,1);assert.equal(stored.practiceArchive[0].topic.questionsTotal,80);assert.deepEqual(stored.activity,{});assert.ok(screen.getByText('Histórico preservado'));
+ cleanup();render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'hoje',exact:true}));assert.ok(await screen.findByText('80 questões em outros editais · 80% de acertos',{exact:true}));assert.ok(screen.getByRole('button',{name:'Pular assunto já praticado',exact:true}));
 });

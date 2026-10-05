@@ -1,3 +1,4 @@
+import { PracticeHistoryPanel } from "../components/PracticeHistoryPanel.jsx";
 import { EditalTemplateImporter } from "../components/EditalTemplateImporter.jsx";
 import { concursoSummary } from "../lib/studyInsights.js";
 import { isSafeStudyLink } from "../lib/planValidation.js";
@@ -8,7 +9,7 @@ import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 import { examCountdownInfo } from "../lib/examCountdown.js";
 
-export function ConcursosView({ concursos, activeConcursoId, newConcursoName, setNewConcursoName, addConcurso, selectConcurso, removeConcurso, renameConcurso, setExamDate, resetCycle, onMetadata, onImport, activeConcurso }) {
+export function ConcursosView({ concursos, activeConcursoId, newConcursoName, setNewConcursoName, addConcurso, selectConcurso, removeConcurso, renameConcurso, setExamDate, resetCycle, onMetadata, onImport, activeConcurso, practiceArchive }) {
   return (
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>concursos</div>
@@ -47,6 +48,7 @@ export function ConcursosView({ concursos, activeConcursoId, newConcursoName, se
           />
         ))}
       </div>
+      <PracticeHistoryPanel rows={practiceArchive} />
       <div style={{marginTop:24}}><EditalTemplateImporter onImport={onImport} activeConcurso={activeConcurso} /></div>
     </div>
   );

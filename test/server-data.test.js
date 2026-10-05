@@ -327,3 +327,21 @@ test('manual topic equivalence and optional skip survive API reload without copy
   assert.equal((await api('/api/data', { method: 'PUT', cookie: user.cookie, body: { value: JSON.stringify(invalid) } })).status, 400);
   assert.deepEqual(JSON.parse((await api('/api/data', { cookie: user.cookie })).body.value), skipped);
 });
+
+test('preserved topic history survives API reload and malformed archives cannot overwrite it', async () => {
+  const { preservePractice } = await import('../src/lib/practiceHistory.js');
+  const { buildPracticeIndex, decorateConcurso } = await import('../src/lib/editalCompatibility.js');
+  const user = await registerFresh();
+  const original = { concursos: [
+    { id:'archive-source',name:'Origem',materias:[{id:'m1',name:'Português',topics:[{id:'t1',name:'Crase',questionsTotal:80,questionsCorrect:64,lastPracticeDate:'2026-10-03',history:[{date:'2026-10-03',questionsTotal:80,questionsCorrect:64}]}]}]},
+    { id:'target',name:'Destino',materias:[{id:'m2',name:'Língua Portuguesa',weight:2,topics:[{id:'t2',name:'Crase',status:'pendente'}]}]}
+  ],activeConcursoId:'target',availableHoursPerWeek:10 };
+  const saved = preservePractice(original,{...original,concursos:[original.concursos[1]]});
+  assert.equal((await api('/api/data',{method:'PUT',cookie:user.cookie,body:{value:JSON.stringify(saved)}})).status,200);
+  const restored=JSON.parse((await api('/api/data',{cookie:user.cookie})).body.value);
+  assert.deepEqual(restored,saved);
+  assert.equal(decorateConcurso(restored.concursos[0],buildPracticeIndex(restored.concursos,restored.practiceArchive)).materias[0].topics[0].crossStudy.otherTotal,80);
+  const invalid=structuredClone(saved);invalid.practiceArchive[0].topic.questionsCorrect=81;
+  assert.equal((await api('/api/data',{method:'PUT',cookie:user.cookie,body:{value:JSON.stringify(invalid)}})).status,400);
+  assert.deepEqual(JSON.parse((await api('/api/data',{cookie:user.cookie})).body.value),saved);
+});

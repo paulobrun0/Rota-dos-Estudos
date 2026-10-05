@@ -124,7 +124,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
     await onLogout();
   }
 
-  const practiceIndex = useMemo(() => buildPracticeIndex(data?.concursos), [data?.concursos]);
+  const practiceIndex = useMemo(() => buildPracticeIndex(data?.concursos, data?.practiceArchive), [data?.concursos, data?.practiceArchive]);
   const activeConcurso = useMemo(() => decorateConcurso(data?.concursos.find(c => c.id === data.activeConcursoId), practiceIndex), [data, practiceIndex]);
   const skipShared = ref => {
     setData(d => applySharedSkip(d, ref, todayISO()));
@@ -182,7 +182,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           // actually progress through them across multiple days.
           const existingToday = c.dailyPlans[today];
           const base = existingToday || (mostRecentPlanBefore(c.dailyPlans, today) || []).filter((card) => !card.manual && !card.feito);
-          const { cards, cursor } = buildDayPlan(c, base, today);
+          const { cards, cursor } = buildDayPlan(c, base, today, buildPracticeIndex(prev.concursos, prev.practiceArchive));
           return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
         }),
       };
@@ -293,6 +293,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         if (item.tipo === "novo") scheduleFirstReview(topic, iso);
         else advanceReview(topic, iso);
         if (questions) {
+          topic.lastPracticeDate = [topic.lastPracticeDate || "", iso].sort().at(-1);
           topic.questionsTotal = (topic.questionsTotal || 0) + questions.total;
           topic.questionsCorrect = (topic.questionsCorrect || 0) + questions.correct;
           clone.questionActivity = clone.questionActivity || {};
@@ -332,7 +333,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
       // Only today's plan drives the live rotation — a retroactive edit to
       // a past day's history shouldn't reach forward and move the cursor.
       if (iso === todayISO()) {
-        const { cards, cursor } = buildDayPlan(c, plan, iso);
+        const { cards, cursor } = buildDayPlan(c, plan, iso, buildPracticeIndex(clone.concursos, clone.practiceArchive));
         c.dailyPlans[iso] = cards;
         c.cycleCursor = cursor;
       }
@@ -381,7 +382,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
     const today = todayISO();
     updateActive((c) => {
       const base = c.dailyPlans[today] || [];
-      const { cards, cursor } = buildCyclePlan(c.materias, c.settings, c.cycleCursor, base, today);
+      const { cards, cursor } = buildCyclePlan(decorateConcurso(c, practiceIndex).materias, c.settings, c.cycleCursor, base, today);
       const normalIds = activeMateriaIds(c.materias, c.settings, cursor);
       if (normalIds.length >= c.materias.length) return { ...c, cycleCursor: cursor, dailyPlans: { ...c.dailyPlans, [today]: cards } };
       const cursorIdx = c.materias.findIndex((m) => m.id === cursor);
@@ -688,6 +689,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             delete reset.skippedFromShared;
             if (!keepHistory) {
               delete reset.history;
+              delete reset.lastPracticeDate;
               delete reset.questionsTotal;
               delete reset.questionsCorrect;
             }
@@ -857,6 +859,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             addConcurso={addConcurso}
             selectConcurso={selectConcurso}
             removeConcurso={removeConcurso}
+            practiceArchive={data.practiceArchive}
             renameConcurso={renameConcurso}
             setExamDate={setExamDate}
             resetCycle={resetCycle}
@@ -903,7 +906,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
           <EmptyConcursoState onGo={() => setTab("concursos")} />
         )}
 
-        {tab === "conciliar" && <ConciliacaoView concursos={data.concursos} activeConcursoId={data.activeConcursoId}
+        {tab === "conciliar" && <ConciliacaoView concursos={data.concursos} activeConcursoId={data.activeConcursoId} practiceArchive={data.practiceArchive} availableHours={data.availableHoursPerWeek} studyDays={data.studyDays}
+          onHours={value => setData(d => ({ ...d, availableHoursPerWeek: value }))}
+          onWeight={(concursoId, materiaId, weight) => setData(d => ({ ...d, concursos: d.concursos.map(c => c.id !== concursoId ? c : ({ ...c, materias: c.materias.map(m => m.id !== materiaId ? m : ({ ...m, weight })) })) }))}
           onLink={(left, right) => setData(d => linkEquivalentTopics(d, left, right, `shared:${uid()}`))}
           onUnlink={ref => setData(d => removeManualEquivalence(d, ref))} onSkip={skipShared} onUndo={undoShared} />}
         {tab === "painel" && activeConcurso && <DashboardView concurso={activeConcurso} onNavigate={goTab} />}

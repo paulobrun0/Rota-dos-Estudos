@@ -4,11 +4,15 @@ Planejador de estudos para concursos com painel de desempenho, edital, ciclos po
 
 ## Conciliar editais e aproveitar a prática
 
-Abra **Conciliar editais** e escolha dois concursos. A tela mostra assuntos em comum, porcentagem de cobertura de cada edital, sobreposição global (interseção ÷ união) e assuntos exclusivos. Os denominadores contam assuntos distintos, evitando inflar a comparação com entradas repetidas. A análise compara conteúdo; datas, banca, pesos e profundidade também influenciam a preparação.
+Abra **Conciliar editais** e escolha dois concursos. A tela mostra assuntos em comum, porcentagem de cobertura de cada edital, sobreposição global (interseção ÷ união) e assuntos exclusivos. Os denominadores contam assuntos distintos, evitando inflar a comparação com entradas repetidas. A tela também mostra cobertura ponderada, pesos configuráveis por assunto e uma estimativa de carga até a primeira prova. Informe as horas semanais disponíveis para os dois editais e ajuste os pesos em **Ajustar importância das matérias**. A estimativa deduplica assuntos comuns e usa minutos por matéria ÷ assuntos por dia; revisões, prática e imprevistos precisam de reserva adicional.
 
 Matéria e assunto iguais são reconhecidos ignorando acentos, pontuação e numeração. Português e Língua Portuguesa são tratados como a mesma matéria. Para nomes diferentes, selecione os assuntos e use **Confirmar assuntos equivalentes**. O vínculo manual pode ser removido. Uma semelhança de palavras, sozinha, não cria equivalência automática.
 
 Questões registradas na plataforma aparecem somadas nos assuntos equivalentes dos seus outros editais, com origem e acertos. Os registros locais e a atividade global não são copiados nem duplicados. Em Hoje, Edital e na comparação, **Pular assunto já praticado** aproveita a etapa inicial, mantém revisões e não conta nova atividade nem domínio. **Voltar a estudar** desfaz o aproveitamento enquanto ele ainda não foi substituído por estudo real. Resultados de Qconcursos ou TEC continuam dependendo do registro manual na plataforma.
+
+Excluir um concurso, matéria ou assunto agora preserva os registros existentes de prática (quantidade, acertos, erros derivados, data e histórico). Eles aparecem em **Concursos → Histórico preservado**, continuam no backup e podem ser aproveitados por novos editais equivalentes. Exclusões anteriores a esta versão só podem ser recuperadas se houver um backup. Uma restauração da mesma origem não duplica os registros.
+
+Os detalhes da prática distinguem amostras menores que 20 questões, desempenho abaixo de 80% e prática com mais de 30 dias. São indicadores de atenção, sem comprovar domínio; dados antigos sem data ficam identificados. **Hoje → Prioridades do plano de hoje** explica as sugestões por desempenho compartilhado, peso e atraso. A seleção de revisões usa esses critérios sem alterar seu ciclo ou cronograma. Detalhes de prática e ações ficam recolhidos na comparação para manter as tabelas compactas.
 
 ## Cadernos de questões externos
 
@@ -113,12 +117,11 @@ Use **Node.js 22.13 ou superior**. `.nvmrc` indica a versão principal usada no 
 ```bash
 npm ci
 cp .env.example .env
-# Preencha JWT_SECRET com um segredo gerado para esta instalação.
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+# Configure o ambiente local seguindo .env.example.
 npm run dev
 ```
 
-O Vite normalmente abre em `http://localhost:5173`. A API usa a porta 4000 e o proxy de desenvolvimento encaminha `/api` para ela. Para VAPID, gere as chaves indicadas em `.env.example` e preencha as duas variáveis; notificações são opcionais.
+O Vite normalmente abre em `http://localhost:5173`. A API usa a porta 4000 e o proxy de desenvolvimento encaminha `/api` para ela. Notificações são opcionais.
 
 ```bash
 npm run dev:client  # Vite
@@ -144,63 +147,11 @@ A API e o importador de backups validam a estrutura do plano, listas, contagens 
 
 ## Dados e recuperação
 
-O SQLite guarda contas, planos, histórico individual de questões, catálogo, questões, notificações e auditoria. `SQLITE_PATH` e `BACKUP_DIR` podem apontar para volumes persistentes; sem configuração, ficam em `server/data.sqlite` e `server/backups`.
+Em **Ajustes**, exporte o plano antes de substituí-lo e guarde o arquivo para recuperar concursos, anotações, prática preservada e atividade. O JSON do plano não inclui o histórico individual de respostas do caderno, mantido separadamente pela conta. Para recuperar a conta, utilize o código de recuperação apresentado no cadastro.
 
-O JSON exportado em Ajustes contém concursos, planos, anotações e histórico de atividade. O histórico individual de respostas às questões pertence à conta no servidor e é preservado pelo **backup SQLite completo**, não pelo JSON do plano. Importar JSON não apaga esse histórico de respostas. Os ids de concursos/assuntos do backup mantêm o vínculo com ele.
+## Publicação
 
-O código de recuperação é mostrado no cadastro e substituído após o uso. Guarde-o com segurança: sem ele e sem a senha, a recuperação exige intervenção administrativa. Não há envio por e-mail implementado.
-
-## Backups e restauração
-
-A API cria um snapshot consistente com `VACUUM INTO` ao iniciar e a cada 12 horas, além do acionamento manual pelo administrador. São mantidos os 14 arquivos mais recentes.
-
-Para proteger contra perda do servidor, monte um volume de backup externo e configure `BACKUP_REPLICA_DIR`. A aplicação copia cada snapshot, compara SHA-256 e publica o arquivo por renomeação, mantendo também 14 réplicas. O código não provisiona armazenamento remoto: essa variável precisa apontar para o volume que você efetivamente montou. Falhas de cópia são registradas, e o snapshot local é preservado.
-
-Para restaurar:
-
-1. Pare a API e mantenha-a parada durante a restauração.
-2. Escolha um snapshot SQLite local ou uma cópia da réplica.
-3. Execute:
-
-```bash
-npm run restore -- --source /caminho/backup.sqlite --target /caminho/data.sqlite --server-stopped
-```
-
-4. Inicie a API e confira o login e o plano restaurado.
-
-A ferramenta verifica a integridade e as tabelas antes de substituir o banco. O banco anterior e seus arquivos auxiliares são preservados com sufixo `.before-restore-*` para retorno à versão anterior. O arquivo de origem permanece intacto. Os testes exercitam restauração e rejeição de arquivos inválidos; faça também um ensaio com uma cópia do seu backup de produção.
-
-## Produção
-
-Para login e dados funcionarem, hospede a API e o build **na mesma origem**, com HTTPS e um volume persistente para o SQLite. O Express serve `dist/` e `/api`.
-
-```bash
-npm ci
-npm run check
-NODE_ENV=production npm start
-```
-
-Configure um `JWT_SECRET` próprio com pelo menos 32 caracteres. Em produção, a API recusa iniciar sem ele ou com o exemplo antigo. O cookie usa `httpOnly`, `sameSite=lax` e `secure` em produção.
-
-A aplicação confia em um proxy reverso. Ajuste essa configuração em `server/index.js` se a topologia real usar uma quantidade diferente de proxies. Use um supervisor de processos para reiniciar a API e mantenha as variáveis e os volumes fora do repositório.
-
-### Oracle: deploy automático da main
-
-A aplicação principal está em `https://app.paulobruno.dev`, hospedada na Oracle. A Cloudflare cuida do domínio.
-
-O workflow inclui **Deploy Oracle**, executado após **Test and build** em pushes para `main` e execuções manuais. Os arquivos de release são entregues por SSH, com os dados persistentes preservados. Uma execução cujo commit deixou de ser a ponta da `main` é ignorada na etapa de entrega.
-
-O deploy prepara as dependências antes de parar a aplicação, guarda uma cópia da instalação e um snapshot SQLite consistente, atualiza código e build e verifica o identificador do commit publicado e a saúde da API. Se falhar, tenta retornar ao código e às dependências anteriores. O banco atual permanece intacto; os snapshots permitem recuperação manual pelo procedimento acima.
-
-A configuração de acesso e a localização dos dados são mantidas na infraestrutura de implantação. Monitore o espaço disponível e defina uma política de retenção para releases e backups.
-
-### GitHub Pages
-
-O workflow `.github/workflows/deploy.yml` roda testes e build no Node indicado em `.nvmrc`. Só publica depois da aprovação dessas etapas, em pushes/execuções manuais da `main`. Pull requests são verificados sem publicação.
-
-Em **Settings > Pages**, selecione **GitHub Actions**. Em proteção da branch, exija o check **Test and build** antes de mesclar alterações.
-
-GitHub Pages publica apenas arquivos estáticos e não executa Express/SQLite. A aplicação usa `/api` na mesma origem, portanto essa publicação isolada não oferece login funcional. Para a aplicação completa, use a hospedagem descrita acima. O manifesto PWA usa caminhos relativos para também respeitar instalações em subdiretórios.
+A plataforma completa precisa da API e do frontend na mesma origem, com HTTPS e armazenamento persistente. O GitHub Actions verifica testes e build antes da publicação. Confira o resultado na aba **Actions** do repositório.
 
 ## Estrutura
 

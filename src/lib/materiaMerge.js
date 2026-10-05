@@ -1,3 +1,4 @@
+import { decorateConcurso } from "./editalCompatibility.js";
 // Pure helpers behind App.jsx's edital-import flows (free-text bulk paste,
 // content-bank import) — pulled out of App.jsx so they're plain functions a
 // test can import directly, with no React/JSX involved.
@@ -35,7 +36,8 @@ export function mostRecentPlanBefore(dailyPlans, iso) {
 // Always returns { cards, cursor } so callers can spread cycleCursor
 // unconditionally; cronograma has no cursor of its own, so it just passes
 // the concurso's existing one through untouched.
-export function buildDayPlan(c, base, today) {
+export function buildDayPlan(c, base, today, practiceIndex) {
+  if (practiceIndex) c = decorateConcurso(c, practiceIndex);
   if (c.planMode === "cronograma") {
     const { cards } = buildCronogramaPlan(c.materias, c.settings, c.cronograma, base, today);
     return { cards, cursor: c.cycleCursor };

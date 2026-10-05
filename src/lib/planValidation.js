@@ -47,6 +47,7 @@ function validateMaterias(materias) {
   distinct(materias, "matérias");
   for (const materia of materias) {
     text(materia.name, "nome da matéria");
+    if (materia.weight !== undefined) { count(materia.weight, "peso da matéria", false); requireValue(materia.weight > 0 && materia.weight <= 100, "peso deve estar entre 0 e 100"); }
     distinct(materia.topics, "assuntos");
     for (const topic of materia.topics) {
       text(topic.name, "nome do assunto");
@@ -72,6 +73,15 @@ function validateMaterias(materias) {
       requireValue((topic.questionsCorrect || 0) <= (topic.questionsTotal || 0), "acertos excedem o total de questões");
       optionalCount(topic, "reviewStep");
       if (topic.nextReviewDate != null) date(topic.nextReviewDate);
+      if (topic.lastPracticeDate != null) date(topic.lastPracticeDate);
+      if (topic.history !== undefined) {
+        requireValue(Array.isArray(topic.history), "histórico do assunto inválido");
+        for (const entry of topic.history) {
+          requireValue(object(entry), "registro de histórico inválido"); date(entry.date);
+          optionalCount(entry, "questionsTotal"); optionalCount(entry, "questionsCorrect");
+          requireValue((entry.questionsCorrect || 0) <= (entry.questionsTotal || 0), "acertos do histórico excedem total");
+        }
+      }
     }
   }
 }
@@ -139,6 +149,16 @@ export function validatePlanData(raw) {
   } else {
     requireValue(Array.isArray(raw.materias), "faltam concursos ou matérias");
     validateConcurso(raw);
+  }
+  if (raw.availableHoursPerWeek != null) { count(raw.availableHoursPerWeek, "horas por semana", false); requireValue(raw.availableHoursPerWeek > 0 && raw.availableHoursPerWeek <= 168, "horas por semana devem estar entre 0 e 168"); }
+  if (raw.practiceArchive !== undefined) {
+    distinct(raw.practiceArchive, "histórico preservado");
+    for (const row of raw.practiceArchive) {
+      for (const field of ["concursoId", "concursoName", "materiaId", "materiaName", "topicId", "key"]) text(row[field], field);
+      requireValue(row.id === JSON.stringify([row.concursoId, row.materiaId, row.topicId]), "origem do histórico inválida");
+      requireValue(object(row.topic) && row.topic.id === row.topicId, "assunto preservado inválido");
+      validateMaterias([{ id: row.materiaId, name: row.materiaName, topics: [row.topic] }]);
+    }
   }
   if (raw.studyDays != null) requireValue(Array.isArray(raw.studyDays) && raw.studyDays.every((day) => weekdays.has(day)), "dias de estudo inválidos");
   for (const key of ["activity", "studyMinutes", "questionActivity"]) {

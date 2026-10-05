@@ -41,6 +41,7 @@ export function useTopicActions({ updateActive, setData, activeConcurso }) {
       const topic = concurso?.materias.find((materia) => materia.id === materiaId)?.topics.find((item) => item.id === topicId);
       if (!topic) return previous;
       const safeCorrect = Math.min(total, Math.max(0, correct));
+      topic.lastPracticeDate = iso;
       topic.questionsTotal = (topic.questionsTotal || 0) + total;
       topic.questionsCorrect = (topic.questionsCorrect || 0) + safeCorrect;
       clone.questionActivity ||= {};

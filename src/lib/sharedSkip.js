@@ -13,14 +13,14 @@ export function applySharedSkip(data, ref, today, undo = false) {
     t.status = 'pendente'; t.reviewStep = 0; t.nextReviewDate = null;
     delete t.skippedFromShared;
   } else {
-    const practice = sharedPractice(buildPracticeIndex(data.concursos), topicIdentity(m, t), c.id);
+    const practice = sharedPractice(buildPracticeIndex(data.concursos, data.practiceArchive), topicIdentity(m, t), c.id);
     if (t.status !== 'pendente' || practice.otherTotal <= 0) return data;
     t.status = 'estudado'; t.mastered = false; t.skippedFromShared = true;
     scheduleFirstReview(t, today);
   }
   if (c.dailyPlans?.[today]) {
     const base = c.dailyPlans[today].filter(card => card.topicId !== t.id || card.materiaId !== m.id || card.feito);
-    const { cards, cursor } = buildDayPlan(c, base, today);
+    const { cards, cursor } = buildDayPlan(c, base, today, buildPracticeIndex(clone.concursos, clone.practiceArchive));
     c.dailyPlans[today] = cards; c.cycleCursor = cursor;
   }
   return clone;

@@ -1,3 +1,4 @@
+import { studyPriority } from "../lib/studyPriorities.js";
 import { SharedPractice } from "../components/SharedPractice.jsx";
 import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
 import { getTopicLinks } from "../lib/topicLinks.js";
@@ -50,6 +51,11 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
   const qa = questionActivityToday || { total: 0, correct: 0 };
   const desempenhoPct = qa.total > 0 ? Math.round((qa.correct / qa.total) * 100) : null;
 
+  const priorities = plan.filter(card => !card.feito).map(card => {
+    const materia = materiaById(card.materiaId), topic = materia && topicById(materia, card.topicId);
+    return topic ? { card, materia, topic, ...studyPriority(materia, topic, selectedDate) } : null;
+  }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 5);
+
   const novosGroups = {};
   novos.forEach((card) => {
     if (!novosGroups[card.materiaId]) novosGroups[card.materiaId] = [];
@@ -65,6 +71,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
 
   return (
     <div>
+      {isToday && priorities.length > 0 && <details className="today-priorities"><summary>Prioridades do plano de hoje</summary><p className="muted">Ordem sugerida por desempenho, peso da matéria e atraso de revisão. Mantém seu ciclo e cronograma.</p><div className="topic-table-wrap"><table className="topic-table"><thead><tr><th>Assunto</th><th>Matéria</th><th>Por que priorizar</th></tr></thead><tbody>{priorities.map(row => <tr key={row.card.id}><td>{row.topic.name}</td><td>{row.materia.name}</td><td>{row.reason}</td></tr>)}</tbody></table></div></details>}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", rowGap: 10, marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button aria-label="dia anterior" onClick={() => setSelectedDate(addDaysISO(selectedDate, -1))} style={navBtnStyle}><ChevronLeft size={16} /></button>
