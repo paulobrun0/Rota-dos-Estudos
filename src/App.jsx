@@ -1,3 +1,4 @@
+import {withNotebookLinks,mergeNotebooks,recordNotebookPractice} from "./lib/notebooks.js";
 import {reviewStudyMark} from "./lib/learningTools.js";
 import {NotebookCatalogView} from "./views/NotebookCatalogView.jsx";
 import { PdfStudyView } from "./views/PdfStudyView.jsx";
@@ -144,7 +145,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
   }
 
   const practiceIndex = useMemo(() => buildPracticeIndex(data?.concursos, data?.practiceArchive), [data?.concursos, data?.practiceArchive]);
-  const activeConcurso = useMemo(() => decorateConcurso(data?.concursos.find(c => c.id === data.activeConcursoId), practiceIndex), [data, practiceIndex]);
+  const activeConcurso = useMemo(() => withNotebookLinks(data,decorateConcurso(data?.concursos.find(c => c.id === data.activeConcursoId), practiceIndex)), [data, practiceIndex]);
   const skipShared = ref => {
     setData(d => applySharedSkip(d, ref, todayISO()));
     if (ref.concursoId === activeConcurso?.id) {
@@ -963,7 +964,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         {tab === "marcacoes" && activeConcurso && <MarksView data={data} concurso={activeConcurso} onReview={(id,rating)=>setData(d=>reviewStudyMark(d,"studyMarks",id,rating,todayISO()))}
           onAdd={entry=>setData(d=>({...d,studyMarks:[...(d.studyMarks||[]),entry]}))}
           onRemove={id=>setData(d=>({...d,studyMarks:d.studyMarks.map(e=>e.id===id?{...e,archived:!e.archived}:e)}))} />}
-        {tab === "avulsas" && activeConcurso && <NotebookCatalogView data={data} concurso={activeConcurso} onAdd={e=>setData(d=>({...d,questionNotebooks:[...(d.questionNotebooks||[]),e]}))} onRemove={id=>setData(d=>({...d,questionNotebooks:(d.questionNotebooks||[]).filter(e=>e.id!==id)}))}/>}
+        {tab === "avulsas" && activeConcurso && <NotebookCatalogView key={activeConcurso.id} data={data} concurso={activeConcurso} onAdd={e=>{const next=mergeNotebooks(data,[e]);validatePlanData(next);setData(d=>d===data?next:mergeNotebooks(d,[e]));}} onImport={entries=>{const next=mergeNotebooks(data,entries);validatePlanData(next);setData(d=>d===data?next:mergeNotebooks(d,entries));}} onPractice={(ref,result)=>{const next=recordNotebookPractice(data,activeConcurso.id,ref,result,todayISO());setData(d=>d===data?next:recordNotebookPractice(d,activeConcurso.id,ref,result,todayISO()));}} onRemove={id=>setData(d=>({...d,questionNotebooks:(d.questionNotebooks||[]).map(e=>e.id===id?{...e,archived:!e.archived}:e)}))}/>}
         {tab === "avulsas" && activeConcurso && <QuestionHubView concurso={activeConcurso} onLinks={updateTopicLink} onMaterials={updateTopicMaterials} onAnswer={addTopicQuestions} questionCounts={questionCounts} />}
         {tab === "pdf" && activeConcurso && <PdfStudyView data={data} concurso={activeConcurso} onReview={(id,rating)=>setData(d=>reviewStudyMark(d,"pdfAnnotations",id,rating,todayISO()))} onAdd={entry=>setData(d=>({...d,pdfAnnotations:[...(d.pdfAnnotations||[]),entry]}))} onRemove={id=>setData(d=>({...d,pdfAnnotations:(d.pdfAnnotations||[]).filter(e=>e.id!==id)}))} />}
         {tab === "ferramentas" && activeConcurso && <StudyToolsView data={data} concurso={activeConcurso} onArea={studyArea=>setData(d=>({...d,studyPreferences:{...d.studyPreferences,studyArea}}))}

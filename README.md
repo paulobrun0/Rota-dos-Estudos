@@ -216,3 +216,13 @@ No menu **Leitor PDF**, abra um arquivo local de até 30 MB, selecione um trecho
 A plataforma usa identidade própria em azul-petróleo e verde-água, com temas claro e escuro e preferência salva. Cobrança, atendimento humano e catálogo comercial não fazem parte do escopo.
 
 O cronômetro do painel permanece ao mudar de tela ou recarregar, separado por conta, edital e dia. Ao concluir, registra o tempo medido; sem iniciar o cronômetro, utiliza a estimativa da tarefa. O calendário mostra o histórico dos dias passados e projeta os próximos dias supondo a conclusão das tarefas. A projeção respeita disponibilidade e dependências; desempenho futuro pode alterar revisões. O leitor PDF permite buscar palavras em todo o documento e navegar pelos resultados.
+
+### Fluxo de cadernos TEC e Qconcursos
+
+Em **Questões avulsas**, selecione um assunto e abra **Assistente de criação no TEC**. Informe banca e anos, copie o roteiro e aplique os filtros no TEC. Crie o caderno na sua conta externa e cole o link no cadastro. Não há criação automática ou coleta de credenciais.
+
+Os cadernos aparecem também nos botões dos assuntos e nos editais equivalentes, com indicação da origem. Correspondências manuais de assuntos também são respeitadas. Os cadastros não são copiados; arquivar o caderno de origem o oculta nas demais telas e restaurar o torna disponível novamente.
+
+**Importar cadernos em lote** aceita CSV (vírgula ou ponto e vírgula), TSV e listas JSON, até 500 registros/2 MiB. Colunas: `materia`, `assunto`, `banca`, `titulo`, `url`; opcionais `anoInicial` e `anoFinal`. Use os nomes exatos do edital. A prévia exige confirmação; linhas inválidas impedem toda a importação. Reimportar os mesmos links por assunto não duplica cadastros.
+
+Ao voltar da prática, use **Registrar prática** junto ao caderno para informar questões, acertos e minutos. O lançamento atualiza uma única origem, os totais globais e o tempo. Nos assuntos já estudados, ajusta a próxima revisão. Não conclui tarefas nem copia contagens nos editais equivalentes. O diagnóstico mostra falta de caderno TEC, baixo aproveitamento e revisão atrasada.

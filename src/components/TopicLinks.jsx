@@ -9,7 +9,7 @@ export function TopicLinkButtons({ topic }) {
   const links = getTopicLinks(topic);
   return <>{STUDY_PLATFORMS.filter(({ key }) => links[key] && isSafeStudyLink(links[key])).map(({ key, label }) => (
     <a key={key} href={links[key]} target="_blank" rel="noopener noreferrer" aria-label={`abrir ${label}`} style={{ color: colors.success, fontSize: 11, padding: "4px 0" }}>{label}</a>
-  ))}{(topic.materials || []).filter(m => isSafeStudyLink(m.url) && m.url).map(m => <a key={m.id} href={m.url} target="_blank" rel="noopener noreferrer" title={m.name} style={{ color: colors.accent, fontSize: 11 }}>{MATERIAL_TYPES[m.type]}: {m.name}</a>)}</>;
+  ))}{(topic.notebookLinks||[]).filter(n=>isSafeStudyLink(n.url)&&!Object.values(links).includes(n.url)).map(n=><a key={n.id} href={n.url} target="_blank" rel="noopener noreferrer" aria-label={`abrir caderno ${n.title}`} title={`${n.bank}${n.shared?` · Reutilizado de ${n.sourceConcursoName}`:''}`} style={{color:colors.success,fontSize:11,padding:'4px 0'}}>{n.title} · {n.provider==='tec'?'TEC':n.provider==='qconcursos'?'Qconcursos':n.bank}</a>)}{(topic.materials || []).filter(m => isSafeStudyLink(m.url) && m.url).map(m => <a key={m.id} href={m.url} target="_blank" rel="noopener noreferrer" title={m.name} style={{ color: colors.accent, fontSize: 11 }}>{MATERIAL_TYPES[m.type]}: {m.name}</a>)}</>;
 }
 
 export function TopicLinksEditor({ topic, onSave, onSaveMaterials, onClose }) {

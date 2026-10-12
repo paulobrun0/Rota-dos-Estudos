@@ -1,0 +1,43 @@
+import {buildPracticeIndex,flattenEdital,topicIdentity,normalizeStudyName,decorateConcurso} from './editalCompatibility.js';
+import {getTopicLinks} from './topicLinks.js';
+import {isSafeStudyLink} from './planValidation.js';
+import {topicDiagnostics,adaptiveInterval} from './learningTools.js';
+import {addDaysISO} from './date.js';
+export function notebookProvider(url){try{const host=new URL(url).hostname;return /(^|\.)tecconcursos\.com\.br$/.test(host)?'tec':/(^|\.)qconcursos\.com$/.test(host)?'qconcursos':'other';}catch{return 'other';}}
+const canonical=url=>{const value=new URL(url);value.hash='';value.searchParams.sort();return value.href;};
+export const notebookKey=n=>JSON.stringify([n.concursoId,n.materiaId,n.topicId,canonical(n.url)]);
+export function mergeNotebooks(data,entries){const all=[...(data.questionNotebooks||[])],keys=new Set(all.map(notebookKey));for(const entry of entries){const key=notebookKey(entry);if(keys.has(key))continue;keys.add(key);all.push(entry);}if(all.length>5000)throw Error("A importação ultrapassa o limite de 5.000 cadernos. Revise a quantidade de registros.");return {...data,questionNotebooks:all};}
+export function notebookRows(data,concursoId){
+ const concursos=data.concursos||[],index=buildPracticeIndex(concursos,data.practiceArchive),raw=concursos.find(c=>c.id===concursoId);if(!raw)return [];
+ const live=concursos.flatMap(flattenEdital),lookup=new Map(live.map(r=>[JSON.stringify([r.concursoId,r.materiaId,r.topicId]),r]));
+ const resolve=key=>index.aliases.get(key)||key;
+ const sources=(data.questionNotebooks||[]).filter(n=>!n.archived).map(n=>{const r=lookup.get(JSON.stringify([n.concursoId,n.materiaId,n.topicId]));return {...n,sourceKind:'catalog',subjectKey:resolve(r?.key||n.subjectKey),sourceConcursoName:r?.concursoName||'Edital removido'};});
+ for(const r of live)for(const [provider,url] of Object.entries(getTopicLinks(r.topic))){if(!url||!isSafeStudyLink(url))continue;sources.push({id:JSON.stringify(['topic-link',r.concursoId,r.materiaId,r.topicId,provider]),concursoId:r.concursoId,materiaId:r.materiaId,topicId:r.topicId,title:r.topic.name,bank:concursos.find(c=>c.id===r.concursoId)?.banca||'Não informada',url,subjectKey:resolve(r.key),sourceKind:'topic',sourceConcursoName:r.concursoName});}
+ const grouped=new Map();for(const n of sources){if(!n.subjectKey)continue;const list=grouped.get(n.subjectKey)||[];list.push(n);grouped.set(n.subjectKey,list);}
+ const rows=[];for(const target of flattenEdital(raw)){const seen=new Set();for(const n of grouped.get(resolve(target.key))||[]){const key=canonical(n.url);if(seen.has(key))continue;seen.add(key);rows.push({...n,provider:notebookProvider(n.url),targetMateriaId:target.materiaId,targetTopicId:target.topicId,targetMateriaName:target.materiaName,targetTopicName:target.topic.name,shared:n.concursoId!==concursoId||n.materiaId!==target.materiaId||n.topicId!==target.topicId});}}
+ return rows;
+}
+export function withNotebookLinks(data,concurso){if(!concurso)return null;const rows=notebookRows(data,concurso.id);return {...concurso,materias:concurso.materias.map(m=>({...m,topics:m.topics.map(t=>({...t,notebookLinks:rows.filter(n=>n.targetMateriaId===m.id&&n.targetTopicId===t.id)}))}))};}
+export function notebookDiagnostics(data,concursoId,today){const raw=data.concursos.find(c=>c.id===concursoId);if(!raw)return [];const rows=notebookRows(data,concursoId),decorated=decorateConcurso(raw,buildPracticeIndex(data.concursos,data.practiceArchive));return topicDiagnostics(decorated,data,today).map(r=>{const books=rows.filter(n=>n.targetMateriaId===r.materia.id&&n.targetTopicId===r.topic.id),reasons=[];if(!books.length)reasons.push('Sem caderno vinculado');else if(!books.some(n=>n.provider==='tec'))reasons.push('Sem caderno TEC');if(r.alert)reasons.push(`Aproveitamento abaixo de ${r.threshold}%`);if(r.overdue)reasons.push('Revisão atrasada');return {...r,books,reasons};});}
+export function notebookBrief(concurso,ref,bank,from,to){const m=concurso.materias.find(m=>m.id===ref.materiaId),t=m?.topics.find(t=>t.id===ref.topicId);return `Matéria: ${m?.name||''}\nAssunto: ${t?.name||''}\nBanca: ${bank||'Todas'}\nAnos: ${from||'Sem início'} a ${to||'Sem fim'}\nNo TEC: selecione os filtros, confira as questões, crie o caderno e copie seu link.`;}
+function csvRows(input){const first=input.split(/\r?\n/)[0],delimiter=first.includes('\t')?'\t':first.includes(';')?';':',';const rows=[];let row=[],cell='',quoted=false;
+ for(let i=0;i<input.length;i++){const c=input[i];if(c==='"'){if(quoted&&input[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}else if(!quoted&&c===delimiter){row.push(cell);cell='';}else if(!quoted&&(c==='\n'||c==='\r')){if(c==='\r'&&input[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell='';}else cell+=c;}
+ if(quoted)throw Error('Há aspas abertas no arquivo.');row.push(cell);if(row.some(v=>v.trim()))rows.push(row);const headers=(rows.shift()||[]).map(h=>normalizeStudyName(h.replace(/^\uFEFF/,'')));return rows.map(values=>Object.fromEntries(headers.map((h,i)=>[h,values[i]||''])));
+}
+export function parseNotebookImport(input,concurso){if(input.length>2*1024*1024)throw Error('Use um arquivo de até 2 MiB.');let rows;if(input.trim().startsWith('['))rows=JSON.parse(input);else rows=csvRows(input);if(!Array.isArray(rows)||!rows.length||rows.length>500)throw Error('Use de 1 a 500 cadernos.');const entries=[],seen=new Set();for(const [i,value] of rows.entries()){
+ if(!value||typeof value!=='object'||Array.isArray(value))throw Error(`Linha ${i+2}: registro inválido.`);
+ const row=Object.fromEntries(Object.entries(value).map(([key,v])=>[normalizeStudyName(key),v]));
+ const materia=String(row.materia||'').trim(),assunto=String(row.assunto||'').trim(),bank=String(row.banca||'').trim(),title=String(row.titulo||'').trim(),url=String(row.url||'').trim();const targets=concurso.materias.flatMap(m=>m.topics.map(t=>({m,t}))).filter(({m,t})=>normalizeStudyName(m.name)===normalizeStudyName(materia)&&normalizeStudyName(t.name)===normalizeStudyName(assunto));
+ if(targets.length!==1||!bank||bank.length>100||!title||title.length>200||!url||!isSafeStudyLink(url))throw Error(`Linha ${i+2}: confira matéria, assunto, banca, título e URL. Nomes precisam identificar um único assunto do edital.`);
+ const {m,t}=targets[0],n={concursoId:concurso.id,materiaId:m.id,topicId:t.id,subjectKey:topicIdentity(m,t),title,bank,url};for(const [header,field] of [['ano inicial','yearFrom'],['ano final','yearTo'],['anoinicial','yearFrom'],['anofinal','yearTo']])if(row[header]){const year=Number(row[header]);if(!Number.isInteger(year)||year<1900||year>2100)throw Error(`Linha ${i+2}: ano inválido.`);n[field]=year;}if(n.yearFrom&&n.yearTo&&n.yearFrom>n.yearTo)throw Error(`Linha ${i+2}: confira o intervalo de anos.`);
+ n.id=JSON.stringify(['notebook-import',notebookKey(n)]);if(!seen.has(notebookKey(n))){seen.add(notebookKey(n));entries.push(n);}}
+ return entries;
+}
+export function recordNotebookPractice(data,concursoId,ref,result,today){
+ const {id,notebookId,total,correct,minutes=0}=result;if(typeof id!=='string'||!id||typeof notebookId!=='string'||!notebookId||!Number.isSafeInteger(total)||total<=0||!Number.isSafeInteger(correct)||correct<0||correct>total||!Number.isSafeInteger(minutes)||minutes<0||minutes>1440)throw Error('Confira questões, acertos e minutos.');
+ if(data.questionEvents?.some(e=>e.id===id))return data;
+ if(!notebookRows(data,concursoId).some(n=>n.id===notebookId&&n.targetMateriaId===ref.materiaId&&n.targetTopicId===ref.topicId))throw Error('Este caderno não está disponível para o assunto.');
+ const next=structuredClone(data),c=next.concursos.find(c=>c.id===concursoId),m=c?.materias.find(m=>m.id===ref.materiaId),t=m?.topics.find(t=>t.id===ref.topicId);if(!t)throw Error('Assunto removido.');t.questionsTotal=(t.questionsTotal||0)+total;t.questionsCorrect=(t.questionsCorrect||0)+correct;t.lastPracticeDate=today;
+ if(t.status==='estudado'&&!t.mastered){const interval=adaptiveInterval({total,correct,criticality:t.criticality,weight:m.weight,step:t.reviewStep||0,examDate:c.examDate,today});t.nextReviewDate=addDaysISO(today,interval.days);}
+ next.questionEvents||=[];next.questionEvents.push({id,date:today,concursoId,materiaId:m.id,topicId:t.id,notebookId,total,correct,minutes,createdAt:Date.now()});next.questionActivity||={};const b=next.questionActivity[today]||{total:0,correct:0};next.questionActivity[today]={total:b.total+total,correct:b.correct+correct};if(minutes){next.studyMinutes||={};next.studyMinutes[today]=(next.studyMinutes[today]||0)+minutes;}return next;
+}

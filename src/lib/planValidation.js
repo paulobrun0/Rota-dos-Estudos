@@ -175,15 +175,19 @@ export function validatePlanData(raw) {
   for (const key of ["studySessions", "questionEvents"]) if (raw[key] !== undefined) {
     distinct(raw[key], key);
     for (const entry of raw[key]) {
-      date(entry.date); optionalCount(entry, "createdAt"); for (const field of ["concursoId", "materiaId", "topicId"]) text(entry[field], field);
+      date(entry.date); optionalCount(entry, "createdAt"); if(entry.notebookId!==undefined)text(entry.notebookId,"caderno da prática"); if(entry.minutes!==undefined){count(entry.minutes,"minutos da prática");requireValue(entry.minutes<=1440,"prática excede 24 horas");} for (const field of ["concursoId", "materiaId", "topicId"]) text(entry[field], field);
       count(entry.total, "questões da sessão"); count(entry.correct, "acertos da sessão"); requireValue(entry.correct <= entry.total, "acertos da sessão excedem total");
       if (key === "studySessions") { requireValue(["theory", "questions", "review"].includes(entry.kind), "tipo da sessão inválido"); count(entry.minutes, "tempo da sessão"); if(entry.elapsedSeconds !== undefined){count(entry.elapsedSeconds,"cronômetro da sessão");requireValue(entry.elapsedSeconds<=86400,"tempo da sessão excede 24 horas");} if (entry.grade !== null) { count(entry.grade, "nota da sessão"); requireValue(entry.grade <= 100, "nota da sessão inválida"); } }
     }
   }
   if (raw.questionNotebooks !== undefined) {
-    distinct(raw.questionNotebooks, "cadernos por banca");
+    distinct(raw.questionNotebooks, "cadernos por banca"); requireValue(raw.questionNotebooks.length<=5000,"muitos cadernos");
     for (const entry of raw.questionNotebooks) {
       for (const field of ["concursoId", "materiaId", "topicId", "title", "bank"]) text(entry[field], field);
+      if(entry.archived!==undefined)requireValue(typeof entry.archived==="boolean","arquivamento de caderno inválido");
+      if(entry.subjectKey!==undefined){text(entry.subjectKey,"identidade do assunto");requireValue(entry.subjectKey.length<=2000,"identidade do assunto muito longa");}
+      for(const key of ["yearFrom","yearTo"])if(entry[key]!==undefined){count(entry[key],"ano do caderno");requireValue(entry[key]>=1900&&entry[key]<=2100,"ano do caderno inválido");}
+      if(entry.yearFrom&&entry.yearTo)requireValue(entry.yearFrom<=entry.yearTo,"intervalo de anos inválido");
       requireValue(entry.title.length <= 200 && entry.bank.length <= 100 && Boolean(entry.url) && isSafeStudyLink(entry.url), "caderno por banca inválido");
     }
   }

@@ -14,7 +14,7 @@ Referência observada com acesso fornecido pelo usuário: painel, desempenho, pl
 | Alertas | Acumulado e prática recente abaixo de corte por importância | Cortes 80/70/60, amostra mínima de 10, média recente disponível e revisões atrasadas |
 | Caderno externo | Links de questões, notas e agenda por avaliação | URLs fornecidas pelo usuário, avaliações, agenda separada, arquivamento e restauração |
 | Marcações | Trechos, notas, fonte e busca | Registro por assunto, busca, cores, arquivamento, revisão ativa com agenda, exportação Markdown e importação de extensão própria |
-| Questões avulsas | Cadernos por disciplina e banca, prática livre | Catálogo próprio por banca e assunto, filtros, links e materiais do usuário e prática no banco próprio existente |
+| Questões avulsas | Cadernos por disciplina e banca, prática livre | Cadernos próprios por banca/assunto, assistência TEC, importação CSV/TSV/JSON com prévia, equivalências com origem, registro de prática e diagnóstico; links e banco próprio existentes |
 | Rankings | Volume, acerto, sequência, períodos, participação opcional | Ranking próprio por volume, aproveitamento com amostra mínima, sequência de dias e área declarada; somente participantes voluntários |
 | Perfil | Conta, estudo, horários, reinício e assinatura | Perfil e reinício existentes preservados; horas por dia adicionadas ao planejamento |
 | Comunidade | Convite de grupo e regras | Convite configurável para o grupo do proprietário; não utiliza o convite da referência |
