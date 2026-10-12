@@ -43,3 +43,10 @@ export async function findPdfPages(doc,query,{isCancelled=()=>false,onProgress=(
 export function selectionRectsToPdf(rects,bounds,viewport){
  return Array.from(rects).flatMap(r=>{const left=Math.max(r.left,bounds.left),right=Math.min(r.right,bounds.right),top=Math.max(r.top,bounds.top),bottom=Math.min(r.bottom,bounds.bottom);if(right<=left||bottom<=top)return [];const a=viewport.convertToPdfPoint(left-bounds.left,top-bounds.top),b=viewport.convertToPdfPoint(right-bounds.left,bottom-bounds.top);return [{x:Math.min(a[0],b[0]),y:Math.min(a[1],b[1]),width:Math.abs(a[0]-b[0]),height:Math.abs(a[1]-b[1])}];}).slice(0,500);
 }
+
+export function createPdfAnnotation({fileId,fileName,page,selection,concurso,materiaId,topicId,color,note,date}){
+ if(!selection||selection.documentId!==fileId||selection.page!==page)throw Error('A seleção pertence a outra página ou arquivo. Selecione novamente.');
+ if(!concurso.materias.some(m=>m.id===materiaId&&m.topics.some(t=>t.id===topicId)))throw Error('Escolha um assunto existente neste edital.');
+ if(!Number.isInteger(page)||page<1||!selection.id||!selection.text?.trim()||!selection.rects?.length||!PDF_COLORS[color])throw Error('Seleção inválida. Selecione novamente.');
+ return {id:selection.id,documentId:fileId,documentName:fileName,concursoId:concurso.id,materiaId,topicId,page,color,text:selection.text,note:note.slice(0,20000),rects:selection.rects,date};
+}

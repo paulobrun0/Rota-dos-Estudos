@@ -225,4 +225,10 @@ Os cadernos aparecem também nos botões dos assuntos e nos editais equivalentes
 
 **Importar cadernos em lote** aceita CSV (vírgula ou ponto e vírgula), TSV e listas JSON, até 500 registros/2 MiB. Colunas: `materia`, `assunto`, `banca`, `titulo`, `url`; opcionais `anoInicial` e `anoFinal`. Use os nomes exatos do edital. A prévia exige confirmação; linhas inválidas impedem toda a importação. Reimportar os mesmos links por assunto não duplica cadastros.
 
-Ao voltar da prática, use **Registrar prática** junto ao caderno para informar questões, acertos e minutos. O lançamento atualiza uma única origem, os totais globais e o tempo. Nos assuntos já estudados, ajusta a próxima revisão. Não conclui tarefas nem copia contagens nos editais equivalentes. O diagnóstico mostra falta de caderno TEC, baixo aproveitamento e revisão atrasada.
+Ao voltar da prática, use **Registrar prática** junto ao caderno para informar questões, acertos e minutos. O lançamento atualiza uma única origem, os totais globais e o tempo. Nos assuntos já estudados, ajusta a próxima revisão. Não conclui tarefas nem copia contagens nos editais equivalentes. O diagnóstico respeita a plataforma filtrada e mostra falta de caderno, baixo aproveitamento e revisão atrasada.
+
+### Revisão de integridade e experiência
+
+Trocar de assunto pausa e preserva o cronômetro anterior; voltar ao assunto recupera seu tempo. A agenda mantém as sessões concluídas de hoje visíveis. O catálogo tem busca sem diferenciação de acentos e paginação de 50 linhas. Links com rotas após `#` continuam distintos, cadernos locais têm prioridade sobre vínculos equivalentes, e a identidade dos cadastros antigos é preservada ao remover sua origem.
+
+A importação CSV rejeita cabeçalhos repetidos e linhas com quantidade incorreta de colunas. O leitor PDF invalida seleções durante o carregamento e verifica arquivo/página/assunto antes de gravar o grifo, com identificador estável para evitar duplicação. Os filtros de matéria do ranking acompanham a área selecionada, e a cor da barra do navegador acompanha o tema claro ou escuro.

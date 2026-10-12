@@ -75,7 +75,7 @@ export function RankingView({ currentDisplayName, onGoToSettings, studyArea = ""
   }, [data, materia, scopedUsers]);
 
   useEffect(() => {
-    if (!materia && materiaNames.length > 0) setMateria(materiaNames[0]);
+    if (!materiaNames.includes(materia)) setMateria(materiaNames[0] || "");
   }, [materiaNames, materia]);
 
   if (error) {

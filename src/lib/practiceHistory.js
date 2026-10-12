@@ -17,7 +17,9 @@ export function preservePractice(previous, next) {
     }
   }
   for (const id of live) archive.delete(id);
-  return { ...next, practiceArchive: [...archive.values()] };
+  const sources=new Map([...previous.concursos.flatMap(flattenEdital),...next.concursos.flatMap(flattenEdital)].map(row=>[practiceSourceId(row),row]));
+  const notebooks=next.questionNotebooks?.map(n=>{const source=sources.get(JSON.stringify([n.concursoId,n.materiaId,n.topicId]));return source?.key?{...n,subjectKey:source.key}:n;});
+  return { ...next, practiceArchive: [...archive.values()], ...(notebooks?{questionNotebooks:notebooks}:{}) };
 }
 
 export function practiceEvidence(practice, today) {
