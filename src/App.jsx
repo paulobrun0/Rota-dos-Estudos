@@ -88,7 +88,7 @@ const TAB_TITLES = {
 };
 
 export default function App({ user, onLogout, onUserUpdate }) {
-  const { data, setData, sync, retry, flush } = usePlanData(user.email);
+  const { data, setData, sync, retry, flush } = usePlanData(user.id ? `account:${user.id}` : user.email);
   const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get("tool") === "pdf" ? "pdf" : "painel");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(() => {

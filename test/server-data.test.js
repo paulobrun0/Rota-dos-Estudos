@@ -209,6 +209,13 @@ describe("GET /api/questions/counts", () => {
   });
 });
 
+test("authenticated profile exposes a stable account identity across email changes", async () => {
+  const user=await registerFresh();const before=await api("/api/me", {cookie:user.cookie});assert.ok(Number.isSafeInteger(before.body.id));
+  const newEmail=`changed-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
+  const changed=await api("/api/me/change-email", {method:"POST",cookie:user.cookie,body:{newEmail,currentPassword:user.password}});
+  assert.equal(changed.status,200);const after=await api("/api/me", {cookie:user.cookie});assert.equal(after.body.id,before.body.id);assert.equal(after.body.email,newEmail);
+});
+
 describe("GET /api/ranking", () => {
   async function setPlanData(cookie, value) {
     const valid = { ...value, concursos: (value.concursos || []).map((c, i) => ({

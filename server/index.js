@@ -292,7 +292,7 @@ app.post("/api/logout", ...requireAuth, (req, res) => {
 app.get("/api/me", requireAuth, (req, res) => {
   const user = req.user;
   res.json({
-    email: user.email, isAdmin: !!user.is_admin, showInRanking: !!user.show_in_ranking,
+    id: user.id, email: user.email, isAdmin: !!user.is_admin, showInRanking: !!user.show_in_ranking,
     username: user.username || null, avatar: user.avatar || null, reminderHour: user.reminder_hour,
   });
 });

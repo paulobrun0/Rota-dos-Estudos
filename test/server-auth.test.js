@@ -126,7 +126,9 @@ describe("session lifecycle", () => {
     const { email, cookie } = await registerFresh();
     const res = await api("/api/me", { cookie });
     assert.equal(res.status, 200);
+    assert.ok(Number.isSafeInteger(res.body.id) && res.body.id > 0);
     assert.deepEqual(res.body, {
+      id: res.body.id,
       email, isAdmin: false, showInRanking: true, username: null, avatar: null, reminderHour: 19,
     });
   });

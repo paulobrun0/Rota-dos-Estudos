@@ -232,3 +232,5 @@ Ao voltar da prática, use **Registrar prática** junto ao caderno para informar
 Trocar de assunto pausa e preserva o cronômetro anterior; voltar ao assunto recupera seu tempo. A agenda mantém as sessões concluídas de hoje visíveis. O catálogo tem busca sem diferenciação de acentos e paginação de 50 linhas. Links com rotas após `#` continuam distintos, cadernos locais têm prioridade sobre vínculos equivalentes, e a identidade dos cadastros antigos é preservada ao remover sua origem.
 
 A importação CSV rejeita cabeçalhos repetidos e linhas com quantidade incorreta de colunas. O leitor PDF invalida seleções durante o carregamento e verifica arquivo/página/assunto antes de gravar o grifo, com identificador estável para evitar duplicação. Os filtros de matéria do ranking acompanham a área selecionada, e a cor da barra do navegador acompanha o tema claro ou escuro.
+
+A recuperação local usa o identificador da conta, permanecendo estável quando o e-mail muda. Sessões antigas devem salvar ou exportar alterações pendentes antes de atualizar; cópias antigas identificadas apenas pelo e-mail não são atribuídas automaticamente a uma conta.
