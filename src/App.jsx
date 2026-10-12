@@ -1,3 +1,4 @@
+import {addSessionReview} from './lib/studySession.js';
 import {applyLearningPlan} from './lib/learningPlanning.js';
 import {withNotebookLinks,mergeNotebooks,recordNotebookPractice} from "./lib/notebooks.js";
 import {reviewStudyMark} from "./lib/learningTools.js";
@@ -947,6 +948,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           onLink={(left, right) => setData(d => linkEquivalentTopics(d, left, right, `shared:${uid()}`))}
           onUnlink={ref => setData(d => removeManualEquivalence(d, ref))} onSkip={skipShared} onUndo={undoShared} />}
         {tab === "painel" && activeConcurso && <LearningDashboard data={data} concurso={activeConcurso} user={user} onNavigate={goTab} onSkip={skipActiveShared} onUndo={undoActiveShared}
+          onAddReview={(ref,url,note)=>{const iso=todayISO();const next=addSessionReview(data,activeConcurso.id,ref,url,note,iso);setData(d=>d===data?next:addSessionReview(d,activeConcurso.id,ref,url,note,iso));}}
           onGoal={goal => setData(d => ({...d,studyPreferences:{...d.studyPreferences,weeklyQuestionsGoal:goal}}))}
           onComplete={(ref,result) => { const iso=todayISO(); const next=completeLearningSession(data,activeConcurso.id,ref,iso,result); setData(d=>d===data?next:completeLearningSession(d,activeConcurso.id,ref,iso,result)); }} />}
         {tab === "desempenho" && activeConcurso && <PerformanceView data={data} concurso={activeConcurso} onRegister={addTopicQuestions} />}

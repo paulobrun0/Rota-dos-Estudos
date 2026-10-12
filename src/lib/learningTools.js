@@ -84,9 +84,10 @@ export function completeLearningSession(data,concursoId,ref,today,result) {
   if((data.studySessions || []).some(s=>s.id===sessionId))return data;
   const current=learningQueue(data,concursoId,today).find(r=>topicRef(r.materiaId,r.topicId)===topicRef(ref.materiaId,ref.topicId));
   if(!current)throw new Error('Esta tarefa mudou ou já foi registrada. Atualize a fila.');
-  const {total=0,correct=0,elapsedSeconds=0}=result;
+  const {total=0,correct=0,elapsedSeconds=0,minutes}=result;
   if(!Number.isSafeInteger(elapsedSeconds)||elapsedSeconds<0||elapsedSeconds>86400)throw new Error("Tempo da sessão inválido.");
-  const recordedMinutes=elapsedSeconds>0?Math.max(1,Math.round(elapsedSeconds/60)):current.minutes;
+  if(minutes!==undefined&&(!Number.isSafeInteger(minutes)||minutes<1||minutes>1440))throw new Error('Informe de 1 a 1440 minutos para a sessão.');
+  const recordedMinutes=minutes??(elapsedSeconds>0?Math.max(1,Math.round(elapsedSeconds/60)):current.minutes);
   if(!Number.isSafeInteger(total)||!Number.isSafeInteger(correct)||total<0||correct<0||correct>total)throw new Error('Confira as quantidades de questões e acertos.');
   if(current.kind==='theory'&&total>0)throw new Error('Registre as questões na etapa de prática.');
   const clone=structuredClone(data),c=clone.concursos.find(c=>c.id===concursoId),m=c.materias.find(m=>m.id===ref.materiaId),t=m.topics.find(t=>t.id===ref.topicId);

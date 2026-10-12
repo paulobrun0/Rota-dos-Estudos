@@ -4,7 +4,7 @@ Planejador de estudos para concursos com fila de sessões, desempenho por assunt
 
 ## Painel e ferramentas de estudo
 
-A interface usa identidade própria em azul-petróleo e verde-água, títulos com serifa e ícones de traço simples, nos temas claro e escuro. **Painel** oferece lista e calendário, tarefa em destaque, cronômetro, conclusão manual, meta semanal e atalhos. O calendário combina sessões registradas e uma projeção sequencial dos próximos dias.
+A interface usa identidade própria em azul-petróleo e verde-água, títulos com serifa e ícones de traço simples, nos temas claro e escuro. **Painel** oferece lista e calendário, tarefa em destaque, cronômetro, conclusão manual, meta semanal e atalhos. O calendário combina sessões registradas e uma projeção sequencial dos próximos dias. **Iniciar** abre uma janela de sessão com os cadernos vinculados ao assunto organizados por banca, materiais e anotações, cronômetro, registro de questões/acertos e atalhos de tempo. O tempo informado substitui a medição; sem ambos, usa a estimativa da tarefa. Exercícios exigem ao menos uma questão. **Fechar sem salvar** pausa o cronômetro e mantém a tarefa pendente. Uma questão do TEC pode ser guardada por ID ou link no caderno de revisão, separadamente da conclusão da sessão, sem duplicar registros.
 
 Em **Planejamento**, configure horas por dia, matérias e assuntos ativos, modo só questões ou teoria e questões, frequência relativa, importância, duração e dependências. Ciclos de dependência são rejeitados. A reserva de conteúdo novo pode ceder tempo às revisões quando uma categoria está vazia. A frequência orienta a prioridade; não garante um número fixo de aparições em cada ciclo.
 

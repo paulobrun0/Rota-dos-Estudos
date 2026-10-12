@@ -17,5 +17,12 @@ export function useSessionClock(key,persist=true){
   save({...ref,elapsedMs:validClock(stored)?clockSeconds(stored)*1000:0,startedAt:null});
  }
  function clear(){if(record){memory.current.delete(topicKey(record));try{if(persist)localStorage.removeItem(topicKey(record));}catch{}}save(null);}
- return {record,seconds:clockSeconds(record),choose,toggle:ref=>save(toggleClock(record||savedTopic(ref),ref)),clear};
+ function start(ref){
+  const same=record?.materiaId===ref.materiaId&&record?.topicId===ref.topicId;
+  if(same&&record.startedAt!==null)return;
+  if(record&&!same)remember({...record,elapsedMs:clockSeconds(record)*1000,startedAt:null});
+  const previous=same?record:savedTopic(ref);
+  save({...ref,elapsedMs:validClock(previous)?clockSeconds(previous)*1000:0,startedAt:Date.now()});
+ }
+ return {record,seconds:clockSeconds(record),choose,start,pause:()=>{if(record?.startedAt!=null)save({...record,elapsedMs:clockSeconds(record)*1000,startedAt:null});},toggle:ref=>save(toggleClock(record||savedTopic(ref),ref)),clear};
 }
