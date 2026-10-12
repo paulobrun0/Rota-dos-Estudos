@@ -79,7 +79,9 @@ export function completeLearningSession(data,concursoId,ref,today,result) {
   if((data.studySessions || []).some(s=>s.id===sessionId))return data;
   const current=learningQueue(data,concursoId,today).find(r=>topicRef(r.materiaId,r.topicId)===topicRef(ref.materiaId,ref.topicId));
   if(!current)throw new Error('Esta tarefa mudou ou já foi registrada. Atualize a fila.');
-  const {total=0,correct=0}=result;
+  const {total=0,correct=0,elapsedSeconds=0}=result;
+  if(!Number.isSafeInteger(elapsedSeconds)||elapsedSeconds<0||elapsedSeconds>86400)throw new Error("Tempo da sessão inválido.");
+  const recordedMinutes=elapsedSeconds>0?Math.max(1,Math.round(elapsedSeconds/60)):current.minutes;
   if(!Number.isSafeInteger(total)||!Number.isSafeInteger(correct)||total<0||correct<0||correct>total)throw new Error('Confira as quantidades de questões e acertos.');
   if(current.kind==='theory'&&total>0)throw new Error('Registre as questões na etapa de prática.');
   const clone=structuredClone(data),c=clone.concursos.find(c=>c.id===concursoId),m=c.materias.find(m=>m.id===ref.materiaId),t=m.topics.find(t=>t.id===ref.topicId);
@@ -95,9 +97,9 @@ export function completeLearningSession(data,concursoId,ref,today,result) {
     if(total){t.questionsTotal=(t.questionsTotal || 0)+total;t.questionsCorrect=(t.questionsCorrect || 0)+correct;t.lastPracticeDate=today;
       clone.questionActivity ||= {};const b=clone.questionActivity[today] || {total:0,correct:0};clone.questionActivity[today]={total:b.total+total,correct:b.correct+correct};}
   }
-  clone.studySessions.push({id,date:today,concursoId,materiaId:m.id,topicId:t.id,kind:current.kind,minutes:current.minutes,total,correct,createdAt:Date.now(),grade:current.kind==='theory'?null:interval.grade});
+  clone.studySessions.push({id,date:today,concursoId,materiaId:m.id,topicId:t.id,kind:current.kind,minutes:recordedMinutes,elapsedSeconds,total,correct,createdAt:Date.now(),grade:current.kind==='theory'?null:interval.grade});
   clone.activity ||= {};clone.activity[today]=(clone.activity[today] || 0)+1;
-  clone.studyMinutes ||= {};clone.studyMinutes[today]=(clone.studyMinutes[today] || 0)+current.minutes;
+  clone.studyMinutes ||= {};clone.studyMinutes[today]=(clone.studyMinutes[today] || 0)+recordedMinutes;
   if(c.dailyPlans?.[today])c.dailyPlans[today]=c.dailyPlans[today].filter(card=>card.feito||card.materiaId!==m.id||card.topicId!==t.id);
   return clone;
 }
@@ -118,4 +120,19 @@ export function reviewStudyMark(data,collection,id,rating,today){
   const entry=data[collection]?.find(m=>m.id===id);if(!entry||entry.archived||entry.lastReviewDate===today)return data;
   const interval=Math.min(120,rating==='again'?1:rating==='hard'?3:rating==='good'?Math.max(7,(entry.interval||1)*2):Math.max(14,(entry.interval||1)*3));
   return {...data,[collection]:data[collection].map(m=>m.id===id?{...m,interval,nextReviewDate:addDaysISO(today,interval),lastReviewDate:today}:m)};
+}
+
+// Calendar simulation: advance only a private copy of the plan, assuming
+// each proposed task is completed. No question counts or real history change.
+export function learningForecast(data,concursoId,today,end){
+ const simulated=structuredClone(data),days={};
+ const c=simulated.concursos.find(c=>c.id===concursoId);if(!c)return days;
+ for(let date=today,n=0;date<=end&&n<91;date=addDaysISO(date,1),n++){
+  const queue=learningQueue(simulated,concursoId,date);days[date]=queue;
+  for(const row of queue){const m=c.materias.find(m=>m.id===row.materiaId),t=m.topics.find(t=>t.id===row.topicId);
+   if(row.kind==='theory')t.theoryDone=true;
+   else{const interval=adaptiveInterval({total:row.topic.crossStudy?.total??t.questionsTotal??0,correct:row.topic.crossStudy?.correct??t.questionsCorrect??0,criticality:t.criticality,weight:m.weight,step:t.reviewStep||0,examDate:c.examDate,today:date});t.status='estudado';t.nextReviewDate=addDaysISO(date,interval.days);t.reviewStep=row.kind==='review'?(t.reviewStep||0)+1:0;}
+  }
+ }
+ return days;
 }

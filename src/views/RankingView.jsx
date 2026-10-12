@@ -1,3 +1,4 @@
+import {secondaryBtnStyle} from "../styles/shared.js";
 import React, { useEffect, useMemo, useState } from "react";
 import { ListChecks, Trophy } from "../components/Icons.jsx";
 import { colors } from "../styles/colors.js";
@@ -37,6 +38,7 @@ export function RankingView({ currentDisplayName, onGoToSettings, studyArea = ""
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [materia, setMateria] = useState("");
+  const [questionMetric,setQuestionMetric]=useState("volume");
   const [scope, setScope] = useState("all");
   const scopedUsers = useMemo(() => (data?.users || []).filter(u => scope !== "area" || u.studyArea === studyArea), [data,scope,studyArea]);
   const [period, setPeriod] = useState("day");
@@ -81,7 +83,8 @@ export function RankingView({ currentDisplayName, onGoToSettings, studyArea = ""
   }
 
   const maxEstudado = overall[0]?.totalEstudado || 1;
-  const questionRanking = (data?.questionPeriods?.[period] || []).filter(u => scope !== "area" || u.studyArea === studyArea);
+  const questionRanking = (data?.questionPeriods?.[period] || []).filter(u => (scope !== "area" || u.studyArea === studyArea)&&(questionMetric!=="accuracy"||u.total>=10)).sort((a,b)=>questionMetric==="accuracy"?(b.correct/b.total-a.correct/a.total)||b.total-a.total:b.total-a.total);
+  const streakRanking=[...scopedUsers].filter(u=>u.streak>0).sort((a,b)=>b.streak-a.streak);
   const maxQuestions = questionRanking[0]?.total || 1;
 
   return (
@@ -100,14 +103,16 @@ export function RankingView({ currentDisplayName, onGoToSettings, studyArea = ""
         )}
       </div>
 
-      <div className="view-tabs"><button aria-pressed={scope === "all"} onClick={()=>setScope("all")}>Ranking geral</button><button disabled={!studyArea} aria-pressed={scope === "area"} onClick={()=>setScope("area")}>Minha área</button></div>
+      <div className="view-tabs"><button style={secondaryBtnStyle} aria-pressed={scope === "all"} onClick={()=>setScope("all")}>Ranking geral</button><button style={secondaryBtnStyle} disabled={!studyArea} aria-pressed={scope === "area"} onClick={()=>setScope("area")}>Minha área</button></div>
       {!studyArea && <p>Configure sua área em Ferramentas para comparar com estudantes da mesma categoria.</p>}
       {data && overall.length === 0 && (
         <div style={{ color: colors.textFaint, fontSize: 14 }}>ninguém no ranking ainda.</div>
       )}
 
+      {streakRanking.length>0&&<section style={{background:colors.surface,border:`1px solid ${colors.border}`,borderRadius:12,padding:18,marginBottom:20}}><h3>Sequência de estudo</h3><p style={{color:colors.textMuted,fontSize:13}}>Dias consecutivos com estudo ou questões registrados. A sequência de ontem permanece até o fim de hoje.</p>{streakRanking.map(u=><Bar key={u.displayName} avatar={u.avatar} label={u.displayName} value={u.streak} max={streakRanking[0].streak} highlight={u.displayName===currentDisplayName} suffix=" dias"/>)}</section>}
       {overall.length > 0 && (
-        <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>geral — assuntos estudados</div>
           {overall.map((u, i) => {
             const accuracy = u.questionsTotal > 0 ? Math.round((u.questionsCorrect / u.questionsTotal) * 100) : null;
@@ -127,10 +132,10 @@ export function RankingView({ currentDisplayName, onGoToSettings, studyArea = ""
         </div>
       )}
 
-      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+      <div role="region" aria-label="Ranking de questões" style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-            <ListChecks size={14} /> questões resolvidas
+            <ListChecks size={14} /> {questionMetric==="accuracy"?"aproveitamento nas questões":"questões resolvidas"}
           </div>
           <div style={{ display: "flex", gap: 4 }}>
             {Object.keys(PERIOD_LABELS).map((p) => (
@@ -147,6 +152,8 @@ export function RankingView({ currentDisplayName, onGoToSettings, studyArea = ""
             ))}
           </div>
         </div>
+        <div className="view-tabs"><button style={secondaryBtnStyle} onClick={()=>setQuestionMetric("volume")} aria-pressed={questionMetric==="volume"}>Por volume</button><button style={secondaryBtnStyle} onClick={()=>setQuestionMetric("accuracy")} aria-pressed={questionMetric==="accuracy"}>Por aproveitamento</button></div>
+        {questionMetric==="accuracy"&&<p style={{color:colors.textMuted,fontSize:13}}>Amostra mínima de 10 questões no período. Desempate pelo volume.</p>}
         {questionRanking.length === 0 && <div style={{ color: colors.textFaint, fontSize: 13 }}>ninguém resolveu questões nesse período ainda.</div>}
         {questionRanking.map((u, i) => {
           const accuracy = u.total > 0 ? Math.round((u.correct / u.total) * 100) : 0;
@@ -155,7 +162,7 @@ export function RankingView({ currentDisplayName, onGoToSettings, studyArea = ""
             <div key={u.displayName} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${colors.border}` : "none" }}>
               <div style={{ width: 20, fontSize: 15, textAlign: "center", flexShrink: 0 }}>{MEDALS[i] || i + 1}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <Bar avatar={u.avatar} label={isMe ? `${u.displayName} (você)` : u.displayName} value={u.total} max={maxQuestions} highlight={isMe} />
+                <Bar avatar={u.avatar} label={isMe ? `${u.displayName} (você)` : u.displayName} value={questionMetric==="accuracy"?accuracy:u.total} max={questionMetric==="accuracy"?100:maxQuestions} suffix={questionMetric==="accuracy"?"%":""} highlight={isMe} />
               </div>
               <div className="mono" style={{ fontSize: 11.5, color: colors.textFaint, width: 60, textAlign: "right", flexShrink: 0 }}>{accuracy}% acerto</div>
             </div>

@@ -27,3 +27,19 @@ export async function annotatedPdf(bytes,marks) {
   return pdf.save();
 }
 export function downloadStudyFile(bytes,name,type){const url=URL.createObjectURL(new Blob([bytes],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+
+const searchable=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').replace(/\s+/g,' ').trim();
+export async function findPdfPages(doc,query,{isCancelled=()=>false,onProgress=()=>{}}={}){
+ const needle=searchable(query);if(!needle)return [];
+ const results=[];
+ for(let page=1;page<=doc.numPages;page++){
+  if(isCancelled())return [];
+  const content=await (await doc.getPage(page)).getTextContent();if(isCancelled())return [];
+  const text=content.items.map(i=>i.str||'').join(' ');if(searchable(text).includes(needle))results.push({page,text:text.slice(0,300)});
+  onProgress(page);if(results.length>=100)break;
+ }
+ return results;
+}
+export function selectionRectsToPdf(rects,bounds,viewport){
+ return Array.from(rects).flatMap(r=>{const left=Math.max(r.left,bounds.left),right=Math.min(r.right,bounds.right),top=Math.max(r.top,bounds.top),bottom=Math.min(r.bottom,bounds.bottom);if(right<=left||bottom<=top)return [];const a=viewport.convertToPdfPoint(left-bounds.left,top-bounds.top),b=viewport.convertToPdfPoint(right-bounds.left,bottom-bounds.top);return [{x:Math.min(a[0],b[0]),y:Math.min(a[1],b[1]),width:Math.abs(a[0]-b[0]),height:Math.abs(a[1]-b[1])}];}).slice(0,500);
+}

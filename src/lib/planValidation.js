@@ -177,7 +177,7 @@ export function validatePlanData(raw) {
     for (const entry of raw[key]) {
       date(entry.date); optionalCount(entry, "createdAt"); for (const field of ["concursoId", "materiaId", "topicId"]) text(entry[field], field);
       count(entry.total, "questões da sessão"); count(entry.correct, "acertos da sessão"); requireValue(entry.correct <= entry.total, "acertos da sessão excedem total");
-      if (key === "studySessions") { requireValue(["theory", "questions", "review"].includes(entry.kind), "tipo da sessão inválido"); count(entry.minutes, "tempo da sessão"); if (entry.grade !== null) { count(entry.grade, "nota da sessão"); requireValue(entry.grade <= 100, "nota da sessão inválida"); } }
+      if (key === "studySessions") { requireValue(["theory", "questions", "review"].includes(entry.kind), "tipo da sessão inválido"); count(entry.minutes, "tempo da sessão"); if(entry.elapsedSeconds !== undefined){count(entry.elapsedSeconds,"cronômetro da sessão");requireValue(entry.elapsedSeconds<=86400,"tempo da sessão excede 24 horas");} if (entry.grade !== null) { count(entry.grade, "nota da sessão"); requireValue(entry.grade <= 100, "nota da sessão inválida"); } }
     }
   }
   if (raw.questionNotebooks !== undefined) {

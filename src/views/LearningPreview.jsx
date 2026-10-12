@@ -1,3 +1,4 @@
+import {useTheme} from "../lib/useTheme.js";
 import {reviewStudyMark} from "../lib/learningTools.js";
 import {NotebookCatalogView} from "./NotebookCatalogView.jsx";
 import {PdfStudyView} from "./PdfStudyView.jsx";
@@ -16,6 +17,7 @@ export function previewData(){const today=todayISO();return {concursos:[{id:'dem
 // Public visual demo: synthetic in-memory data only. It never requests account
 // data, supplies a token or changes authentication on the real application.
 export function LearningPreview(){
+ const [theme,setTheme]=useTheme();
  const [data,setData]=useState(previewData),[tab,setTab]=useState('painel'),[collapsed,setCollapsed]=useState(false);
  const concurso=useMemo(()=>decorateConcurso(data.concursos[0],buildPracticeIndex(data.concursos)),[data]);
  const nav=[['painel','Painel',CalendarDays],['desempenho','Desempenho',Target],['planejamento','Planejamento',ListChecks],['alertas','Alertas',Flame],['revisao','Caderno de revisão',NotebookText],['marcacoes','Minhas marcações',BookOpen],['avulsas','Questões avulsas',Target],['pdf','Leitor PDF',BookOpen],['ferramentas','Ferramentas',Settings]];
@@ -31,5 +33,5 @@ export function LearningPreview(){
  {tab==='avulsas'&&<QuestionHubView concurso={concurso} questionCounts={{}} onLinks={()=>{}} onMaterials={()=>{}} onAnswer={()=>{}}/>}
  {tab==='pdf'&&<PdfStudyView data={data} concurso={concurso} onReview={(id,r)=>setData(d=>reviewStudyMark(d,"pdfAnnotations",id,r,todayISO()))} onAdd={e=>setData(d=>({...d,pdfAnnotations:[...(d.pdfAnnotations||[]),e]}))} onRemove={id=>setData(d=>({...d,pdfAnnotations:(d.pdfAnnotations||[]).filter(e=>e.id!==id)}))}/>}
  {tab==='ferramentas'&&<StudyToolsView data={data} concurso={concurso} onImport={marks=>setData(d=>({...d,studyMarks:[...d.studyMarks,...marks]}))} onCommunity={url=>setData(d=>({...d,studyPreferences:{...d.studyPreferences,communityUrl:url}}))}/>}
- <LearningHelp/></main></div>;
+ <button onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?'Usar tema claro':'Usar tema escuro'}</button><LearningHelp/></main></div>;
 }

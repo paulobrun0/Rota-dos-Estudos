@@ -15,3 +15,10 @@ test('PDF export preserves original pages, adds highlight and notes appendix, le
 });
 test('PDF annotations validate and reject unsafe bounds, invalid files, pages, colors and huge text',()=>{validatePlanData(plan());for(const edit of [m=>m.documentId='x',m=>m.page=0,m=>m.rects[0].width=-1,m=>m.rects[0].x=Infinity,m=>m.color='purple',m=>m.note='x'.repeat(20001)]){const p=plan();edit(p.pdfAnnotations[0]);assert.throws(()=>validatePlanData(p));}});
 test('highlight review schedules recall once per day without crediting questions or changing original marks',()=>{const p=plan(),next=reviewStudyMark(p,'pdfAnnotations','highlight','good','2026-10-12');validatePlanData(next);assert.equal(next.pdfAnnotations[0].nextReviewDate,'2026-10-19');assert.equal(p.pdfAnnotations[0].nextReviewDate,undefined);assert.equal(next.questionActivity,undefined);assert.equal(reviewStudyMark(next,'pdfAnnotations','highlight','again','2026-10-12'),next);});
+
+test('PDF search ignores accents, returns page links and stops when cancelled',async()=>{
+ const {findPdfPages}=await import('../src/lib/pdfStudy.js');const texts=['Introdução aos estudos','Atos administrativos e revisão','Outro material'];const doc={numPages:3,getPage:async p=>({getTextContent:async()=>({items:[{str:texts[p-1]}]})})};assert.deepEqual((await findPdfPages(doc,'revisao')).map(r=>r.page),[2]);assert.deepEqual(await findPdfPages(doc,'inexistente'),[]);let scanned=0;assert.deepEqual(await findPdfPages(doc,'atos',{onProgress:()=>scanned++,isCancelled:()=>scanned>=1}),[]);assert.equal(scanned,1);
+});
+test('selection coordinates clip to the page and remain correct after rotated viewport conversion',async()=>{
+ const {selectionRectsToPdf}=await import('../src/lib/pdfStudy.js');const bounds={left:10,top:20,right:110,bottom:220},rects=[{left:5,top:30,right:50,bottom:50},{left:200,top:300,right:220,bottom:330}],viewport={convertToPdfPoint:(x,y)=>[y/2,100-x/2]};assert.deepEqual(selectionRectsToPdf(rects,bounds,viewport),[{x:5,y:80,width:10,height:20}]);
+});

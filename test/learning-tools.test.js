@@ -22,3 +22,10 @@ test('relative frequency grants extra turns without starving another discipline 
  for(const m of d.concursos[0].materias)m.topics=Array.from({length:6},(_,i)=>({id:`${m.id}-${i}`,name:`Assunto ${i}`,status:'pendente',exerciseMinutes:15}));
  const queue=learningQueue(d,'a',today);assert.deepEqual(queue.slice(0,6).map(q=>q.materiaId),['m','m2','m','m','m2','m']);assert.equal(new Set(queue.map(q=>JSON.stringify([q.materiaId,q.topicId]))).size,queue.length);
 });
+
+test('forecast advances hypothetical tasks, respects rest days and never changes actual practice or history',async()=>{
+ const {learningForecast}=await import('../src/lib/learningTools.js');const d=fixture(),before=JSON.stringify(d);const forecast=learningForecast(d,'a',today,'2026-10-14');assert.equal(forecast[today].length,2);assert.equal(forecast['2026-10-13'].length,0);assert.ok(forecast['2026-10-14'].some(r=>r.topicId==='t2'));assert.equal(forecast['2026-10-14'].find(r=>r.topicId==='t').kind,'review');assert.equal(JSON.stringify(d),before);
+});
+test('measured session time replaces estimate without inflating question counts, rejects invalid durations',()=>{
+ const d=fixture();const next=completeLearningSession(d,'a',{materiaId:'m',topicId:'t'},today,{total:5,correct:4,elapsedSeconds:125});validatePlanData(next);assert.equal(next.studySessions[0].minutes,2);assert.equal(next.studySessions[0].elapsedSeconds,125);assert.equal(next.studyMinutes[today],2);assert.equal(next.questionActivity[today].total,5);assert.throws(()=>completeLearningSession(d,'a',{materiaId:'m',topicId:'t'},today,{elapsedSeconds:86401}));
+});

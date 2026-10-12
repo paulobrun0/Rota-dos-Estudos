@@ -1,3 +1,4 @@
+import {rankingStreak} from "./rankingStats.js";
 import "dotenv/config";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -451,10 +452,11 @@ app.get("/api/ranking", requireAuth, (req, res) => {
     }
     const materias = [...materiaMap.values()];
     const totalEstudado = materias.reduce((sum, m) => sum + m.estudado, 0);
-    users.push({ displayName, avatar, studyArea, totalEstudado, questionsTotal, questionsCorrect, materias });
+    users.push({ displayName, avatar, studyArea, streak:rankingStreak(parsed,dayCutoff), totalEstudado, questionsTotal, questionsCorrect, materias });
 
     const sums = { day: { total: 0, correct: 0 }, week: { total: 0, correct: 0 }, month: { total: 0, correct: 0 } };
     for (const [iso, entry] of Object.entries(parsed?.questionActivity || {})) {
+      if(iso>dayCutoff)continue;
       const total = entry?.total || 0;
       const correct = entry?.correct || 0;
       if (iso >= dayCutoff) { sums.day.total += total; sums.day.correct += correct; }

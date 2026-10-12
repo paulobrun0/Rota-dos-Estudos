@@ -4,7 +4,7 @@ Planejador de estudos para concursos com fila de sessões, desempenho por assunt
 
 ## Painel e ferramentas de estudo
 
-A interface usa fundo marfim, menu terracota, títulos com serifa e ícones de traço simples. **Painel** oferece lista e calendário, tarefa em destaque, cronômetro, conclusão manual, meta semanal e atalhos. O calendário é uma projeção do progresso atual.
+A interface usa identidade própria em azul-petróleo e verde-água, títulos com serifa e ícones de traço simples, nos temas claro e escuro. **Painel** oferece lista e calendário, tarefa em destaque, cronômetro, conclusão manual, meta semanal e atalhos. O calendário combina sessões registradas e uma projeção sequencial dos próximos dias.
 
 Em **Planejamento**, configure horas por dia, matérias e assuntos ativos, modo só questões ou teoria e questões, frequência relativa, importância, duração e dependências. Ciclos de dependência são rejeitados. A reserva de conteúdo novo pode ceder tempo às revisões quando uma categoria está vazia. A frequência orienta a prioridade; não garante um número fixo de aparições em cada ciclo.
 
@@ -20,7 +20,9 @@ A [demonstração visual](https://app.paulobruno.dev/?preview=learning) usa dado
 
 Capturas da versão publicada, usando apenas dados fictícios da demonstração:
 
-![Painel com menu terracota, fila e sessão de estudo](docs/images/painel-terracota.jpg)
+Capturas da versão anterior do layout, com dados fictícios. A paleta atual é azul-petróleo e verde-água nos temas claro e escuro.
+
+![Versão anterior do painel, fila e sessão de estudo](docs/images/painel-terracota.jpg)
 
 ![Desempenho com períodos, atividade e tabela por assunto](docs/images/desempenho-terracota.jpg)
 
@@ -48,7 +50,7 @@ Em **Edital** ou **Hoje**, use **Buscar questões** ao lado de um assunto. O nom
 
 ## Interface
 
-Identidade em marfim e terracota, símbolo Q com check e ícones de traço simples, navegação lateral recolhível e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto. As colunas permanecem lado a lado e se ajustam à largura disponível, sem rolagem horizontal.
+Identidade em azul-petróleo e verde-água, símbolo Q com check e ícones de traço simples, navegação lateral recolhível e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto. As colunas permanecem lado a lado e se ajustam à largura disponível, sem rolagem horizontal.
 
 As capturas abaixo mostram a aplicação real com dados fictícios de demonstração. Nenhuma conta, questão de prova ou informação de usuário real foi usada nas imagens.
 
@@ -208,3 +210,9 @@ As versões das dependências principais estão fixadas; `package-lock.json` dev
 No menu **Leitor PDF**, abra um arquivo local de até 30 MB, selecione um trecho e vincule o grifo a um assunto. Reabrir o mesmo arquivo restaura as marcações salvas. Exporte uma cópia com grifos e apêndice de notas, ou notas em Markdown. Há revisão ativa de grifos com agenda independente. PDFs escaneados precisam de OCR externo e PDFs protegidos precisam ser desbloqueados pelo proprietário.
 
 **Questões avulsas** permite cadastrar e filtrar cadernos por banca e assunto. **Ferramentas** configura a área pública do ranking e disponibiliza a extensão própria com grifos persistentes nos sites autorizados, revisão de notas, Pomodoro e modo foco. O arquivo PDF original fica local; resultados de sites externos continuam sendo registrados manualmente.
+
+### Identidade visual e agenda
+
+A plataforma usa identidade própria em azul-petróleo e verde-água, com temas claro e escuro e preferência salva. Cobrança, atendimento humano e catálogo comercial não fazem parte do escopo.
+
+O cronômetro do painel permanece ao mudar de tela ou recarregar, separado por conta, edital e dia. Ao concluir, registra o tempo medido; sem iniciar o cronômetro, utiliza a estimativa da tarefa. O calendário mostra o histórico dos dias passados e projeta os próximos dias supondo a conclusão das tarefas. A projeção respeita disponibilidade e dependências; desempenho futuro pode alterar revisões. O leitor PDF permite buscar palavras em todo o documento e navegar pelos resultados.

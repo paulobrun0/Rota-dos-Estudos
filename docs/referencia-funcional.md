@@ -6,8 +6,8 @@ Referência observada com acesso fornecido pelo usuário: painel, desempenho, pl
 
 | Área | Comportamentos observados | Situação neste projeto |
 | --- | --- | --- |
-| Painel | Fila, tarefa atual, tempo, acumulado, próximos assuntos, meta semanal, prazo | Nova fila intercalada, sessão com cronômetro e conclusão manual; meta, prazo e atalhos |
-| Calendário | Semana, navegação e distribuição conforme horas | Projeção semanal baseada no progresso atual, com aviso de que não é um cronograma garantido |
+| Painel | Fila, tarefa atual, tempo, acumulado, próximos assuntos, meta semanal, prazo | Nova fila intercalada, cronômetro persistente por conta/edital/dia, tempo medido e conclusão manual; meta, prazo e atalhos |
+| Calendário | Semana, navegação e distribuição conforme horas | Histórico de sessões passadas e simulação futura sequencial, respeitando horas, dependências e revisões estimadas |
 | Desempenho | Períodos, volume, aproveitamento, matéria, tópico, registros externos | Períodos globais, filtros de matéria/assunto nos registros datados, barras diárias, acumulado compartilhado por assunto, últimas sessões e registro externo |
 | Planejamento | Modo por matéria, frequência, ativação, teoria, prioridade, duração e dependência | Configuração por matéria e assunto, horas por dia, frequência relativa com turnos adicionais, validação de dependências e reserva para revisão |
 | Revisões | Intervalos dependem do desempenho, amostra, peso, importância e prova | Algoritmo próprio e explícito; não é uma reprodução do algoritmo interno da referência |
@@ -15,7 +15,7 @@ Referência observada com acesso fornecido pelo usuário: painel, desempenho, pl
 | Caderno externo | Links de questões, notas e agenda por avaliação | URLs fornecidas pelo usuário, avaliações, agenda separada, arquivamento e restauração |
 | Marcações | Trechos, notas, fonte e busca | Registro por assunto, busca, cores, arquivamento, revisão ativa com agenda, exportação Markdown e importação de extensão própria |
 | Questões avulsas | Cadernos por disciplina e banca, prática livre | Catálogo próprio por banca e assunto, filtros, links e materiais do usuário e prática no banco próprio existente |
-| Rankings | Volume, acerto, sequência, períodos, participação opcional | Ranking próprio com períodos e filtro por área declarada; somente participantes voluntários |
+| Rankings | Volume, acerto, sequência, períodos, participação opcional | Ranking próprio por volume, aproveitamento com amostra mínima, sequência de dias e área declarada; somente participantes voluntários |
 | Perfil | Conta, estudo, horários, reinício e assinatura | Perfil e reinício existentes preservados; horas por dia adicionadas ao planejamento |
 | Comunidade | Convite de grupo e regras | Convite configurável para o grupo do proprietário; não utiliza o convite da referência |
 | Ajuda | Artigos de método e suporte | Ajuda local sobre os recursos implementados; atendimento humano não é simulado |
@@ -25,9 +25,9 @@ Referência observada com acesso fornecido pelo usuário: painel, desempenho, pl
 
 A inspeção mostra interfaces e regras descritas ao usuário, não código-fonte, banco de dados, fórmulas completas ou serviços internos. Nenhum catálogo, caderno compartilhado da referência, guia pago, imagem da marca, credencial, dado pessoal ou lista de alunos foi inserido no repositório.
 
-O leitor PDF da plataforma abre arquivos locais de até 30 MB, grava grifos por documento/página/assunto, oferece revisão ativa e exporta uma cópia com grifos desenhados e apêndice de notas. A identificação SHA-256 permite restaurar grifos ao reabrir o mesmo arquivo. Não envia o arquivo original ao servidor. PDFs escaneados não têm OCR e arquivos protegidos exigem uma cópia desbloqueada.
+O leitor PDF da plataforma abre arquivos locais de até 30 MB, grava grifos por documento/página/assunto, oferece busca em todas as páginas, captura explícita da seleção, revisão ativa e exporta uma cópia com grifos desenhados e apêndice de notas. A identificação SHA-256 permite restaurar grifos ao reabrir o mesmo arquivo. Não envia o arquivo original ao servidor. PDFs escaneados não têm OCR e arquivos protegidos exigem uma cópia desbloqueada.
 
-Não há catálogo comercial, atendimento humano, cobrança/assinatura ou integração automática com resultados de sites externos. São dependências de conteúdo próprio, contratos e/ou serviços do proprietário, não recursos que possam ser extraídos da referência. O catálogo por banca aceita cadernos próprios, a comunidade aceita convite próprio e a ajuda explica as funções locais. As fórmulas de planejamento/revisão são independentes e não pretendem reproduzir algoritmos internos inacessíveis. A projeção semanal usa o progresso atual e não prevê resultados futuros.
+Cobrança/assinatura, atendimento humano e catálogo comercial estão fora do escopo por decisão do proprietário. Não implementar esses serviços. A integração automática com resultados externos depende de APIs oficiais; atualmente os resultados são lançados manualmente. O catálogo por banca aceita cadernos próprios, a comunidade aceita convite próprio e a ajuda explica as funções locais. As fórmulas de planejamento/revisão são independentes e não pretendem reproduzir algoritmos internos inacessíveis. A projeção semanal supõe a conclusão das tarefas propostas e estima intervalos pelo desempenho atual; resultados futuros podem mudar a agenda.
 
 A demonstração pública usa dados fictícios em memória e não acessa APIs da conta. Não é um bypass do login; endpoints reais continuam autenticados.
 

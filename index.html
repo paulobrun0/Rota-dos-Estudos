@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#F8F5ED" />
+    <meta name="theme-color" content="#F3F7F9" />
     <link rel="icon" type="image/svg+xml" href="./brand.svg" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -18,23 +18,25 @@
 
       :root {
         color-scheme: light;
-        --bg: #F8F5ED; --surface: #FFFDF8; --surface2: #F1EBDF;
-        --border: #DDD4C5; --border-soft: #EBE3D7;
-        --text: #222932; --text-muted: #665F55; --text-faint: #756D62;
-        --accent: #A3432E; --accent-soft: #F6E5DA; --on-accent: #FFFFFF;
-        --success: #167451; --success-soft: #E3F4ED;
-        --red: #BF3650; --red-soft: #FCE9EE;
-        --heat-1: #B7E7DD; --heat-2: #6DC9B9;
+        --bg: #F3F7F9; --surface: #FFFFFF; --surface2: #EAF1F5;
+        --border: #CDDCE4; --border-soft: #E3ECF1;
+        --text: #142C3A; --text-muted: #486270; --text-faint: #526D7A;
+        --accent: #087E83; --accent-soft: #DDF3F1; --on-accent: #FFFFFF;
+        --success: #17724D; --success-soft: #E2F4E9;
+        --red: #B72E4F; --red-soft: #FCE7ED;
+        --heat-1: #B9E5DF; --heat-2: #60C4B9;
+        --nav-bg: #123849; --nav-text: #F0FAFC;
       }
       :root[data-theme="dark"] {
         color-scheme: dark;
-        --bg: #211E1A; --surface: #2A2621; --surface2: #352F28;
-        --border: #554A3E; --border-soft: #433A31;
-        --text: #F7F0E5; --text-muted: #D0C1AC; --text-faint: #B9A78F;
-        --accent: #F0AB8B; --accent-soft: #493024; --on-accent: #31251C;
-        --success: #7BDBAF; --success-soft: #193C34;
-        --red: #FFA2B5; --red-soft: #442937;
-        --heat-1: #225657; --heat-2: #32988F;
+        --bg: #0C1821; --surface: #142633; --surface2: #1B3241;
+        --border: #355263; --border-soft: #284453;
+        --text: #EAF5F9; --text-muted: #B0C6D2; --text-faint: #A1BAC8;
+        --accent: #5ED6C9; --accent-soft: #173D40; --on-accent: #092A2A;
+        --success: #7AD9A5; --success-soft: #183D2E;
+        --red: #FF9EB3; --red-soft: #472635;
+        --heat-1: #215C58; --heat-2: #36968C;
+        --nav-bg: #102D3D; --nav-text: #EAF8FB;
       }
       body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: var(--text); }
       button, input, textarea, select { font: inherit; }
@@ -50,7 +52,7 @@
       h1, h2, h3, p { overflow-wrap: anywhere; }
       .sg { font-family: Georgia, "Times New Roman", serif; letter-spacing: -.035em; }
       .mono { font-family: ui-monospace, monospace; }
-      .app-nav { background: #A3432E; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+      .app-nav { background: var(--nav-bg); position: sticky; top: 0; height: 100vh; overflow-y: auto; }
       .nav-toggle-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }
       @media (min-width: 861px) {
         .app-nav.collapsed { width: 76px !important; padding: 18px 8px !important; }
@@ -172,12 +174,12 @@
       @media (max-width: 640px) { .study-panel { padding: 14px; } .study-metrics { grid-template-columns: 1fr 1fr; gap: 10px; } .study-metric { padding: 14px; } .study-metric strong { font-size: 23px; } .form-grid { grid-template-columns: 1fr; } }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 
-      .app-nav .nav-item, .app-nav .nav-item span, .app-nav .nav-item svg, .app-nav .nav-user-label, .app-nav .nav-brand .sg, .app-nav .nav-brand .sg + div, .app-nav .nav-toggle { color: #FFF8EE !important; }
-      .app-nav .nav-item[aria-current="page"] { background: #FFFFFF20 !important; box-shadow: inset 3px 0 #FFF8EE; }
+      .app-nav .nav-item, .app-nav .nav-item span, .app-nav .nav-item svg, .app-nav .nav-user-label, .app-nav .nav-brand .sg, .app-nav .nav-brand .sg + div, .app-nav .nav-toggle { color: var(--nav-text) !important; }
+      .app-nav .nav-item[aria-current="page"] { background: #FFFFFF20 !important; box-shadow: inset 3px 0 var(--nav-text); }
       .app-nav .nav-item:not([aria-current]):hover { background: #FFFFFF12 !important; }
-      .app-nav .nav-concurso { background: #00000010 !important; border-color: #FFFFFF30 !important; color: #FFF8EE !important; }
-      .app-nav .nav-context-label > div { color: #FFF8EE !important; }
-      .app-nav > div:last-child button { color: #FFF8EE !important; }
+      .app-nav .nav-concurso { background: #00000010 !important; border-color: #FFFFFF30 !important; color: var(--nav-text) !important; }
+      .app-nav .nav-context-label > div { color: var(--nav-text) !important; }
+      .app-nav > div:last-child button { color: var(--nav-text) !important; }
       .app-heading { padding-bottom: 20px; border-bottom: 1px solid var(--border); }
       .study-panel { border-radius: 8px !important; }
       .study-panel-heading h2, .dashboard-welcome h2, .session-spotlight h2 { font-family: Georgia, "Times New Roman", serif; }
@@ -209,6 +211,7 @@
       .topic-table select, .topic-table button { max-width:100%; min-width:0; white-space:normal; overflow-wrap:anywhere; }
     .pdf-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}.pdf-toolbar input{width:65px}.pdf-container{max-width:100%;overflow:hidden}.pdf-page{position:relative;max-width:100%;background:white}.pdf-text-layer{position:absolute;inset:0;overflow:hidden;z-index:2}.pdf-text-layer ::selection{background:rgba(163,67,46,.3)}.pdf-highlight{position:absolute;pointer-events:none;z-index:1}.pdf-page canvas{display:block;max-width:100%}.pdf-container+div label{display:block;margin:12px 0}.pdf-container+div select,.pdf-container+div textarea{max-width:100%}
 :is(.pdf-study-view,.notebook-catalog) button{background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 12px;font-size:13px;margin:4px 3px 4px 0}:is(.pdf-study-view,.notebook-catalog) input,:is(.pdf-study-view,.notebook-catalog) select,:is(.pdf-study-view,.notebook-catalog) textarea{background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 12px;min-width:0;max-width:100%;font-size:14px}.notebook-catalog .study-form label{display:grid;gap:6px}.pdf-study-view .learning-card label{display:grid;gap:6px}.pdf-study-view textarea{width:100%;min-height:90px}.notebook-catalog select{max-width:100%}.pdf-study-view h2{font-family:Georgia,serif}.pdf-study-view .learning-card{margin:18px 0;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.pdf-toolbar input[type="search"]{width:250px;max-width:100%}.pdf-study-view li span{overflow-wrap:anywhere}
 </style>
     <script>
       (function () {

@@ -1,0 +1,3 @@
+export function validClock(value){return value && typeof value.materiaId==='string' && typeof value.topicId==='string' && Number.isFinite(value.elapsedMs) && value.elapsedMs>=0 && value.elapsedMs<=86400000 && (value.startedAt===null || (Number.isFinite(value.startedAt)&&value.startedAt>0));}
+export function clockSeconds(clock,now=Date.now()){if(!validClock(clock))return 0;return Math.floor(Math.min(86400000,clock.elapsedMs+(clock.startedAt===null?0:Math.max(0,now-clock.startedAt)))/1000);}
+export function toggleClock(clock,ref,now=Date.now()){const same=validClock(clock)&&clock.materiaId===ref.materiaId&&clock.topicId===ref.topicId;return {...ref,elapsedMs:same?clockSeconds(clock,now)*1000:0,startedAt:same&&clock.startedAt!==null?null:now};}
