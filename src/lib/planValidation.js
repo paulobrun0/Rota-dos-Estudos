@@ -1,3 +1,4 @@
+import {validateTecRequest,tecNotebookUrl} from './tecProtocol.js';
 const object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const weekdays = new Set(["dom", "seg", "ter", "qua", "qui", "sex", "sab"]);
 
@@ -63,6 +64,7 @@ function validateMaterias(materias) {
       if (topic.exerciseMinutes !== undefined) { count(topic.exerciseMinutes, "minutos por tópico"); requireValue(topic.exerciseMinutes >= 5 && topic.exerciseMinutes <= 180, "minutos por tópico fora do limite"); }
 
       if (topic.status !== undefined) requireValue(["pendente", "estudado"].includes(topic.status), "status do assunto inválido");
+      if (topic.tecSubjectTitle !== undefined) requireValue(typeof topic.tecSubjectTitle === "string" && topic.tecSubjectTitle.length <= 1500, "correspondência TEC inválida");
       if (topic.notes !== undefined) requireValue(typeof topic.notes === "string", "anotação inválida");
       if (topic.link !== undefined) requireValue(isSafeStudyLink(topic.link), "link precisa começar com http ou https");
       if (topic.links !== undefined) {
@@ -252,6 +254,16 @@ export function validatePlanData(raw) {
       }
     }
   }
+  if (raw.tecRequests !== undefined) {
+    distinct(raw.tecRequests, "montagens TEC"); requireValue(raw.tecRequests.length <= 50, "muitas montagens TEC");
+    for (const request of raw.tecRequests) {
+      validateTecRequest(request);
+      requireValue(["pending","complete","cancelled","error"].includes(request.status), "estado da montagem TEC inválido");
+      if (request.status === "complete") tecNotebookUrl(request.url);
+      if (request.error !== undefined) requireValue(typeof request.error === "string" && request.error.length <= 1000, "erro de montagem TEC inválido");
+    }
+  }
+  if (raw.studyPreferences?.tecFolder !== undefined) requireValue(typeof raw.studyPreferences.tecFolder === "string" && raw.studyPreferences.tecFolder.length <= 200, "pasta TEC inválida");
   if (raw.availableHoursPerWeek != null) { count(raw.availableHoursPerWeek, "horas por semana", false); requireValue(raw.availableHoursPerWeek > 0 && raw.availableHoursPerWeek <= 168, "horas por semana devem estar entre 0 e 168"); }
   if (raw.practiceArchive !== undefined) {
     distinct(raw.practiceArchive, "histórico preservado");

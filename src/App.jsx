@@ -1,3 +1,4 @@
+import {TecNotebookProvider,useTecNotebooks,TecRequestStatus} from './components/TecNotebookBuilder.jsx';
 import {addSessionReview} from './lib/studySession.js';
 import {applyLearningPlan} from './lib/learningPlanning.js';
 import {withNotebookLinks,mergeNotebooks,recordNotebookPractice} from "./lib/notebooks.js";
@@ -91,6 +92,7 @@ const TAB_TITLES = {
 
 export default function App({ user, onLogout, onUserUpdate }) {
   const { data, setData, sync, retry, flush } = usePlanData(user.id ? `account:${user.id}` : user.email);
+  const tecNotebooks = useTecNotebooks(data,setData,user.id ? `account:${user.id}` : null);
   const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get("tool") === "pdf" ? "pdf" : "painel");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(() => {
@@ -756,6 +758,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
   const weekDays = Array.from({ length: 35 }, (_, i) => addDaysISO(weekAnchor, i));
 
   return (
+    <TecNotebookProvider value={tecNotebooks}>
     <div style={{ background: colors.bg, color: colors.text, minHeight: "100vh", fontFamily: "Inter, system-ui, sans-serif", display: "flex" }}>
       <style>{`
         input, textarea { font-family: inherit; }
@@ -970,6 +973,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         {tab === "ferramentas" && activeConcurso && <StudyToolsView data={data} concurso={activeConcurso} onArea={studyArea=>setData(d=>({...d,studyPreferences:{...d.studyPreferences,studyArea}}))}
           onImport={entries=>setData(d=>{const existing=new Set((d.studyMarks||[]).map(e=>e.id));return {...d,studyMarks:[...(d.studyMarks||[]),...entries.filter(e=>!existing.has(e.id))]};})}
           onCommunity={communityUrl=>setData(d=>({...d,studyPreferences:{...d.studyPreferences,communityUrl}}))} />}
+        <TecRequestStatus />
         <LearningHelp />
         {tab === "revisoes" && activeConcurso && <RevisoesView key={activeConcurso.id} concurso={activeConcurso} addTopicToToday={addTopicToToday} onNavigate={goTab} />}
         {tab === "simulados" && activeConcurso && <SimuladosView key={activeConcurso.id} concurso={activeConcurso}
@@ -1060,5 +1064,6 @@ export default function App({ user, onLogout, onUserUpdate }) {
         </main>
       </div>
     </div>
+    </TecNotebookProvider>
   );
 }

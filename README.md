@@ -46,6 +46,18 @@ Os detalhes da prática distinguem amostras menores que 20 questões, desempenho
 
 ## Cadernos de questões externos
 
+### Montagem automática no TEC
+
+Use **Gerar caderno TEC** no assunto de Edital, Hoje, na sessão de estudo ou no catálogo de Questões avulsas. Matéria e assunto já vêm preenchidos. Escolha banca (vazio para todas), anos, quantidade, pasta e opções de questões não resolvidas/anuladas/desatualizadas. **Gerar e vincular caderno** envia o pedido à extensão Ritmo 1.2, que abre o TEC, aplica os filtros pela interface, ajusta a quantidade e gera o caderno. Se houver menos questões, usa as disponíveis. A conta do TEC precisa estar aberta no navegador.
+
+Na primeira instalação, baixe a extensão em **Ferramentas**, extraia o ZIP e use **Carregar sem compactação** no Chrome ou Edge. Se já usa a extensão, atualize a pasta e clique em Recarregar no gerenciador de extensões. Abra o popup da extensão e clique em **Ativar montador TEC**; autorize o acesso ao domínio do TEC e recarregue a plataforma. A extensão utiliza o login existente no TEC, sem coletar credenciais. A única autorização permanente opcional é para o domínio do TEC e pode ser removida em **Desativar montador TEC**. Em outros sites, captura e restauração de grifos continuam manuais pelo popup.
+
+Correspondências exatas são selecionadas automaticamente. Quando os nomes diferem ou existem várias opções, confirme o assunto no painel da extensão dentro do TEC. Essa correspondência é guardada naquele assunto. A primeira pasta de destino também exige confirmação e será lembrada para os pedidos seguintes. Ao concluir, o caderno aparece nos links do assunto e da sessão. A montagem não registra questões, acertos, tempo nem conclusão de estudo. Os resultados ficam vinculados ao pedido e à conta de origem; retornos repetidos não duplicam o caderno.
+
+O montador usa os controles visíveis do TEC, sem API não documentada ou extração de questões. Mudanças no layout, ausência de resultados ou campos não reconhecidos interrompem a montagem. Se o TEC já criou o caderno e o link não voltou, abra o caderno e use **Vincular caderno aberto** no popup da extensão. Há também **Vincular link gerado** na lista de montagens da plataforma. Cancelar não apaga um caderno que já tenha sido criado no TEC.
+
+### Vincular manualmente
+
 Em **Edital** ou **Hoje**, use **Buscar questões** ao lado de um assunto. O nome já aparece preenchido e pode ser ajustado antes da busca. **Buscar no Qconcursos** abre questões por palavra-chave; confira os filtros de disciplina e assunto. Para o **TEC Concursos**, copie o assunto, abra a plataforma e escolha seus filtros. A criação e o salvamento do caderno são feitos na sua conta da plataforma externa. Depois cole a URL nos campos de cadernos e salve: o link ficará disponível diretamente naquele assunto, inclusive após recarregar a página. O aplicativo não recebe credenciais dessas plataformas e não sincroniza automaticamente as questões resolvidas nelas.
 
 ## Interface

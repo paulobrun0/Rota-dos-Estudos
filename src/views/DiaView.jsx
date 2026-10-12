@@ -1,3 +1,4 @@
+import {TecNotebookButton} from '../components/TecNotebookBuilder.jsx';
 import { studyPriority } from "../lib/studyPriorities.js";
 import { SharedPractice } from "../components/SharedPractice.jsx";
 import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
@@ -437,7 +438,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
             <span className="mono" style={{ fontSize: 10.5, color: colors.success }}>praticar ({questionsAvailable})</span>
           </button>
         )}
-          <TopicLinkButtons topic={topic} /><button type="button" onClick={() => setLinkOpen(o => !o)} aria-label={`buscar questões de ${topic.name}`} style={{ ...secondaryBtnStyle, marginTop: 0, padding: "4px 8px", fontSize: 11 }}>Buscar questões</button>
+          <TopicLinkButtons topic={topic} /><TecNotebookButton concursoId={concursoId} materiaId={materiaId} topicId={topic.id}/><button type="button" onClick={() => setLinkOpen(o => !o)} aria-label={`buscar questões de ${topic.name}`} style={{ ...secondaryBtnStyle, marginTop: 0, padding: "4px 8px", fontSize: 11 }}>Buscar questões</button>
         <button
           onClick={() => setLinkOpen((o) => !o)}
           aria-label="link do caderno de questões"

@@ -29,4 +29,4 @@ export function buildQconcursosSearch(term) {
   return url.href;
 }
 
-export const TEC_QUESTIONS_URL = "https://www.tecconcursos.com.br/questoes";
+export const TEC_QUESTIONS_URL = "https://www.tecconcursos.com.br/questoes/filtrar";

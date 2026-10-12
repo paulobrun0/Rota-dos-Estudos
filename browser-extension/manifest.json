@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Ritmo · Marcações de estudo",
-  "version": "1.1.0",
-  "description": "Guarda trechos, fontes e notas localmente e exporta para sua plataforma de estudo.",
+  "name": "Ritmo · Estudo e cadernos TEC",
+  "version": "1.2.0",
+  "description": "Marcações de estudo e montagem de cadernos no TEC a partir dos assuntos da sua plataforma.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -13,7 +13,32 @@
     "default_title": "Guardar trecho de estudo"
   },
   "optional_host_permissions": [
-    "http://*/*",
-    "https://*/*"
+    "https://www.tecconcursos.com.br/*"
+  ],
+  "background": {
+    "service_worker": "tec-background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://app.paulobruno.dev/*"
+      ],
+      "js": [
+        "app-bridge.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "tec-dom.js",
+        "tec-protocol.js"
+      ],
+      "matches": [
+        "https://www.tecconcursos.com.br/*"
+      ]
+    }
   ]
 }
