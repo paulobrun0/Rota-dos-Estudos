@@ -48,9 +48,20 @@ function validateMaterias(materias) {
   for (const materia of materias) {
     text(materia.name, "nome da matéria");
     if (materia.weight !== undefined) { count(materia.weight, "peso da matéria", false); requireValue(materia.weight > 0 && materia.weight <= 100, "peso deve estar entre 0 e 100"); }
+    if (materia.learning !== undefined) {
+      requireValue(object(materia.learning), "planejamento da matéria inválido");
+      if (materia.learning.enabled !== undefined) requireValue(typeof materia.learning.enabled === "boolean", "ativação da matéria inválida");
+      if (materia.learning.mode !== undefined) requireValue(["mixed", "questions"].includes(materia.learning.mode), "modo de estudo inválido");
+      if (materia.learning.frequency !== undefined) { count(materia.learning.frequency, "frequência"); requireValue(materia.learning.frequency >= 1 && materia.learning.frequency <= 10, "frequência deve estar entre 1 e 10"); }
+      if (materia.learning.afterMateriaId !== undefined) requireValue(typeof materia.learning.afterMateriaId === "string" && materia.learning.afterMateriaId !== materia.id, "dependência inválida");
+    }
     distinct(materia.topics, "assuntos");
     for (const topic of materia.topics) {
       text(topic.name, "nome do assunto");
+      for (const field of ["enabled", "theoryDone"]) if (topic[field] !== undefined) requireValue(typeof topic[field] === "boolean", `${field} inválido`);
+      if (topic.criticality !== undefined) requireValue(["critical", "normal", "low"].includes(topic.criticality), "importância inválida");
+      if (topic.exerciseMinutes !== undefined) { count(topic.exerciseMinutes, "minutos por tópico"); requireValue(topic.exerciseMinutes >= 5 && topic.exerciseMinutes <= 180, "minutos por tópico fora do limite"); }
+
       if (topic.status !== undefined) requireValue(["pendente", "estudado"].includes(topic.status), "status do assunto inválido");
       if (topic.notes !== undefined) requireValue(typeof topic.notes === "string", "anotação inválida");
       if (topic.link !== undefined) requireValue(isSafeStudyLink(topic.link), "link precisa começar com http ou https");
@@ -89,6 +100,10 @@ function validateMaterias(materias) {
 function validateConcurso(concurso) {
   requireValue(object(concurso), "concurso inválido");
   validateMaterias(concurso.materias);
+  if (concurso.learningBalance !== undefined) { requireValue(object(concurso.learningBalance), "equilíbrio inválido"); count(concurso.learningBalance.newPercent, "reserva de conteúdo"); requireValue(concurso.learningBalance.newPercent <= 100, "reserva inválida"); }
+  const parents = new Map(concurso.materias.map(m => [m.id, m.learning?.afterMateriaId]));
+  for (const id of parents.keys()) { const seen = new Set(); let current = id; while (parents.get(current)) { requireValue(!seen.has(current), "dependências formam um ciclo"); seen.add(current); current = parents.get(current); } }
+
   for (const key of ["banca", "cargo"]) if (concurso[key] !== undefined) requireValue(typeof concurso[key] === "string", `${key} inválido`);
   if (concurso.stage !== undefined) requireValue(["pre", "post", "completed"].includes(concurso.stage), "fase do concurso inválida");
   if (concurso.editalUrl !== undefined) requireValue(isSafeStudyLink(concurso.editalUrl), "link do edital inválido");
@@ -149,6 +164,30 @@ export function validatePlanData(raw) {
   } else {
     requireValue(Array.isArray(raw.materias), "faltam concursos ou matérias");
     validateConcurso(raw);
+  }
+  if (raw.studyPreferences !== undefined) {
+    requireValue(object(raw.studyPreferences), "preferências de estudo inválidas");
+    if (raw.studyPreferences.communityUrl !== undefined) requireValue(isSafeStudyLink(raw.studyPreferences.communityUrl), "convite da comunidade inválido");
+    if (raw.studyPreferences.weeklyQuestionsGoal !== undefined) { count(raw.studyPreferences.weeklyQuestionsGoal, "meta semanal"); requireValue(raw.studyPreferences.weeklyQuestionsGoal <= 20000, "meta semanal muito alta"); }
+    if (raw.studyPreferences.dailyHours !== undefined) { requireValue(object(raw.studyPreferences.dailyHours), "horários inválidos"); for (const [day,hours] of Object.entries(raw.studyPreferences.dailyHours)) { requireValue(weekdays.has(day), "dia de estudo inválido"); count(hours, "horas por dia", false); requireValue(hours <= 24, "horas diárias excedem 24"); } }
+  }
+  for (const key of ["studySessions", "questionEvents"]) if (raw[key] !== undefined) {
+    distinct(raw[key], key);
+    for (const entry of raw[key]) {
+      date(entry.date); optionalCount(entry, "createdAt"); for (const field of ["concursoId", "materiaId", "topicId"]) text(entry[field], field);
+      count(entry.total, "questões da sessão"); count(entry.correct, "acertos da sessão"); requireValue(entry.correct <= entry.total, "acertos da sessão excedem total");
+      if (key === "studySessions") { requireValue(["theory", "questions", "review"].includes(entry.kind), "tipo da sessão inválido"); count(entry.minutes, "tempo da sessão"); if (entry.grade !== null) { count(entry.grade, "nota da sessão"); requireValue(entry.grade <= 100, "nota da sessão inválida"); } }
+    }
+  }
+  for (const key of ["externalReviews", "studyMarks"]) if (raw[key] !== undefined) {
+    distinct(raw[key], key);
+    for (const entry of raw[key]) {
+      for (const field of ["concursoId", "materiaId", "topicId"]) text(entry[field], field);
+      requireValue(typeof entry.note === "string" && isSafeStudyLink(entry.url), "anotação ou fonte inválida");
+      if (entry.archived !== undefined) requireValue(typeof entry.archived === "boolean", "arquivamento inválido");
+      if (key === "studyMarks") { text(entry.text, "trecho"); requireValue(entry.text.length <= 20000 && ["yellow", "green", "pink"].includes(entry.color), "marcação inválida"); date(entry.date); }
+      else { requireValue(Boolean(entry.url), "link da revisão obrigatório"); date(entry.nextReviewDate); count(entry.interval, "intervalo"); requireValue(entry.interval > 0 && entry.interval <= 120, "intervalo inválido"); if (entry.lastReviewDate !== undefined) date(entry.lastReviewDate); requireValue(Array.isArray(entry.reviews), "histórico de revisão inválido"); for (const review of entry.reviews) { date(review.date); requireValue(["again", "hard", "good", "easy"].includes(review.rating), "avaliação de revisão inválida"); } }
+    }
   }
   const concursoIds = value => {
     requireValue(Array.isArray(value) && value.every(id => typeof id === "string" && id.trim()) && new Set(value).size === value.length, "seleção de concursos inválida");

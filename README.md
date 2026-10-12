@@ -1,6 +1,20 @@
 # Questão de Ritmo
 
-Planejador de estudos para concursos com painel de desempenho, edital, ciclos por progresso, revisões, simulados e materiais organizados por assunto.
+Planejador de estudos para concursos com fila de sessões, desempenho por assunto, planejamento, alertas, revisões externas, marcações, editais, simulados e prática compartilhada.
+
+## Painel e ferramentas de estudo
+
+A interface usa fundo marfim, menu terracota, títulos com serifa e ícones de traço simples. **Painel** oferece lista e calendário, tarefa em destaque, cronômetro, conclusão manual, meta semanal e atalhos. O calendário é uma projeção do progresso atual.
+
+Em **Planejamento**, configure horas por dia, matérias e assuntos ativos, modo só questões ou teoria e questões, frequência relativa, importância, duração e dependências. Ciclos de dependência são rejeitados. A reserva de conteúdo novo pode ceder tempo às revisões quando uma categoria está vazia. A frequência orienta a prioridade; não garante um número fixo de aparições em cada ciclo.
+
+**Desempenho** reúne atividade por período, gráficos diários, filtros por matéria/assunto e registros externos. **Alertas** destaca atrasos e baixo aproveitamento conforme a importância. A fila calcula os intervalos com algoritmo próprio, considerando acertos, amostra, importância, peso e prazo; não comprova domínio.
+
+**Caderno de revisão** aceita links de questões e anotações, com avaliações e agenda separada. **Minhas marcações** guarda trechos, fonte e notas. Ambas oferecem arquivamento reversível. **Questões avulsas** reúne seus links e a prática no banco próprio.
+
+Em **Ferramentas**, há Pomodoro, convite do seu grupo e uma extensão própria de captura/notas, com exportação JSON e importação com prévia. O leitor nativo de PDF pode bloquear captura; a extensão própria ainda não tem leitor de PDF com grifos, exportação de PDF anotado ou restauração automática de marcações nas páginas.
+
+A [demonstração visual](https://app.paulobruno.dev/?preview=learning) usa dados fictícios somente em memória, sem acessar contas nem salvar no servidor. O [levantamento funcional](docs/referencia-funcional.md) registra os recursos observados, implementados e pendentes. As imagens antigas abaixo documentam versões anteriores da interface.
 
 ## Plano integrado para vários editais
 
@@ -26,7 +40,7 @@ Em **Edital** ou **Hoje**, use **Buscar questões** ao lado de um assunto. O nom
 
 ## Interface
 
-Identidade em azul profundo e turquesa, símbolo Q com check, ícones duotone, navegação lateral recolhível e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto. As colunas permanecem lado a lado e se ajustam à largura disponível, sem rolagem horizontal.
+Identidade em marfim e terracota, símbolo Q com check e ícones de traço simples, navegação lateral recolhível e temas claro e escuro. O tema claro é o padrão para novas visitas; sua escolha anterior é preservada e pode ser alterada em **Ajustes**. A interface se adapta ao celular e oferece indicação visível de foco para navegação por teclado. As matérias mantêm seus títulos, com assuntos organizados em tabela: situação, questões, cadernos e ações. Na tela de hoje, os controles também ficam alinhados por assunto. As colunas permanecem lado a lado e se ajustam à largura disponível, sem rolagem horizontal.
 
 As capturas abaixo mostram a aplicação real com dados fictícios de demonstração. Nenhuma conta, questão de prova ou informação de usuário real foi usada nas imagens.
 

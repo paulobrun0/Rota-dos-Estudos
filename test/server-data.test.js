@@ -356,3 +356,11 @@ test('integrated daily plan and one shared completion survive API reload with re
  const invalid=structuredClone(saved);invalid.unifiedPlans[today].cards[0].refs=[];
  assert.equal((await api('/api/data',{method:'PUT',cookie:user.cookie,body:{value:JSON.stringify(invalid)}})).status,400);assert.deepEqual(JSON.parse((await api('/api/data',{cookie:user.cookie})).body.value),saved);
 });
+
+test('learning sessions, marks and external review agendas persist per account and reject invalid structures',async()=>{
+ const {completeLearningSession}=await import('../src/lib/learningTools.js');const {todayISO}=await import('../src/lib/date.js');const date=todayISO();
+ const user=await registerFresh(),other=await registerFresh();const original={concursos:[{id:'learn',name:'Aprender',materias:[{id:'m',name:'Português',topics:[{id:'t',name:'Crase',status:'pendente'}]}],settings:{minutesPerMateria:30}}],activeConcursoId:'learn',studyPreferences:{dailyHours:{dom:1,seg:1,ter:1,qua:1,qui:1,sex:1,sab:1},weeklyQuestionsGoal:100},activity:{},questionActivity:{}};
+ const saved=completeLearningSession(original,'learn',{materiaId:'m',topicId:'t'},date,{total:20,correct:16});saved.studyMarks=[{id:'mark',concursoId:'learn',materiaId:'m',topicId:'t',text:'Texto próprio de teste',note:'Revisar',url:'https://example.com',color:'yellow',date}];saved.externalReviews=[{id:'review',concursoId:'learn',materiaId:'m',topicId:'t',note:'Exemplo',url:'https://example.com/questao',nextReviewDate:date,interval:1,reviews:[]}];
+ assert.equal((await api('/api/data',{method:'PUT',cookie:user.cookie,body:{value:JSON.stringify(saved)}})).status,200);assert.deepEqual(JSON.parse((await api('/api/data',{cookie:user.cookie})).body.value),saved);assert.equal((await api('/api/data',{cookie:other.cookie})).body.value,null);
+ const invalid=structuredClone(saved);invalid.studyMarks[0].url='javascript:alert(1)';assert.equal((await api('/api/data',{method:'PUT',cookie:user.cookie,body:{value:JSON.stringify(invalid)}})).status,400);assert.deepEqual(JSON.parse((await api('/api/data',{cookie:user.cookie})).body.value),saved);
+});

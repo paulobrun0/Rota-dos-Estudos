@@ -1,3 +1,4 @@
+import { uid } from "./id.js";
 import { todayISO } from "./date.js";
 
 export function useTopicActions({ updateActive, setData, activeConcurso }) {
@@ -44,6 +45,8 @@ export function useTopicActions({ updateActive, setData, activeConcurso }) {
       topic.lastPracticeDate = iso;
       topic.questionsTotal = (topic.questionsTotal || 0) + total;
       topic.questionsCorrect = (topic.questionsCorrect || 0) + safeCorrect;
+      clone.questionEvents ||= [];
+      clone.questionEvents.push({id:uid(),date:iso,concursoId:activeId,materiaId,topicId,total,correct:safeCorrect,createdAt:Date.now()});
       clone.questionActivity ||= {};
       const bucket = clone.questionActivity[iso] || { total: 0, correct: 0 };
       clone.questionActivity[iso] = { total: bucket.total + total, correct: bucket.correct + safeCorrect };

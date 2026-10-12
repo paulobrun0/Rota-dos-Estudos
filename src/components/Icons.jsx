@@ -60,7 +60,7 @@ import { X as XGlyph } from "@phosphor-icons/react/X";
 
 // Keep icon styling consistent and import only the glyphs the app uses.
 function icon(Glyph) {
-  return forwardRef(function RotaIcon({ strokeWidth, weight = "duotone", ...props }, ref) {
+  return forwardRef(function RotaIcon({ strokeWidth, weight = "regular", ...props }, ref) {
     return <Glyph ref={ref} weight={weight} aria-hidden="true" {...props} />;
   });
 }

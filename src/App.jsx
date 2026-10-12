@@ -1,3 +1,8 @@
+import { StudyToolsView } from "./views/StudyToolsView.jsx";
+import { LearningDashboard } from "./views/LearningDashboard.jsx";
+import { PerformanceView, AlertsView, PlanningView, ExternalReviewView, MarksView, QuestionHubView, LearningHelp } from "./views/LearningViews.jsx";
+import { completeLearningSession, reviewExternalEntry } from "./lib/learningTools.js";
+import { validatePlanData } from "./lib/planValidation.js";
 import { UnifiedPlanView } from "./views/UnifiedPlanView.jsx";
 import { saveUnifiedPlan, completeUnifiedCard } from "./lib/unifiedPlan.js";
 import { ConciliacaoView } from "./views/ConciliacaoView.jsx";
@@ -53,6 +58,13 @@ const REVIEW_CARD_MINUTES = 3;
 
 const TAB_TITLES = {
   painel: "painel",
+  desempenho: "desempenho",
+  planejamento: "planejamento",
+  alertas: "alertas",
+  revisaoexterna: "caderno de revisão",
+  marcacoes: "minhas marcações",
+  avulsas: "questões avulsas",
+  ferramentas: "ferramentas",
   conciliar: "conciliar editais",
   integrado: "plano integrado",
   revisoes: "revisões",
@@ -789,6 +801,13 @@ export default function App({ user, onLogout, onUserUpdate }) {
         </button>
 
         <NavItem icon={<GraduationCap size={20} />} label="painel" active={tab === "painel"} onClick={() => goTab("painel")} />
+        <NavItem icon={<Target size={20} />} label="desempenho" active={tab === "desempenho"} onClick={() => goTab("desempenho")} />
+        <NavItem icon={<ListChecks size={20} />} label="planejamento" active={tab === "planejamento"} onClick={() => goTab("planejamento")} />
+        <NavItem icon={<Flame size={20} />} label="alertas" active={tab === "alertas"} onClick={() => goTab("alertas")} />
+        <NavItem icon={<NotebookText size={20} />} label="caderno de revisão" active={tab === "revisaoexterna"} onClick={() => goTab("revisaoexterna")} />
+        <NavItem icon={<BookOpen size={20} />} label="minhas marcações" active={tab === "marcacoes"} onClick={() => goTab("marcacoes")} />
+        <NavItem icon={<Target size={20} />} label="questões avulsas" active={tab === "avulsas"} onClick={() => goTab("avulsas")} />
+        <NavItem icon={<Settings size={20} />} label="ferramentas" active={tab === "ferramentas"} onClick={() => goTab("ferramentas")} />
         <NavItem icon={<CalendarDays size={20} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); goTab("dia"); }} />
         <NavItem icon={<ListChecks size={20} />} label="semana" active={tab === "semana"} onClick={() => goTab("semana")} />
         <NavItem icon={<BookOpen size={20} />} label="edital" active={tab === "edital"} onClick={() => goTab("edital")} />
@@ -920,7 +939,30 @@ export default function App({ user, onLogout, onUserUpdate }) {
           onWeight={(concursoId, materiaId, weight) => setData(d => ({ ...d, concursos: d.concursos.map(c => c.id !== concursoId ? c : ({ ...c, materias: c.materias.map(m => m.id !== materiaId ? m : ({ ...m, weight })) })) }))}
           onLink={(left, right) => setData(d => linkEquivalentTopics(d, left, right, `shared:${uid()}`))}
           onUnlink={ref => setData(d => removeManualEquivalence(d, ref))} onSkip={skipShared} onUndo={undoShared} />}
-        {tab === "painel" && activeConcurso && <DashboardView concurso={activeConcurso} onNavigate={goTab} />}
+        {tab === "painel" && activeConcurso && <LearningDashboard data={data} concurso={activeConcurso} user={user} onNavigate={goTab} onSkip={skipActiveShared} onUndo={undoActiveShared}
+          onGoal={goal => setData(d => ({...d,studyPreferences:{...d.studyPreferences,weeklyQuestionsGoal:goal}}))}
+          onComplete={(ref,result) => { const iso=todayISO(); const next=completeLearningSession(data,activeConcurso.id,ref,iso,result); setData(d=>d===data?next:completeLearningSession(d,activeConcurso.id,ref,iso,result)); }} />}
+        {tab === "desempenho" && activeConcurso && <PerformanceView data={data} concurso={activeConcurso} onRegister={addTopicQuestions} />}
+        {tab === "alertas" && activeConcurso && <AlertsView data={data} concurso={activeConcurso} onStudy={(m,t)=>{addTopicToToday(m,t);goTab("dia");}} />}
+        {tab === "planejamento" && activeConcurso && <PlanningView key={activeConcurso.id} data={data} concurso={activeConcurso} onSave={(draft,hours)=>{
+          const dailyHours=Object.fromEntries(Object.entries(hours).map(([day,value])=>[day,Number(value)]));
+          const applyConfig=c=>c.materias.map(m=>{const dm=draft.materias.find(item=>item.id===m.id);if(!dm)return m;return {...m,learning:dm.learning,topics:m.topics.map(t=>{const dt=dm.topics.find(item=>item.id===t.id);return dt?{...t,enabled:dt.enabled,theoryDone:dt.theoryDone,criticality:dt.criticality,exerciseMinutes:dt.exerciseMinutes}:t;})};});
+          const cleanMaterias=applyConfig(data.concursos.find(c=>c.id===draft.id));
+          const next={...data,concursos:data.concursos.map(c=>c.id===draft.id?{...c,materias:cleanMaterias,learningBalance:draft.learningBalance}:c),studyDays:Object.keys(dailyHours).filter(day=>dailyHours[day]>0),availableHoursPerWeek:Object.values(dailyHours).reduce((sum,n)=>sum+n,0)||null,studyPreferences:{...data.studyPreferences,dailyHours}};
+          validatePlanData(next);setData(d=>({...d,concursos:d.concursos.map(c=>c.id===draft.id?{...c,materias:applyConfig(c),learningBalance:draft.learningBalance}:c),studyDays:next.studyDays,availableHoursPerWeek:next.availableHoursPerWeek,studyPreferences:{...d.studyPreferences,dailyHours}}));
+        }} />}
+        {tab === "revisaoexterna" && activeConcurso && <ExternalReviewView data={data} concurso={activeConcurso}
+          onAdd={entry=>setData(d=>({...d,externalReviews:[...(d.externalReviews||[]),entry]}))}
+          onReview={(id,rating)=>setData(d=>reviewExternalEntry(d,id,rating,todayISO()))}
+          onRemove={id=>setData(d=>({...d,externalReviews:d.externalReviews.map(e=>e.id===id?{...e,archived:!e.archived}:e)}))} />}
+        {tab === "marcacoes" && activeConcurso && <MarksView data={data} concurso={activeConcurso}
+          onAdd={entry=>setData(d=>({...d,studyMarks:[...(d.studyMarks||[]),entry]}))}
+          onRemove={id=>setData(d=>({...d,studyMarks:d.studyMarks.map(e=>e.id===id?{...e,archived:!e.archived}:e)}))} />}
+        {tab === "avulsas" && activeConcurso && <QuestionHubView concurso={activeConcurso} onLinks={updateTopicLink} onMaterials={updateTopicMaterials} onAnswer={addTopicQuestions} questionCounts={questionCounts} />}
+        {tab === "ferramentas" && activeConcurso && <StudyToolsView data={data} concurso={activeConcurso}
+          onImport={entries=>setData(d=>{const existing=new Set((d.studyMarks||[]).map(e=>e.id));return {...d,studyMarks:[...(d.studyMarks||[]),...entries.filter(e=>!existing.has(e.id))]};})}
+          onCommunity={communityUrl=>setData(d=>({...d,studyPreferences:{...d.studyPreferences,communityUrl}}))} />}
+        <LearningHelp />
         {tab === "revisoes" && activeConcurso && <RevisoesView key={activeConcurso.id} concurso={activeConcurso} addTopicToToday={addTopicToToday} onNavigate={goTab} />}
         {tab === "simulados" && activeConcurso && <SimuladosView key={activeConcurso.id} concurso={activeConcurso}
           onSave={exam => updateActive(c => ({ ...c, simulados:(c.simulados || []).some(e => e.id === exam.id) ? c.simulados.map(e => e.id === exam.id ? exam : e) : [...(c.simulados || []),exam] }))}
