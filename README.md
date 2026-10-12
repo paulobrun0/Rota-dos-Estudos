@@ -16,6 +16,14 @@ Em **Ferramentas**, há Pomodoro, convite do seu grupo e uma extensão própria 
 
 A [demonstração visual](https://app.paulobruno.dev/?preview=learning) usa dados fictícios somente em memória, sem acessar contas nem salvar no servidor. O [levantamento funcional](docs/referencia-funcional.md) registra os recursos observados, implementados e pendentes. As imagens antigas abaixo documentam versões anteriores da interface.
 
+### Visual atual
+
+Capturas da versão publicada, usando apenas dados fictícios da demonstração:
+
+![Painel com menu terracota, fila e sessão de estudo](docs/images/painel-terracota.jpg)
+
+![Desempenho com períodos, atividade e tabela por assunto](docs/images/desempenho-terracota.jpg)
+
 ## Plano integrado para vários editais
 
 Em **Plano integrado**, selecione pelo menos dois concursos em preparação, informe suas horas semanais e o tempo por assunto novo. **Gerar plano de hoje** reúne assuntos equivalentes em uma única linha, mostra quais editais cada estudo atende e respeita a carga diária dividida pelos dias de estudo de Ajustes. Revisões vencidas têm prioridade; peso, desempenho compartilhado, prazo da prova e pendências anteriores orientam a seleção. Assuntos exclusivos também participam da carga.
