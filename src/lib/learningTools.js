@@ -30,7 +30,7 @@ export function adaptiveInterval({total,correct,criticality='normal',weight=1,st
   if(examDate){const remaining=Math.floor((Date.parse(examDate)-Date.parse(today))/86400000);if(remaining>0)days=Math.min(days,Math.max(1,Math.floor(remaining/3)));}
   return {grade,days};
 }
-export function learningQueue(data,concursoId,today) {
+export function learningCandidates(data,concursoId,today) {
   const raw=data.concursos.find(c=>c.id===concursoId);if(!raw)return [];
   const c=decorateConcurso(raw,buildPracticeIndex(data.concursos,data.practiceArchive));
   const done=new Set((data.studySessions || []).filter(s=>s.date===today&&s.concursoId===c.id).map(s=>topicRef(s.materiaId,s.topicId)));
@@ -64,6 +64,11 @@ export function learningQueue(data,concursoId,today) {
       if(index>=0)ordered.push(remaining.splice(index,1)[0]);
     }
   }
+  return ordered;
+}
+export function learningQueue(data,concursoId,today) {
+  const c=data.concursos.find(c=>c.id===concursoId);if(!c)return [];
+  const ordered=learningCandidates(data,concursoId,today);
   const completedMinutes=(data.studySessions || []).filter(s=>s.date===today&&s.concursoId===c.id).reduce((n,s)=>n+s.minutes,0);
   let budget=Math.max(0,dailyCapacity(data,c,today)-completedMinutes);
   const newShare=c.learningBalance?.newPercent ?? 50;

@@ -1,3 +1,4 @@
+import {applyLearningPlan} from '../lib/learningPlanning.js';
 import {withNotebookLinks,mergeNotebooks,recordNotebookPractice} from "../lib/notebooks.js";
 import {useTheme} from "../lib/useTheme.js";
 import {reviewStudyMark} from "../lib/learningTools.js";
@@ -13,7 +14,6 @@ import {StudyToolsView} from './StudyToolsView.jsx';
 import {todayISO,addDaysISO} from '../lib/date.js';
 import {completeLearningSession,reviewExternalEntry} from '../lib/learningTools.js';
 import {decorateConcurso,buildPracticeIndex} from '../lib/editalCompatibility.js';
-import {validatePlanData} from '../lib/planValidation.js';
 export function previewData(){const today=todayISO();return {concursos:[{id:'demo',name:'Meu próximo concurso',banca:'Banca do edital',examDate:addDaysISO(today,90),settings:{minutesPerMateria:30,topicsPerDay:1},materias:[{id:'portugues',name:'Língua Portuguesa',learning:{mode:'questions',frequency:2},topics:[{id:'crase',name:'Crase',status:'pendente',questionsTotal:30,questionsCorrect:24,criticality:'normal'},{id:'pontuacao',name:'Pontuação',status:'pendente'}]},{id:'administrativo',name:'Direito Administrativo',learning:{mode:'questions'},topics:[{id:'atos',name:'Atos administrativos',status:'estudado',questionsTotal:20,questionsCorrect:12,nextReviewDate:today,reviewStep:0,criticality:'critical'}]}],dailyPlans:{}}],activeConcursoId:'demo',studyPreferences:{weeklyQuestionsGoal:150,dailyHours:{dom:0,seg:2,ter:2,qua:2,qui:2,sex:2,sab:1}},studyDays:['seg','ter','qua','qui','sex','sab'],activity:{},studyMinutes:{},questionActivity:{[addDaysISO(today,-2)]:{total:25,correct:20},[addDaysISO(today,-1)]:{total:30,correct:24},[today]:{total:15,correct:12}},studySessions:[],externalReviews:[],studyMarks:[]};}
 // Public visual demo: synthetic in-memory data only. It never requests account
 // data, supplies a token or changes authentication on the real application.
@@ -27,7 +27,7 @@ export function LearningPreview(){
  {tab==='painel'&&<LearningDashboard data={data} concurso={concurso} user={{displayName:'Aluno de demonstração'}} onNavigate={key=>setTab(nav.some(([id])=>id===key)?key:'planejamento')} onGoal={goal=>setData(d=>({...d,studyPreferences:{...d.studyPreferences,weeklyQuestionsGoal:goal}}))} onComplete={(ref,result)=>setData(d=>completeLearningSession(d,'demo',ref,todayISO(),result))}/>}
  {tab==='desempenho'&&<PerformanceView data={data} concurso={concurso} onRegister={register}/>}
  {tab==='alertas'&&<AlertsView data={data} concurso={concurso} onStudy={()=>setTab('painel')}/>}
- {tab==='planejamento'&&<PlanningView data={data} concurso={concurso} onSave={(draft,hours)=>{const materias=draft.materias.map(m=>({...m,topics:m.topics.map(({crossStudy,...t})=>t)}));const next={...data,concursos:[{...data.concursos[0],materias,learningBalance:draft.learningBalance}],studyPreferences:{...data.studyPreferences,dailyHours:Object.fromEntries(Object.entries(hours).map(([day,n])=>[day,Number(n)]))}};validatePlanData(next);setData(next);}}/>}
+ {tab==='planejamento'&&<PlanningView data={data} concurso={concurso} onNavigate={setTab} onSave={(draft,hours)=>setData(d=>applyLearningPlan(d,draft,hours))}/>}
  {tab==='revisao'&&<ExternalReviewView data={data} concurso={concurso} onAdd={e=>setData(d=>({...d,externalReviews:[...d.externalReviews,e]}))} onReview={(id,rating)=>setData(d=>reviewExternalEntry(d,id,rating,todayISO()))} onRemove={id=>setData(d=>({...d,externalReviews:d.externalReviews.map(e=>e.id===id?{...e,archived:!e.archived}:e)}))}/>}
  {tab==='marcacoes'&&<MarksView data={data} concurso={concurso} onReview={(id,r)=>setData(d=>reviewStudyMark(d,"studyMarks",id,r,todayISO()))} onAdd={e=>setData(d=>({...d,studyMarks:[...d.studyMarks,e]}))} onRemove={id=>setData(d=>({...d,studyMarks:d.studyMarks.map(e=>e.id===id?{...e,archived:!e.archived}:e)}))}/>}
  {tab==='avulsas'&&<NotebookCatalogView data={data} concurso={concurso} onAdd={e=>setData(d=>mergeNotebooks(d,[e]))} onImport={entries=>setData(d=>mergeNotebooks(d,entries))} onPractice={(ref,result)=>setData(d=>recordNotebookPractice(d,concurso.id,ref,result,todayISO()))} onRemove={id=>setData(d=>({...d,questionNotebooks:(d.questionNotebooks||[]).map(e=>e.id===id?{...e,archived:!e.archived}:e)}))}/>}

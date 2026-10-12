@@ -1,3 +1,4 @@
+import {applyLearningPlan} from './lib/learningPlanning.js';
 import {withNotebookLinks,mergeNotebooks,recordNotebookPractice} from "./lib/notebooks.js";
 import {reviewStudyMark} from "./lib/learningTools.js";
 import {NotebookCatalogView} from "./views/NotebookCatalogView.jsx";
@@ -950,12 +951,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
           onComplete={(ref,result) => { const iso=todayISO(); const next=completeLearningSession(data,activeConcurso.id,ref,iso,result); setData(d=>d===data?next:completeLearningSession(d,activeConcurso.id,ref,iso,result)); }} />}
         {tab === "desempenho" && activeConcurso && <PerformanceView data={data} concurso={activeConcurso} onRegister={addTopicQuestions} />}
         {tab === "alertas" && activeConcurso && <AlertsView data={data} concurso={activeConcurso} onStudy={(m,t)=>{addTopicToToday(m,t);goTab("dia");}} />}
-        {tab === "planejamento" && activeConcurso && <PlanningView key={activeConcurso.id} data={data} concurso={activeConcurso} onSave={(draft,hours)=>{
-          const dailyHours=Object.fromEntries(Object.entries(hours).map(([day,value])=>[day,Number(value)]));
-          const applyConfig=c=>c.materias.map(m=>{const dm=draft.materias.find(item=>item.id===m.id);if(!dm)return m;return {...m,learning:dm.learning,topics:m.topics.map(t=>{const dt=dm.topics.find(item=>item.id===t.id);return dt?{...t,enabled:dt.enabled,theoryDone:dt.theoryDone,criticality:dt.criticality,exerciseMinutes:dt.exerciseMinutes}:t;})};});
-          const cleanMaterias=applyConfig(data.concursos.find(c=>c.id===draft.id));
-          const next={...data,concursos:data.concursos.map(c=>c.id===draft.id?{...c,materias:cleanMaterias,learningBalance:draft.learningBalance}:c),studyDays:Object.keys(dailyHours).filter(day=>dailyHours[day]>0),availableHoursPerWeek:Object.values(dailyHours).reduce((sum,n)=>sum+n,0)||null,studyPreferences:{...data.studyPreferences,dailyHours}};
-          validatePlanData(next);setData(d=>({...d,concursos:d.concursos.map(c=>c.id===draft.id?{...c,materias:applyConfig(c),learningBalance:draft.learningBalance}:c),studyDays:next.studyDays,availableHoursPerWeek:next.availableHoursPerWeek,studyPreferences:{...d.studyPreferences,dailyHours}}));
+        {tab === "planejamento" && activeConcurso && <PlanningView key={activeConcurso.id} data={data} concurso={activeConcurso} onNavigate={goTab} onSave={(draft,hours)=>{
+          const next=applyLearningPlan(data,draft,hours);
+          setData(d=>d===data?next:applyLearningPlan(d,draft,hours));
         }} />}
         {tab === "revisaoexterna" && activeConcurso && <ExternalReviewView data={data} concurso={activeConcurso}
           onAdd={entry=>setData(d=>({...d,externalReviews:[...(d.externalReviews||[]),entry]}))}

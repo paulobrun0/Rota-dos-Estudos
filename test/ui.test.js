@@ -228,11 +228,30 @@ test('new learning dashboard records a single session, shares practice and reloa
 });
 
 test('planning dependencies are validated and configured changes preserve question counts',async()=>{
- const {makeConcurso}=await import('../src/data/model.js');const c=makeConcurso('Configuração',0);c.id='c';c.materias=[{id:'m',name:'Português',topics:[{id:'t',name:'Crase',status:'pendente',questionsTotal:40,questionsCorrect:30}]}];let stored={concursos:[c],activeConcursoId:'c',activity:{},questionActivity:{},studyMinutes:{}};let revision=1;
+ const {makeConcurso}=await import('../src/data/model.js');const c=makeConcurso('Configuração',0);c.id='c';c.materias=[{id:'m',name:'Português',topics:[{id:'t',name:'Crase',status:'pendente',questionsTotal:40,questionsCorrect:30}]}];let stored={concursos:[c],activeConcursoId:'c',activity:{},questionActivity:{},studyMinutes:{},studyDays:['seg','ter','qua','qui','sex','sab','dom'],availableHoursPerWeek:10};let revision=1;
  globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);stored=JSON.parse(body.value);return response({revision:++revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};
  render(React.createElement(App,{user:{email:'planning@example.com'},onLogout(){},onUserUpdate(){}}));fireEvent.click(await screen.findByRole('button',{name:'planejamento',exact:true}));
- fireEvent.change(screen.getByLabelText('Modo de Português'),{target:{value:'mixed'}});fireEvent.change(screen.getByLabelText('Horas de seg'),{target:{value:'2'}});fireEvent.click(screen.getByRole('button',{name:'Salvar planejamento'}));
- await waitFor(()=>assert.equal(stored.concursos[0].materias[0].learning?.mode,'mixed'));assert.equal(stored.studyPreferences.dailyHours.seg,2);assert.equal(stored.concursos[0].materias[0].topics[0].questionsTotal,40);assert.equal(stored.concursos[0].materias[0].topics[0].crossStudy,undefined);
+ assert.equal(screen.getByLabelText('Horas de seg').validity.stepMismatch,false);
+ fireEvent.change(screen.getByLabelText('Modo de Português'),{target:{value:'mixed'}});fireEvent.change(screen.getByLabelText('Horas de seg'),{target:{value:'1.4'}});assert.equal(screen.getByRole('button',{name:'Salvar planejamento'}).closest('form').checkValidity(),true);fireEvent.click(screen.getByRole('button',{name:'Salvar planejamento'}));
+ await waitFor(()=>assert.equal(stored.concursos[0].materias[0].learning?.mode,'mixed'));assert.equal(stored.studyPreferences.dailyHours.seg,1.4);assert.equal(stored.concursos[0].materias[0].topics[0].questionsTotal,40);assert.equal(stored.concursos[0].materias[0].topics[0].crossStudy,undefined);
+ assert.ok(screen.getByText(/Configuração aplicada. Acompanhe/));const {learningQueue}=await import('../src/lib/learningTools.js');assert.equal(learningQueue(stored,'c','2026-10-12')[0].kind,'theory');
+ cleanup();render(React.createElement(App,{user:{email:'planning@example.com'},onLogout(){},onUserUpdate(){}}));fireEvent.click(await screen.findByRole('button',{name:'planejamento',exact:true}));assert.equal(screen.getByLabelText('Horas de seg').value,'1.4');assert.equal(screen.getByLabelText('Modo de Português').value,'mixed');
+});
+
+test('planning displays legacy theory correctly and clears dependencies when prerequisites are disabled',async()=>{
+ const {PlanningView}=await vite.ssrLoadModule('/src/views/PlanningView.jsx');
+ const concurso={id:'c',name:'Plano',materias:[{id:'m',name:'Português',learning:{mode:'mixed'},topics:[{id:'t',name:'Crase',status:'estudado',nextReviewDate:'2099-01-01'}]},{id:'n',name:'Direito',learning:{afterMateriaId:'m'},topics:[{id:'u',name:'Atos',status:'pendente'}]}]};
+ const data={concursos:[concurso],activity:{},questionActivity:{},studyMinutes:{}};let saved;
+ render(React.createElement(PlanningView,{data,concurso,onSave:d=>saved=d}));
+ assert.equal(screen.getByLabelText('Teoria concluída de Crase').checked,true);
+ fireEvent.change(screen.getByLabelText('Modo de Português'),{target:{value:'questions'}});
+ fireEvent.click(screen.getByRole('button',{name:'Configurar assuntos de Direito'}));
+ assert.equal(screen.getByLabelText('Dependência de Direito').value,'');
+ fireEvent.click(screen.getByRole('button',{name:'Salvar planejamento'}));
+ assert.equal(saved.materias[1].learning.afterMateriaId,'');assert.equal(saved.materias[0].topics[0].theoryDone,undefined);
+ fireEvent.change(screen.getByLabelText('Data da prévia do planejamento'),{target:{value:'2026-10-13'}});
+ fireEvent.change(screen.getByLabelText('Horas de ter'),{target:{value:'0'}});
+ assert.ok(screen.getByText(/Dia de folga/));
 });
 
 test('external review and study marks persist, archive reversibly and do not add question activity',async()=>{
