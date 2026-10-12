@@ -53,9 +53,17 @@ export function learningQueue(data,concursoId,today) {
     }
   }
   rows.sort((a,b)=>b.score-a.score);
-  // Interleave disciplines without duplicating topics. Frequency affects the
-  // rank while each pass selects at most one topic per discipline.
-  const ordered=[],remaining=[...rows];while(remaining.length){const seen=new Set();for(let i=0;i<remaining.length;){if(seen.has(remaining[i].materiaId)){i++;continue;}seen.add(remaining[i].materiaId);ordered.push(remaining.splice(i,1)[0]);}}
+  // Each round gives every discipline one turn, followed by the extra
+  // turns configured by its relative frequency. Topics never repeat.
+  const ordered=[],remaining=[...rows];
+  while(remaining.length){
+    const ids=[...new Set(remaining.map(r=>r.materiaId))];
+    const frequency=new Map(ids.map(id=>[id,remaining.find(r=>r.materiaId===id).frequency]));
+    for(let pass=0;pass<Math.max(...frequency.values());pass++)for(const id of ids){
+      if(pass>=frequency.get(id))continue;const index=remaining.findIndex(r=>r.materiaId===id);
+      if(index>=0)ordered.push(remaining.splice(index,1)[0]);
+    }
+  }
   const completedMinutes=(data.studySessions || []).filter(s=>s.date===today&&s.concursoId===c.id).reduce((n,s)=>n+s.minutes,0);
   let budget=Math.max(0,dailyCapacity(data,c,today)-completedMinutes);
   const newShare=c.learningBalance?.newPercent ?? 50;
@@ -102,4 +110,12 @@ export function reviewExternalEntry(data,id,rating,today) {
   const old=entry.interval || 1,interval=rating==='again'?1:rating==='hard'?Math.max(1,Math.round(old*1.2)):rating==='good'?Math.max(3,old*2):Math.max(7,old*3);
   entry.interval=Math.min(120,interval);entry.nextReviewDate=addDaysISO(today,entry.interval);entry.lastReviewDate=today;
   entry.reviews ||= [];entry.reviews.push({date:today,rating});return clone;
+}
+
+export function reviewStudyMark(data,collection,id,rating,today){
+  if(!['studyMarks','pdfAnnotations'].includes(collection))throw Error('Coleção inválida.');
+  if(!['again','hard','good','easy'].includes(rating))throw Error('Avaliação inválida.');
+  const entry=data[collection]?.find(m=>m.id===id);if(!entry||entry.archived||entry.lastReviewDate===today)return data;
+  const interval=Math.min(120,rating==='again'?1:rating==='hard'?3:rating==='good'?Math.max(7,(entry.interval||1)*2):Math.max(14,(entry.interval||1)*3));
+  return {...data,[collection]:data[collection].map(m=>m.id===id?{...m,interval,nextReviewDate:addDaysISO(today,interval),lastReviewDate:today}:m)};
 }

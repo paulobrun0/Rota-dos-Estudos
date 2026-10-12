@@ -253,3 +253,10 @@ test('public visual demo uses synthetic state and never requests private account
  const {LearningPreview,previewData}=(await vite.ssrLoadModule('/src/views/LearningPreview.jsx'));const {validatePlanData}=await import('../src/lib/planValidation.js');validatePlanData(previewData());let calls=0;globalThis.fetch=async()=>{calls++;throw Error('A demonstração não pode acessar APIs.');};
  render(React.createElement(LearningPreview));assert.ok(screen.getByText(/Prévia com dados fictícios/));fireEvent.click(screen.getByRole('button',{name:'Concluir sessão do painel'}));fireEvent.click(screen.getByRole('button',{name:'Desempenho',exact:true}));await screen.findByText('Desempenho por assunto');assert.equal(calls,0);
 });
+
+test('notebook catalog creates topic-linked bank entries and filters saved links',async()=>{
+ const {NotebookCatalogView}=await vite.ssrLoadModule('/src/views/NotebookCatalogView.jsx');let created;
+ const concurso={id:'c',materias:[{id:'m',name:'Português',topics:[{id:'t',name:'Crase'}]}]};const props={concurso,data:{questionNotebooks:[{id:'old',concursoId:'c',materiaId:'m',topicId:'t',title:'Caderno FGV',bank:'FGV',url:'https://example.com/fgv'},{id:'other',concursoId:'c',materiaId:'m',topicId:'t',title:'Caderno Cespe',bank:'Cebraspe',url:'https://example.com/cespe'}]},onAdd:e=>created=e,onRemove(){}};
+ render(React.createElement(NotebookCatalogView,props));fireEvent.change(screen.getByLabelText('Filtrar banca'),{target:{value:'FGV'}});assert.ok(screen.getByText('Caderno FGV'));assert.equal(screen.queryByText('Caderno Cespe'),null);
+ fireEvent.change(screen.getByLabelText('Assunto'),{target:{value:JSON.stringify(['m','t'])}});fireEvent.change(screen.getByLabelText('Título do caderno'),{target:{value:'Meu caderno'}});fireEvent.change(screen.getByLabelText('Banca',{exact:true}),{target:{value:'FGV'}});fireEvent.change(screen.getByLabelText('Link do caderno'),{target:{value:'https://example.com/meu'}});fireEvent.click(screen.getByRole('button',{name:'Adicionar caderno por banca'}));assert.equal(created.topicId,'t');assert.equal(created.bank,'FGV');assert.equal(created.concursoId,'c');
+});

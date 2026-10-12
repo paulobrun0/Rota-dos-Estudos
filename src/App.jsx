@@ -1,3 +1,6 @@
+import {reviewStudyMark} from "./lib/learningTools.js";
+import {NotebookCatalogView} from "./views/NotebookCatalogView.jsx";
+import { PdfStudyView } from "./views/PdfStudyView.jsx";
 import { StudyToolsView } from "./views/StudyToolsView.jsx";
 import { LearningDashboard } from "./views/LearningDashboard.jsx";
 import { PerformanceView, AlertsView, PlanningView, ExternalReviewView, MarksView, QuestionHubView, LearningHelp } from "./views/LearningViews.jsx";
@@ -57,6 +60,7 @@ import { ProfileView } from "./views/ProfileView.jsx";
 const REVIEW_CARD_MINUTES = 3;
 
 const TAB_TITLES = {
+  pdf: "leitor de PDF",
   painel: "painel",
   desempenho: "desempenho",
   planejamento: "planejamento",
@@ -84,7 +88,7 @@ const TAB_TITLES = {
 
 export default function App({ user, onLogout, onUserUpdate }) {
   const { data, setData, sync, retry, flush } = usePlanData(user.email);
-  const [tab, setTab] = useState("painel");
+  const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get("tool") === "pdf" ? "pdf" : "painel");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("ritmo-nav-collapsed") === "true"; }
@@ -807,6 +811,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         <NavItem icon={<NotebookText size={20} />} label="caderno de revisão" active={tab === "revisaoexterna"} onClick={() => goTab("revisaoexterna")} />
         <NavItem icon={<BookOpen size={20} />} label="minhas marcações" active={tab === "marcacoes"} onClick={() => goTab("marcacoes")} />
         <NavItem icon={<Target size={20} />} label="questões avulsas" active={tab === "avulsas"} onClick={() => goTab("avulsas")} />
+        <NavItem icon={<BookOpen size={20} />} label="leitor PDF" active={tab === "pdf"} onClick={() => goTab("pdf")} />
         <NavItem icon={<Settings size={20} />} label="ferramentas" active={tab === "ferramentas"} onClick={() => goTab("ferramentas")} />
         <NavItem icon={<CalendarDays size={20} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); goTab("dia"); }} />
         <NavItem icon={<ListChecks size={20} />} label="semana" active={tab === "semana"} onClick={() => goTab("semana")} />
@@ -918,7 +923,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         )}
 
         {tab === "ranking" && (
-          <RankingView currentDisplayName={user?.username || user?.email?.split("@")[0]} onGoToSettings={() => setTab("ajustes")} />
+          <RankingView studyArea={data.studyPreferences?.studyArea || ""} currentDisplayName={user?.username || user?.email?.split("@")[0]} onGoToSettings={() => setTab("ajustes")} />
         )}
 
         {tab === "perfil" && <ProfileView user={user} onUserUpdate={onUserUpdate} />}
@@ -955,11 +960,13 @@ export default function App({ user, onLogout, onUserUpdate }) {
           onAdd={entry=>setData(d=>({...d,externalReviews:[...(d.externalReviews||[]),entry]}))}
           onReview={(id,rating)=>setData(d=>reviewExternalEntry(d,id,rating,todayISO()))}
           onRemove={id=>setData(d=>({...d,externalReviews:d.externalReviews.map(e=>e.id===id?{...e,archived:!e.archived}:e)}))} />}
-        {tab === "marcacoes" && activeConcurso && <MarksView data={data} concurso={activeConcurso}
+        {tab === "marcacoes" && activeConcurso && <MarksView data={data} concurso={activeConcurso} onReview={(id,rating)=>setData(d=>reviewStudyMark(d,"studyMarks",id,rating,todayISO()))}
           onAdd={entry=>setData(d=>({...d,studyMarks:[...(d.studyMarks||[]),entry]}))}
           onRemove={id=>setData(d=>({...d,studyMarks:d.studyMarks.map(e=>e.id===id?{...e,archived:!e.archived}:e)}))} />}
+        {tab === "avulsas" && activeConcurso && <NotebookCatalogView data={data} concurso={activeConcurso} onAdd={e=>setData(d=>({...d,questionNotebooks:[...(d.questionNotebooks||[]),e]}))} onRemove={id=>setData(d=>({...d,questionNotebooks:(d.questionNotebooks||[]).filter(e=>e.id!==id)}))}/>}
         {tab === "avulsas" && activeConcurso && <QuestionHubView concurso={activeConcurso} onLinks={updateTopicLink} onMaterials={updateTopicMaterials} onAnswer={addTopicQuestions} questionCounts={questionCounts} />}
-        {tab === "ferramentas" && activeConcurso && <StudyToolsView data={data} concurso={activeConcurso}
+        {tab === "pdf" && activeConcurso && <PdfStudyView data={data} concurso={activeConcurso} onReview={(id,rating)=>setData(d=>reviewStudyMark(d,"pdfAnnotations",id,rating,todayISO()))} onAdd={entry=>setData(d=>({...d,pdfAnnotations:[...(d.pdfAnnotations||[]),entry]}))} onRemove={id=>setData(d=>({...d,pdfAnnotations:(d.pdfAnnotations||[]).filter(e=>e.id!==id)}))} />}
+        {tab === "ferramentas" && activeConcurso && <StudyToolsView data={data} concurso={activeConcurso} onArea={studyArea=>setData(d=>({...d,studyPreferences:{...d.studyPreferences,studyArea}}))}
           onImport={entries=>setData(d=>{const existing=new Set((d.studyMarks||[]).map(e=>e.id));return {...d,studyMarks:[...(d.studyMarks||[]),...entries.filter(e=>!existing.has(e.id))]};})}
           onCommunity={communityUrl=>setData(d=>({...d,studyPreferences:{...d.studyPreferences,communityUrl}}))} />}
         <LearningHelp />

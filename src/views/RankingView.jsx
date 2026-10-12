@@ -33,10 +33,12 @@ function Bar({ avatar, label, value, max, highlight, suffix }) {
   );
 }
 
-export function RankingView({ currentDisplayName, onGoToSettings }) {
+export function RankingView({ currentDisplayName, onGoToSettings, studyArea = "" }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [materia, setMateria] = useState("");
+  const [scope, setScope] = useState("all");
+  const scopedUsers = useMemo(() => (data?.users || []).filter(u => scope !== "area" || u.studyArea === studyArea), [data,scope,studyArea]);
   const [period, setPeriod] = useState("day");
 
   useEffect(() => {
@@ -45,30 +47,30 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
 
   const overall = useMemo(() => {
     if (!data) return [];
-    return [...data.users].sort((a, b) => b.totalEstudado - a.totalEstudado);
-  }, [data]);
+    return [...scopedUsers].sort((a, b) => b.totalEstudado - a.totalEstudado);
+  }, [data, scopedUsers]);
 
   const materiaNames = useMemo(() => {
     if (!data) return [];
     const names = new Map();
-    for (const u of data.users) for (const m of u.materias) {
+    for (const u of scopedUsers) for (const m of u.materias) {
       const key = m.name.toLowerCase();
       if (!names.has(key)) names.set(key, m.name);
     }
     return [...names.values()].sort((a, b) => a.localeCompare(b));
-  }, [data]);
+  }, [data, scopedUsers]);
 
   const materiaRanking = useMemo(() => {
     if (!data || !materia) return [];
     const key = materia.toLowerCase();
-    return data.users
+    return scopedUsers
       .map((u) => {
         const m = u.materias.find((x) => x.name.toLowerCase() === key);
         return { displayName: u.displayName, avatar: u.avatar, estudado: m?.estudado || 0, questionsTotal: m?.questionsTotal || 0, questionsCorrect: m?.questionsCorrect || 0 };
       })
       .filter((u) => u.estudado > 0)
       .sort((a, b) => b.estudado - a.estudado);
-  }, [data, materia]);
+  }, [data, materia, scopedUsers]);
 
   useEffect(() => {
     if (!materia && materiaNames.length > 0) setMateria(materiaNames[0]);
@@ -79,7 +81,7 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
   }
 
   const maxEstudado = overall[0]?.totalEstudado || 1;
-  const questionRanking = data?.questionPeriods?.[period] || [];
+  const questionRanking = (data?.questionPeriods?.[period] || []).filter(u => scope !== "area" || u.studyArea === studyArea);
   const maxQuestions = questionRanking[0]?.total || 1;
 
   return (
@@ -98,6 +100,8 @@ export function RankingView({ currentDisplayName, onGoToSettings }) {
         )}
       </div>
 
+      <div className="view-tabs"><button aria-pressed={scope === "all"} onClick={()=>setScope("all")}>Ranking geral</button><button disabled={!studyArea} aria-pressed={scope === "area"} onClick={()=>setScope("area")}>Minha área</button></div>
+      {!studyArea && <p>Configure sua área em Ferramentas para comparar com estudantes da mesma categoria.</p>}
       {data && overall.length === 0 && (
         <div style={{ color: colors.textFaint, fontSize: 14 }}>ninguém no ranking ainda.</div>
       )}

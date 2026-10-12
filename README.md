@@ -202,3 +202,9 @@ test/               # testes unitários, API, DOM, conflitos, recuperação e ba
 ```
 
 As versões das dependências principais estão fixadas; `package-lock.json` deve acompanhar qualquer atualização. O projeto ainda não possui uma licença definida.
+
+### Leitor PDF e ferramentas de estudo
+
+No menu **Leitor PDF**, abra um arquivo local de até 30 MB, selecione um trecho e vincule o grifo a um assunto. Reabrir o mesmo arquivo restaura as marcações salvas. Exporte uma cópia com grifos e apêndice de notas, ou notas em Markdown. Há revisão ativa de grifos com agenda independente. PDFs escaneados precisam de OCR externo e PDFs protegidos precisam ser desbloqueados pelo proprietário.
+
+**Questões avulsas** permite cadastrar e filtrar cadernos por banca e assunto. **Ferramentas** configura a área pública do ranking e disponibiliza a extensão própria com grifos persistentes nos sites autorizados, revisão de notas, Pomodoro e modo foco. O arquivo PDF original fica local; resultados de sites externos continuam sendo registrados manualmente.

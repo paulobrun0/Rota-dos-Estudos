@@ -429,6 +429,7 @@ app.get("/api/ranking", requireAuth, (req, res) => {
       continue;
     }
 
+    const studyArea = ["policial", "tribunais", "fiscal", "administrativa", "educacao", "saude", "outras"].includes(parsed?.studyPreferences?.studyArea) ? parsed.studyPreferences.studyArea : "";
     const materiaMap = new Map();
     let questionsTotal = 0;
     let questionsCorrect = 0;
@@ -450,7 +451,7 @@ app.get("/api/ranking", requireAuth, (req, res) => {
     }
     const materias = [...materiaMap.values()];
     const totalEstudado = materias.reduce((sum, m) => sum + m.estudado, 0);
-    users.push({ displayName, avatar, totalEstudado, questionsTotal, questionsCorrect, materias });
+    users.push({ displayName, avatar, studyArea, totalEstudado, questionsTotal, questionsCorrect, materias });
 
     const sums = { day: { total: 0, correct: 0 }, week: { total: 0, correct: 0 }, month: { total: 0, correct: 0 } };
     for (const [iso, entry] of Object.entries(parsed?.questionActivity || {})) {
@@ -461,7 +462,7 @@ app.get("/api/ranking", requireAuth, (req, res) => {
       if (iso >= monthCutoff) { sums.month.total += total; sums.month.correct += correct; }
     }
     for (const period of ["day", "week", "month"]) {
-      if (sums[period].total > 0) periodTotals[period].push({ displayName, avatar, ...sums[period] });
+      if (sums[period].total > 0) periodTotals[period].push({ displayName, avatar, studyArea, ...sums[period] });
     }
   }
 

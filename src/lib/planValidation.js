@@ -167,6 +167,7 @@ export function validatePlanData(raw) {
   }
   if (raw.studyPreferences !== undefined) {
     requireValue(object(raw.studyPreferences), "preferências de estudo inválidas");
+    if (raw.studyPreferences.studyArea !== undefined) requireValue(["", "policial", "tribunais", "fiscal", "administrativa", "educacao", "saude", "outras"].includes(raw.studyPreferences.studyArea), "área de estudo inválida");
     if (raw.studyPreferences.communityUrl !== undefined) requireValue(isSafeStudyLink(raw.studyPreferences.communityUrl), "convite da comunidade inválido");
     if (raw.studyPreferences.weeklyQuestionsGoal !== undefined) { count(raw.studyPreferences.weeklyQuestionsGoal, "meta semanal"); requireValue(raw.studyPreferences.weeklyQuestionsGoal <= 20000, "meta semanal muito alta"); }
     if (raw.studyPreferences.dailyHours !== undefined) { requireValue(object(raw.studyPreferences.dailyHours), "horários inválidos"); for (const [day,hours] of Object.entries(raw.studyPreferences.dailyHours)) { requireValue(weekdays.has(day), "dia de estudo inválido"); count(hours, "horas por dia", false); requireValue(hours <= 24, "horas diárias excedem 24"); } }
@@ -179,6 +180,29 @@ export function validatePlanData(raw) {
       if (key === "studySessions") { requireValue(["theory", "questions", "review"].includes(entry.kind), "tipo da sessão inválido"); count(entry.minutes, "tempo da sessão"); if (entry.grade !== null) { count(entry.grade, "nota da sessão"); requireValue(entry.grade <= 100, "nota da sessão inválida"); } }
     }
   }
+  if (raw.questionNotebooks !== undefined) {
+    distinct(raw.questionNotebooks, "cadernos por banca");
+    for (const entry of raw.questionNotebooks) {
+      for (const field of ["concursoId", "materiaId", "topicId", "title", "bank"]) text(entry[field], field);
+      requireValue(entry.title.length <= 200 && entry.bank.length <= 100 && Boolean(entry.url) && isSafeStudyLink(entry.url), "caderno por banca inválido");
+    }
+  }
+  if (raw.pdfAnnotations !== undefined) {
+    distinct(raw.pdfAnnotations, "grifos de PDF");
+    requireValue(raw.pdfAnnotations.length <= 10000, "muitos grifos de PDF");
+    for (const mark of raw.pdfAnnotations) {
+      for (const field of ["concursoId", "materiaId", "topicId", "documentName", "text"]) text(mark[field], field);
+      requireValue(/^[a-f0-9]{64}$/.test(mark.documentId), "identificação de PDF inválida");
+      requireValue(mark.text.length <= 20000 && typeof mark.note === "string" && mark.note.length <= 20000, "nota de PDF inválida");
+      count(mark.page, "página"); requireValue(mark.page > 0 && mark.page <= 100000, "página inválida");
+      requireValue(["yellow", "green", "pink"].includes(mark.color), "cor inválida"); date(mark.date);
+      requireValue(Array.isArray(mark.rects) && mark.rects.length > 0 && mark.rects.length <= 500, "área de grifo inválida");
+      for (const rect of mark.rects) {
+        for (const key of ["x", "y", "width", "height"]) requireValue(Number.isFinite(rect[key]) && Math.abs(rect[key]) <= 1000000, "coordenada inválida");
+        requireValue(rect.width > 0 && rect.height > 0, "grifo vazio");
+      }
+    }
+  }
   for (const key of ["externalReviews", "studyMarks"]) if (raw[key] !== undefined) {
     distinct(raw[key], key);
     for (const entry of raw[key]) {
@@ -188,6 +212,11 @@ export function validatePlanData(raw) {
       if (key === "studyMarks") { text(entry.text, "trecho"); requireValue(entry.text.length <= 20000 && ["yellow", "green", "pink"].includes(entry.color), "marcação inválida"); date(entry.date); }
       else { requireValue(Boolean(entry.url), "link da revisão obrigatório"); date(entry.nextReviewDate); count(entry.interval, "intervalo"); requireValue(entry.interval > 0 && entry.interval <= 120, "intervalo inválido"); if (entry.lastReviewDate !== undefined) date(entry.lastReviewDate); requireValue(Array.isArray(entry.reviews), "histórico de revisão inválido"); for (const review of entry.reviews) { date(review.date); requireValue(["again", "hard", "good", "easy"].includes(review.rating), "avaliação de revisão inválida"); } }
     }
+  }
+  for (const key of ["studyMarks", "pdfAnnotations"]) for (const mark of raw[key] || []) {
+    if (mark.nextReviewDate !== undefined) date(mark.nextReviewDate);
+    if (mark.lastReviewDate !== undefined) date(mark.lastReviewDate);
+    if (mark.interval !== undefined) { count(mark.interval, "intervalo do grifo"); requireValue(mark.interval >= 1 && mark.interval <= 120, "intervalo do grifo inválido"); }
   }
   const concursoIds = value => {
     requireValue(Array.isArray(value) && value.every(id => typeof id === "string" && id.trim()) && new Set(value).size === value.length, "seleção de concursos inválida");

@@ -237,6 +237,16 @@ describe("GET /api/ranking", () => {
     assert.equal(asOptedOut.body.isOptedIn, false);
   });
 
+  test("ranking publishes only the declared area of opted-in users, without their marks", async () => {
+    const user = await registerFresh();
+    await setPlanData(user.cookie, {concursos:[{materias:[]}],studyPreferences:{studyArea:"fiscal"},studyMarks:[{id:"private",concursoId:"concurso-0",materiaId:"m",topicId:"t",text:"Nota privada",note:"Segredo de estudo",url:"",color:"yellow",date:"2026-10-12"}]});
+    const res = await api("/api/ranking", {cookie:user.cookie});
+    const row = res.body.users.find(u=>u.displayName===user.email.split("@")[0]);
+    assert.equal(row.studyArea,"fiscal");assert.equal(JSON.stringify(res.body).includes("Segredo de estudo"),false);
+    await api("/api/me", {method:"PATCH",cookie:user.cookie,body:{showInRanking:false}});
+    const optedOut=await api("/api/ranking", {cookie:user.cookie});assert.ok(!optedOut.body.users.some(u=>u.displayName===row.displayName));
+  });
+
   test("aggregates estudado/total and question accuracy per matéria", async () => {
     const user = await registerFresh();
     await setPlanData(user.cookie, {

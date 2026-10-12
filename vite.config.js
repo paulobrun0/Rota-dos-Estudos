@@ -25,7 +25,7 @@ export default defineConfig({
       srcDir: "src",
       filename: "sw.js",
       injectManifest: {
-        globPatterns: ["**/*.{js,css,html,png,svg,webmanifest}"],
+        globPatterns: ["**/*.{js,mjs,css,html,png,svg,webmanifest}"],
       },
       includeAssets: ["favicon.png", "apple-touch-icon.png"],
       manifest: {
@@ -36,8 +36,8 @@ export default defineConfig({
         start_url: "./",
         scope: "./",
         display: "standalone",
-        background_color: "#F3F7F8",
-        theme_color: "#F3F7F8",
+        background_color: "#F8F5ED",
+        theme_color: "#F8F5ED",
         icons: [
           { src: "icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icon-512.png", sizes: "512x512", type: "image/png" },
