@@ -1,6 +1,6 @@
 import {TecNotebookButton} from '../components/TecNotebookBuilder.jsx';
 import { SharedPractice } from "../components/SharedPractice.jsx";
-import { filterTopics } from "../lib/studyInsights.js";
+import { buildTopicTree, filterHierarchyTopics, topicsInGroup } from "../lib/topicHierarchy.js";
 import { TopicLinkButtons, TopicLinksEditor } from "../components/TopicLinks.jsx";
 import { getTopicLinks } from "../lib/topicLinks.js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -395,7 +395,8 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
 
 function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, onDragHandlePointerDown, isDragging, isDropTarget, isExpanded, onToggleExpanded }) {
   const collapsed = !isExpanded;
-  const visibleTopics = filterTopics(m.topics, topicFilter);
+  const visibleTopics = filterHierarchyTopics(m.topics, topicFilter);
+  const topicTree = buildTopicTree(visibleTopics);
   const pendentes = m.topics.filter((t) => t.status === "pendente").length;
   const estudados = m.topics.length - pendentes;
 
@@ -473,9 +474,7 @@ function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraf
         <>
           {m.topics.length > 0 && (
             <div className="topic-table-wrap" tabIndex={0} role="region" aria-label={`Tabela de assuntos de ${m.name}`}><table className="topic-table edital-topics-table" aria-label={`Assuntos de ${m.name}`}><thead><tr><th scope="col">Assunto</th><th scope="col">Situação</th><th scope="col">Questões</th><th scope="col">Cadernos</th><th scope="col">Ações</th></tr></thead><tbody>
-              {visibleTopics.map((t) => (
-                <TopicEditalRow key={t.id} materiaId={m.id} topic={t} removeTopic={removeTopic} skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes} updateTopicLink={updateTopicLink} />
-              ))}
+              <HierarchyRows tree={topicTree} forceOpen={Boolean(topicFilter.query) || topicFilter.status !== 'all'} rowProps={{materiaId:m.id, removeTopic, skipShared, undoShared, updateTopicMaterials, updateTopicNotes, updateTopicLink}} />
             </tbody></table>{!visibleTopics.length && <p className="muted" style={{padding:12}}>Nenhum assunto neste filtro.</p>}</div>
           )}
 
@@ -497,7 +496,29 @@ function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraf
   );
 }
 
-function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared }) {
+function HierarchyRows({tree, rowProps, forceOpen, depth=0}) {
+  return tree.items.map(item => item.topic
+    ? <TopicEditalRow key={item.topic.id} {...rowProps} topic={item.topic} depth={depth} />
+    : <TopicGroup key={item.group.key} group={item.group} rowProps={rowProps} forceOpen={forceOpen} depth={depth} />);
+}
+
+function TopicGroup({group, rowProps, forceOpen, depth}) {
+  const [expanded, setExpanded] = useState(false);
+  const open = expanded || forceOpen;
+  const topics = topicsInGroup(group);
+  const studied = topics.filter(t => t.status === 'estudado' || t.mastered).length;
+  return <>
+    <tr className="topic-group-row"><td colSpan={5}>
+      <button type="button" aria-expanded={open} aria-label={`${open ? 'Recolher' : 'Expandir'} grupo ${group.name}`} onClick={() => setExpanded(value => !value)} style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:`10px 8px 10px ${8 + depth * 14}px`,background:colors.surface2,border:0,borderRadius:6,textAlign:'left',color:colors.text,fontSize:13}}>
+        {open ? <ChevronDown size={15}/> : <ChevronRight size={15}/>}
+        <strong style={{flex:1}}>{group.name}</strong><span className="mono" style={{fontSize:11,color:colors.textMuted,whiteSpace:'nowrap'}}>{studied}/{topics.length}</span>
+      </button>
+    </td></tr>
+    {open && <HierarchyRows tree={group} rowProps={rowProps} forceOpen={forceOpen} depth={depth+1}/>}
+  </>;
+}
+
+function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, depth=0 }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [draft, setDraft] = useState(t.notes || "");
   const hasNotes = (t.notes || "").trim().length > 0;
@@ -513,7 +534,7 @@ function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, up
 
   return <>
     <tr>
-      <td data-label="Assunto" style={{ color: colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}<SharedPractice topic={t} onSkip={() => skipShared(materiaId, t.id)} onUndo={() => undoShared(materiaId, t.id)} /></td>
+      <td data-label="Assunto" style={{ paddingLeft:12+Math.min(depth,4)*10, color: colors.text, textDecoration: t.mastered ? "line-through" : "none" }}>{t.name}<SharedPractice topic={t} onSkip={() => skipShared(materiaId, t.id)} onUndo={() => undoShared(materiaId, t.id)} /></td>
       <td data-label="Situação"><span className="topic-status" style={{ color: t.mastered ? colors.success : t.status === "estudado" ? colors.accent : colors.textMuted, background: t.status === "estudado" ? colors.accentSoft : colors.surface2 }}>{t.mastered ? "dominado" : t.status === "estudado" ? "estudado" : "pendente"}</span></td>
       <td data-label="Questões"><span className="mono">{(t.crossStudy?.total ?? t.questionsTotal) > 0 ? `${t.crossStudy?.correct ?? t.questionsCorrect}/${t.crossStudy?.total ?? t.questionsTotal}` : "—"}</span>{(t.crossStudy?.total ?? t.questionsTotal) > 0 && <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 3 }}>{Math.round((t.crossStudy?.correct ?? t.questionsCorrect) / (t.crossStudy?.total ?? t.questionsTotal) * 100)}% de acertos</div>}</td>
       <td data-label="Cadernos"><div className="topic-actions"><TopicLinkButtons topic={t} /><TecNotebookButton materiaId={materiaId} topicId={t.id}/><button type="button" onClick={() => setLinkOpen(o => !o)} aria-label={`buscar questões de ${t.name}`} style={{ ...secondaryBtnStyle, marginTop: 0, padding: "4px 8px", fontSize: 11 }}>Buscar questões</button><button onClick={() => setLinkOpen(o => !o)} aria-label="link do caderno de questões" aria-expanded={linkOpen} title="Editar links dos cadernos" style={{ ...iconBtnStyle, color: hasLink ? colors.success : colors.textFaint }}><Link2 size={16} /></button></div></td>

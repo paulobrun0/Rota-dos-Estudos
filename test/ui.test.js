@@ -30,6 +30,24 @@ before(async () => {
 afterEach(() => { cleanup(); localStorage.clear(); globalThis.fetch = originalFetch; });
 after(async () => { await vite.close(); dom.window.close(); });
 
+test('edital groups expand into linked subtópicos and parent searches expose descendants', async () => {
+  const {EditalView} = await vite.ssrLoadModule('/src/views/EditalView.jsx');
+  const noop = () => {};
+  const props = {concurso:{name:'PM AL',materias:[{id:'m',name:'Português',color:'#5865D9',topics:[{id:'a',name:'Acentuação',groupPath:['Ortografia'],status:'pendente',links:{tec:'https://www.tecconcursos.com.br/questoes/cadernos/123'}},{id:'b',name:'Uso do hífen',groupPath:['Ortografia'],status:'estudado'}]}]},bulkText:'',setBulkText:noop,parseBulk:noop,newMateriaName:'',setNewMateriaName:noop,addMateria:noop,addTopics:noop,removeMateria:noop,removeTopic:noop,moveMateria:noop,reorderMaterias:noop,updateTopicNotes:noop,updateTopicLink:noop,updateTopicMaterials:noop,skipShared:noop,undoShared:noop,topicDrafts:{},setTopicDrafts:noop};
+  render(React.createElement(EditalView,props));
+  fireEvent.click(screen.getByText('Português').closest('button'));
+  assert.equal(screen.queryByText('Acentuação'),null);
+  const group = screen.getByRole('button',{name:'Expandir grupo Ortografia'});
+  assert.equal(group.getAttribute('aria-expanded'),'false');
+  fireEvent.click(group);
+  assert.ok(screen.getByText('Acentuação'));
+  assert.equal(screen.getByRole('link',{name:'abrir Tec Concursos'}).getAttribute('href'),'https://www.tecconcursos.com.br/questoes/cadernos/123');
+  fireEvent.click(screen.getByRole('button',{name:'Recolher grupo Ortografia'}));
+  fireEvent.change(screen.getByLabelText('Buscar assunto no edital'),{target:{value:'ortografia'}});
+  assert.ok(screen.getByText('Acentuação'));
+  assert.ok(screen.getByText('Uso do hífen'));
+});
+
 test("a failed plan read shows retry without writing a replacement plan", async () => {
   const writes = [];
   let fail = true;

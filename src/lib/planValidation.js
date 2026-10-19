@@ -59,6 +59,7 @@ function validateMaterias(materias) {
     distinct(materia.topics, "assuntos");
     for (const topic of materia.topics) {
       text(topic.name, "nome do assunto");
+      if (topic.groupPath !== undefined) requireValue(Array.isArray(topic.groupPath) && topic.groupPath.length <= 12 && topic.groupPath.every(part => typeof part === 'string' && part.trim().length > 0 && part.length <= 300), "grupos do assunto inválidos");
       for (const field of ["enabled", "theoryDone"]) if (topic[field] !== undefined) requireValue(typeof topic[field] === "boolean", `${field} inválido`);
       if (topic.criticality !== undefined) requireValue(["critical", "normal", "low"].includes(topic.criticality), "importância inválida");
       if (topic.exerciseMinutes !== undefined) { count(topic.exerciseMinutes, "minutos por tópico"); requireValue(topic.exerciseMinutes >= 5 && topic.exerciseMinutes <= 180, "minutos por tópico fora do limite"); }
