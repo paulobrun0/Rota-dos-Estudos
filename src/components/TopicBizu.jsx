@@ -1,5 +1,5 @@
 import { BizuText } from "./BizuText.jsx";
-import { getPmBizu } from "../lib/pmBizu.js";
+import { getPmBizu, getPmBizuSources } from "../lib/pmBizu.js";
 import React, { useId, useState } from 'react';
 import { colors } from '../styles/colors.js';
 import { inputStyle, secondaryBtnStyle } from '../styles/shared.js';
@@ -8,6 +8,7 @@ import { inputStyle, secondaryBtnStyle } from '../styles/shared.js';
 export function TopicBizu({ topic, onSave }) {
   const id = useId();
   const content = topic.bizu ?? getPmBizu(topic.name);
+  const sources = topic.bizu == null ? getPmBizuSources(topic.name) : [];
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(content || '');
   const [tab, setTab] = useState('bizu');
@@ -26,6 +27,12 @@ export function TopicBizu({ topic, onSave }) {
         <div style={{display:'flex', gap:8}}><button type="submit" style={secondaryBtnStyle}>Salvar bizu</button><button type="button" onClick={()=>setEditing(false)} style={secondaryBtnStyle}>Cancelar</button></div>
       </form> : <>
         {content?.trim() ? <BizuText text={content} /> : <p style={{color:colors.textMuted,fontSize:13}}>Bizu deste assunto ainda não cadastrado.</p>}
+        {sources.length > 0 && <details style={{fontSize:11, color:colors.textMuted, marginTop:10}}>
+          <summary style={{cursor:'pointer'}}>Referências</summary>
+          <ul style={{paddingLeft:18, margin:'6px 0'}}>{sources.map(source => <li key={source.url}>
+            <a href={source.url} target="_blank" rel="noopener noreferrer" style={{color:colors.textMuted}}>{source.label}</a>
+          </li>)}</ul>
+        </details>}
         <button type="button" onClick={edit} style={{...secondaryBtnStyle,fontSize:12}}>{content?.trim() ? 'Editar bizu' : 'Adicionar bizu'}</button>
       </>}
     </div>

@@ -1,0 +1,1743 @@
+{
+  "reviewedAt": "2026-10-22",
+  "sources": {
+    "cf": {
+      "label": "Constituição Federal",
+      "url": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicaocompilado.htm"
+    },
+    "cp": {
+      "label": "Código Penal",
+      "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm"
+    },
+    "cpp": {
+      "label": "Código de Processo Penal",
+      "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689.htm"
+    },
+    "cpm": {
+      "label": "Código Penal Militar",
+      "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del1001.htm"
+    },
+    "cppm": {
+      "label": "Código de Processo Penal Militar",
+      "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del1002.htm"
+    },
+    "eca": {
+      "label": "ECA",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l8069.htm"
+    },
+    "ctb": {
+      "label": "Código de Trânsito Brasileiro",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l9503compilado.htm"
+    },
+    "licit": {
+      "label": "Lei 14.133 — Licitações e contratos",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm"
+    },
+    "concess": {
+      "label": "Lei 8.987 — Concessões",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l8987compilada.htm"
+    },
+    "usuario": {
+      "label": "Lei 13.460 — Usuário do serviço público",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/lei/l13460.htm"
+    },
+    "simplifica": {
+      "label": "Decreto 9.094 — Simplificação",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/decreto/d9094.htm"
+    },
+    "jec": {
+      "label": "Lei 9.099 — Juizados",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l9099.htm"
+    },
+    "jef": {
+      "label": "Lei 10.259 — Juizados federais",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/leis_2001/l10259.htm"
+    },
+    "pm": {
+      "label": "Lei 14.751 — PMs e bombeiros",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/l14751.htm"
+    },
+    "estatuto": {
+      "label": "Estatuto dos militares de Alagoas",
+      "url": "https://sapl.al.al.leg.br/norma/845"
+    },
+    "rd": {
+      "label": "Regulamento disciplinar PM-AL",
+      "url": "https://central.pm.al.gov.br/sistemas/public/sislegis/publico/download/id/792/param/2/set/1/get/c8f191d3/dist/"
+    },
+    "racismo": {
+      "label": "Lei 7.716 — Racismo",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l7716.htm"
+    },
+    "temp": {
+      "label": "Lei 7.960 — Prisão temporária",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l7960.htm"
+    },
+    "hed": {
+      "label": "Lei 8.072 — Crimes hediondos",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l8072.htm"
+    },
+    "tortura": {
+      "label": "Lei 9.455 — Tortura",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l9455.htm"
+    },
+    "ambiental": {
+      "label": "Lei 9.605 — Crimes ambientais",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l9605.htm"
+    },
+    "armas": {
+      "label": "Lei 10.826 — Armas",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/2003/l10.826.htm"
+    },
+    "d9847": {
+      "label": "Decreto 9.847 — com revogações",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/decreto/D9847.htm"
+    },
+    "d11615": {
+      "label": "Decreto 11.615 — Armas",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/decreto/d11615.htm"
+    },
+    "lmp": {
+      "label": "Lei Maria da Penha",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11340.htm"
+    },
+    "drogas": {
+      "label": "Lei 11.343 — Drogas",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11343.htm"
+    },
+    "org": {
+      "label": "Lei 12.850 — Organizações criminosas",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12850.htm"
+    },
+    "abuso": {
+      "label": "Lei 13.869 — Abuso de autoridade",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/lei/l13869.htm"
+    },
+    "jmu": {
+      "label": "Lei 8.457 — Justiça Militar da União",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l8457.htm"
+    },
+    "ortografia": {
+      "label": "Acordo Ortográfico",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2008/decreto/d6583.htm"
+    },
+    "senado": {
+      "label": "Manual de Comunicação do Senado",
+      "url": "https://www12.senado.leg.br/manualdecomunicacao"
+    },
+    "cert": {
+      "label": "Cartilhas de segurança CERT.br",
+      "url": "https://cartilha.cert.br/fasciculos/"
+    },
+    "excel": {
+      "label": "Microsoft — Limites do Excel",
+      "url": "https://support.microsoft.com/pt-br/excel/excel-specifications-and-limits"
+    },
+    "snap": {
+      "label": "Microsoft — Organizar janelas",
+      "url": "https://support.microsoft.com/pt-br/windows/experience/snap-your-windows"
+    },
+    "flash": {
+      "label": "Microsoft — Novidades do Excel 2013",
+      "url": "https://support.microsoft.com/pt-br/office/novidades-do-excel-2013-1cbc42cd-bfaf-43d7-9031-5688ef1392fd"
+    },
+    "ppt": {
+      "label": "Microsoft — PowerPoint 2019",
+      "url": "https://support.microsoft.com/pt-br/powerpoint/what-s-new-in-powerpoint-2019-for-windows"
+    },
+    "drive": {
+      "label": "Google — Compartilhamento",
+      "url": "https://support.google.com/docs/answer/2494822?hl=pt-BR"
+    },
+    "al": {
+      "label": "IBGE — História de Maceió",
+      "url": "https://www.ibge.gov.br/biblioteca/visualizacao/dtb/alagoas/maceio.pdf"
+    },
+    "emancipa": {
+      "label": "Alagoas — Emancipação política",
+      "url": "https://dados.al.gov.br/catalogo/dataset/348b8b6d-a41a-41a7-9f93-c8c6eb3aa1fa/resource/e3adff04-27df-4198-b312-4c279b2ca5a3/download/emancipacao-politica-de-alagoas.pdf"
+    },
+    "palmares": {
+      "label": "Arquivo Nacional — Palmares",
+      "url": "https://historialuso.an.gov.br/index.php?Itemid=101&catid=2017&id=3317%3Aquilombo-dos-palmares--historia-e-imagem&option=com_content&view=article"
+    },
+    "cadh": {
+      "label": "Convenção Americana — OEA",
+      "url": "https://www.oas.org/juridico/portuguese/treaties/b-32.htm"
+    },
+    "europa": {
+      "label": "Tribunal Europeu — Perguntas e respostas",
+      "url": "https://www.echr.coe.int/documents/d/echr/50questions_eng"
+    },
+    "africa": {
+      "label": "Corte Africana — Protocolo",
+      "url": "https://www.african-court.org/afchpr/wp-content/uploads/2020/10/2-PROTOCOL-TO-THE-AFRICAN-CHARTER-ON-HUMAN-AND-PEOPLES-RIGHTS-ON-THE-ESTABLISHMENT-OF-AN-AFRICAN-COURT-ON-HUMAN-AND-PEOPLES-RIGHTS.pdf"
+    },
+    "stf": {
+      "label": "STF — Súmulas",
+      "url": "https://www.stf.jus.br/arquivo/cms/jurisprudenciaSumula/anexo/Enunciados_Sumulas_STF_1_a_736_Completo.pdf"
+    },
+    "sv": {
+      "label": "STF — Súmulas vinculantes",
+      "url": "https://portal.stf.jus.br/jurisprudencia/sumariosumulas.asp?base=26"
+    },
+    "stj": {
+      "label": "STJ — Súmulas",
+      "url": "https://www.stj.jus.br/docs_internet/jurisprudencia/tematica/download/SU/Verbetes/VerbetesSTJ_asc.pdf"
+    },
+    "t532": {
+      "label": "STF — Tema 532",
+      "url": "https://www.stf.jus.br/arquivo/informativo/documento/informativo996.htm"
+    },
+    "t1118": {
+      "label": "STF — Tema 1118",
+      "url": "https://portal.stf.jus.br/jurisprudenciaRepercussao/verAndamentoProcesso.asp?classeProcesso=RE&incidente=6048634&numeroProcesso=1298647&numeroTema=1118"
+    },
+    "t940": {
+      "label": "STF — Responsabilidade do Estado",
+      "url": "https://www.stf.jus.br/arquivo/cms/jurisprudenciaRepercussaoInformacaoGeral/anexo/Edio89.pdf"
+    },
+    "t130": {
+      "label": "STF — Tema 130",
+      "url": "https://portal.stf.jus.br/jurisprudenciaRepercussao/verAndamentoProcesso.asp?classeProcesso=RE&incidente=2635450&numeroProcesso=591874&numeroTema=130"
+    },
+    "t280": {
+      "label": "STF — Tema 280",
+      "url": "https://portal.stf.jus.br/jurisprudenciaRepercussao/verAndamentoProcesso.asp?classeProcesso=RE&incidente=3774503&numeroProcesso=603616&numeroTema=280"
+    },
+    "t541": {
+      "label": "STF — Tema 541",
+      "url": "https://portal.stf.jus.br/jurisprudenciaRepercussao/verAndamentoProcesso.asp?classeProcesso=ARE&incidente=4128634&numeroProcesso=654432&numeroTema=541"
+    },
+    "t678": {
+      "label": "STF — Tema 678",
+      "url": "https://portal.stf.jus.br/jurisprudenciaRepercussao/verAndamentoProcesso.asp?classeProcesso=RE&incidente=4428673&numeroProcesso=758461&numeroTema=678"
+    },
+    "adi4650": {
+      "label": "STF — Financiamento eleitoral",
+      "url": "https://portal.stf.jus.br/noticias/verNoticiaDetalhe.asp?idConteudo=300015"
+    },
+    "t656": {
+      "label": "STF — Tema 656",
+      "url": "https://portal.stf.jus.br/jurisprudenciaRepercussao/verAndamentoProcesso.asp?classeProcesso=RE&incidente=3832832&numeroProcesso=608588&numeroTema=656"
+    },
+    "t506": {
+      "label": "STF — Tema 506",
+      "url": "https://portal.stf.jus.br/jurisprudenciaRepercussao/verAndamentoProcesso.asp?classeProcesso=RE&incidente=4034145&numeroProcesso=635659&numeroTema=506"
+    },
+    "militar": {
+      "label": "STF — Interrogatório militar",
+      "url": "https://www.stf.jus.br/arquivo/cms/publicacaoInformativoTema/anexo/Informativomensalmaro2016.pdf"
+    },
+    "re466343": {
+      "label": "STF — CADH e prisão civil",
+      "url": "https://www.stf.jus.br/arquivo/cms/publicacaoBOInternet/anexo/link_download/casos_relevantes/pt/RE_466343.pdf"
+    },
+    "ambjur": {
+      "label": "STJ — Pessoa jurídica e crimes ambientais",
+      "url": "https://www.stj.jus.br/sites/portalp/Paginas/Comunicacao/Noticias/2024/05052024-A-responsabilidade-penal-das-pessoas-juridicas-segundo-o-STJ.aspx"
+    },
+    "armasjur": {
+      "label": "STJ — Crimes de armas",
+      "url": "https://www.stj.jus.br/sites/portalp/Paginas/Comunicacao/Noticias/2024/15092024-Porte--posse--crime-os-delitos-relacionados-as-armas-de-fogo--segundo-o-STJ.aspx"
+    },
+    "ctbjur": {
+      "label": "STJ — Embriaguez ao volante",
+      "url": "https://www.stj.jus.br/sites/portalp/Paginas/Comunicacao/Noticias/2025/08102025-Embriaguez-ao-volante-e-lesao-corporal-culposa-na-direcao-de-veiculo-devem-ter-as-penas-somadas.aspx"
+    },
+    "pa": {
+      "label": "Lei 9.784 — Processo administrativo federal",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l9784.htm"
+    },
+    "cc": {
+      "label": "Código Civil — Bens públicos",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm"
+    }
+  },
+  "topics": {
+    "Ortografia - Casos Gerais e Emprego das Letras": [
+      "ortografia",
+      "senado"
+    ],
+    "Fatos da Língua Portuguesa (Porque, Por Que, Porquê e Por Quê; Onde, Aonde e Donde; Há e A, etc)": [
+      "ortografia",
+      "senado"
+    ],
+    "Inicial Maiúscula": [
+      "ortografia",
+      "senado"
+    ],
+    "Acentuação": [
+      "ortografia",
+      "senado"
+    ],
+    "Uso do Hífen": [
+      "ortografia",
+      "senado"
+    ],
+    "Convenções de Escrita (Itálico, Siglas, etc)": [
+      "ortografia",
+      "senado"
+    ],
+    "Formação e Estrutura das Palavras": [
+      "ortografia",
+      "senado"
+    ],
+    "Artigo": [
+      "ortografia",
+      "senado"
+    ],
+    "Substantivo": [
+      "ortografia",
+      "senado"
+    ],
+    "Adjetivo": [
+      "ortografia",
+      "senado"
+    ],
+    "Conjugação. Reconhecimento e Emprego dos Modos e Tempos Verbais": [
+      "ortografia",
+      "senado"
+    ],
+    "Correlação Verbal": [
+      "ortografia",
+      "senado"
+    ],
+    "Locução Verbal": [
+      "ortografia",
+      "senado"
+    ],
+    "Questões Variadas de Verbo": [
+      "ortografia",
+      "senado"
+    ],
+    "Pronomes Pessoais": [
+      "ortografia",
+      "senado"
+    ],
+    "Pronomes Possessivos": [
+      "ortografia",
+      "senado"
+    ],
+    "Pronomes Indefinidos": [
+      "ortografia",
+      "senado"
+    ],
+    "Pronomes Demonstrativos": [
+      "ortografia",
+      "senado"
+    ],
+    "Pronomes Relativos": [
+      "ortografia",
+      "senado"
+    ],
+    "Advérbio": [
+      "ortografia",
+      "senado"
+    ],
+    "Preposição": [
+      "ortografia",
+      "senado"
+    ],
+    "Conjunção": [
+      "ortografia",
+      "senado"
+    ],
+    "Questões Variadas de Classe de Palavras": [
+      "ortografia",
+      "senado"
+    ],
+    "Colocação Pronominal": [
+      "ortografia",
+      "senado"
+    ],
+    "Sinônimos e Antônimos": [
+      "ortografia",
+      "senado"
+    ],
+    "Homônimos e Parônimos": [
+      "ortografia",
+      "senado"
+    ],
+    "Denotação e Conotação": [
+      "ortografia",
+      "senado"
+    ],
+    "Polissemia": [
+      "ortografia",
+      "senado"
+    ],
+    "Significação de Vocábulo e Expressões": [
+      "ortografia",
+      "senado"
+    ],
+    "Outras Questões de Semântica": [
+      "ortografia",
+      "senado"
+    ],
+    "Frase, Oração e Período": [
+      "ortografia",
+      "senado"
+    ],
+    "Sujeito": [
+      "ortografia",
+      "senado"
+    ],
+    "Predicado": [
+      "ortografia",
+      "senado"
+    ],
+    "Termos Integrantes (Objeto Direto e Indireto, Complemento Nominal e Agente da Passiva)": [
+      "ortografia",
+      "senado"
+    ],
+    "Termos Acessórios (Adjunto Adnominal, Adjunto Adverbial e Aposto). Vocativo": [
+      "ortografia",
+      "senado"
+    ],
+    "Adjunto adnominal x Complemento Nominal": [
+      "ortografia",
+      "senado"
+    ],
+    "Orações Coordenadas": [
+      "ortografia",
+      "senado"
+    ],
+    "Orações Subordinadas Substantivas": [
+      "ortografia",
+      "senado"
+    ],
+    "Orações Subordinadas Adjetivas": [
+      "ortografia",
+      "senado"
+    ],
+    "Orações Subordinadas Adverbiais": [
+      "ortografia",
+      "senado"
+    ],
+    "Orações Reduzidas": [
+      "ortografia",
+      "senado"
+    ],
+    "Funções Sintáticas dos Pronomes Relativos": [
+      "ortografia",
+      "senado"
+    ],
+    "Função Sintática dos Pronomes Pessoais Átonos": [
+      "ortografia",
+      "senado"
+    ],
+    "Questões Mescladas de Sintaxe": [
+      "ortografia",
+      "senado"
+    ],
+    "Pontuação (Ponto, Vírgula, Travessão, Aspas, Parênteses, etc)": [
+      "ortografia",
+      "senado"
+    ],
+    "Regência Nominal e Verbal (Casos Gerais)": [
+      "ortografia",
+      "senado"
+    ],
+    "Crase": [
+      "ortografia",
+      "senado"
+    ],
+    "Concordância (Verbal e Nominal)": [
+      "ortografia",
+      "senado"
+    ],
+    "Vozes (Voz Passiva e Voz Ativa)": [
+      "ortografia",
+      "senado"
+    ],
+    "Coerência. Coesão (Anáfora, Catáfora, Uso dos Conectores - Pronomes Relativos, Conjunções, etc)": [
+      "ortografia",
+      "senado"
+    ],
+    "Variações da Linguagem: Não Verbal, Regional, Histórica, Contextual. Neologismos e Estrangeirismos": [
+      "ortografia",
+      "senado"
+    ],
+    "Linguagem Formal e Informal": [
+      "ortografia",
+      "senado"
+    ],
+    "Figuras de Linguagem": [
+      "ortografia",
+      "senado"
+    ],
+    "Vícios de Linguagem (Pleonasmo, Ambiguidade, Cacofonia, etc.)": [
+      "ortografia",
+      "senado"
+    ],
+    "Elementos da Comunicação e Funções da Linguagem": [
+      "ortografia",
+      "senado"
+    ],
+    "Partícula \"Se\"": [
+      "ortografia",
+      "senado"
+    ],
+    "Vocábulo \"Como\"": [
+      "ortografia",
+      "senado"
+    ],
+    "Vocábulo \"Que\"": [
+      "ortografia",
+      "senado"
+    ],
+    "Interpretação de Textos (Compreensão)": [
+      "ortografia",
+      "senado"
+    ],
+    "Tipologia e Gênero Textual": [
+      "ortografia",
+      "senado"
+    ],
+    "Paralelismo": [
+      "ortografia",
+      "senado"
+    ],
+    "Reescrita de Frases. Substituição de Palavras ou Trechos de Texto.": [
+      "ortografia",
+      "senado"
+    ],
+    "Clareza e Correção": [
+      "ortografia",
+      "senado"
+    ],
+    "Outras Questões de Português e Questões Mescladas (Interpretação de Textos ou Gramática)": [
+      "ortografia",
+      "senado"
+    ],
+    "Conceitos Gerais de Sistemas Operacionais e Sistemas de Arquivos": [],
+    "Windows 2000 e Versões Anteriores": [],
+    "Windows XP": [],
+    "Windows Vista": [],
+    "Windows 7": [],
+    "Windows 8": [
+      "snap"
+    ],
+    "Windows 10": [
+      "snap"
+    ],
+    "Windows 11": [
+      "snap"
+    ],
+    "Word 2016": [],
+    "Word 2019": [],
+    "Excel 2003 e Versões Anteriores": [
+      "excel",
+      "flash"
+    ],
+    "Excel 2007": [
+      "excel",
+      "flash"
+    ],
+    "Excel 2010": [
+      "excel",
+      "flash"
+    ],
+    "Excel 2013": [
+      "excel",
+      "flash"
+    ],
+    "Excel 2016": [
+      "excel",
+      "flash"
+    ],
+    "Excel 2019": [
+      "excel",
+      "flash"
+    ],
+    "Powerpoint 2003 e Versões Anteriores": [],
+    "Powerpoint 2007": [],
+    "Powerpoint 2010": [],
+    "Powerpoint 2013": [],
+    "Powerpoint 2016": [],
+    "Powerpoint 2019": [
+      "ppt"
+    ],
+    "Conceitos, Modelos, Tipos e Topologias de Redes": [],
+    "Equipamentos, Meios de Transmissão e Conexão": [],
+    "Protocolos de Redes": [],
+    "Conceitos de Internet": [],
+    "Intranet e Extranet": [],
+    "Internet Explorer": [],
+    "Mozilla Firefox": [],
+    "Google Chrome": [],
+    "Microsoft Edge": [],
+    "Safari": [],
+    "Questões Mescladas de Navegadores": [],
+    "Recursos, Campos, Endereçamento (Correio Eletrônico)": [],
+    "Outlook 2003 e Versões Anteriores": [],
+    "Outlook 2007": [],
+    "Outlook 2010": [],
+    "Outlook 2013": [],
+    "Outlook 2016": [],
+    "Outlook 2019": [],
+    "Outlook Express": [],
+    "Mozilla Thunderbird": [],
+    "Conceitos Gerais sobre Webmails": [],
+    "Gmail": [],
+    "Sites de Busca (Google, Bing, Yahoo, etc.)": [],
+    "Redes Sociais (Facebook, WhatsApp, etc.)": [],
+    "Grupos Colaborativos e de Discussão": [],
+    "Conceitos e Tipos de Computação em Nuvem (Cloud Computing)": [],
+    "Conceitos Gerais de Google Workspace": [
+      "drive"
+    ],
+    "Google Drive": [
+      "drive"
+    ],
+    "Google Docs": [
+      "drive"
+    ],
+    "Google Sheets": [
+      "drive"
+    ],
+    "Demais Recursos do Google Workspace": [
+      "drive"
+    ],
+    "Nuvens Microsoft (OneDrive e Azure)": [],
+    "Dropbox": [],
+    "Conceitos e Princípios de Segurança da Informação": [
+      "cert"
+    ],
+    "Ameaças (Vírus, Worms, Trojans, Malware, etc.)": [
+      "cert"
+    ],
+    "Firewall e Proxy": [
+      "cert"
+    ],
+    "Antivírus e Antispyware": [
+      "cert"
+    ],
+    "Procedimentos de Segurança da Informação (Senhas, Autenticação Etc.)": [
+      "cert"
+    ],
+    "Backup": [
+      "cert"
+    ],
+    "Realidade Social, Histórica e Geográfica de Alagoas": [
+      "al"
+    ],
+    "Geografia de Alagoas": [
+      "al"
+    ],
+    "Os Negros durante o Período Colonial (Cultura, Escravidão, Tráfico Negreiro, etc)": [
+      "palmares"
+    ],
+    "Movimentos Emancipacionistas": [
+      "emancipa",
+      "al"
+    ],
+    "História de Alagoas": [
+      "emancipa",
+      "al"
+    ],
+    "Das Disposições Preliminares (arts. 1º a 6º da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Do Direito à Vida e à Saúde (arts. 7º a 14 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Do Direito à Liberdade, ao Respeito e à Dignidade (arts. 15 a 18-B da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Disposições Gerais do Direito à Convivência Familiar (arts. 19 a 24 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Da Família Natural (arts. 25 a 27 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Da Família Substituta: Guarda, Tutela e Adoção (arts. 28 a 52-D da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Do Direito à Educação, à Cultura, ao Esporte e ao Lazer (arts. 53 a 59-A da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Do Direito à Profissionalização e à Proteção no Trabalho (arts. 60 a 69 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Disposições Gerais da Prevenção (arts. 70 a 73 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Da Prevenção Especial (arts. 74 a 85 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Disposições Gerais da Política de Atendimento (arts. 86 a 89 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Das Entidades de Atendimento (arts. 90 a 97 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Das Medidas de Proteção (arts. 98 a 102 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Disposições Gerais da Prática de Ato Infracional (arts. 103 a 105 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Dos Direitos Individuais (arts. 106 a 109 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Das Garantias Processuais (arts. 110 e 111 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Das Medidas Sócio-educativas (arts. 112 a 125 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Da Remissão (arts. 126 a 128 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Das Medidas Pertinentes aos Pais ou Responsáveis (arts. 129 a 130 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Do Conselho Tutelar (arts. 131 a 140 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Disposições Gerais do Acesso à Justiça (arts. 141 a 144 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Da Justiça da Infância e da Juventude (arts. 145 a 151 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Dos Procedimentos do Acesso à Justiça (arts. 152 a 197-F da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Dos Recursos (arts. 198 a 199-E da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Do Ministério Público (arts. 200 a 205 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Do Advogado (arts. 206 e 207 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Da Proteção Judicial dos Interesses Individuais, Difusos e Coletivos (arts. 208 a 224 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Das Infrações Administrativas (arts. 245 a 258-C da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Disposições Finais e Transitórias (arts. 259 a 267 da Lei nº 8.069/1990 - ECA)": [
+      "eca"
+    ],
+    "Jurisprudência sobre a Lei nº 8.069/1990 (Estatuto da Criança e do Adolescente - ECA)": [
+      "stj"
+    ],
+    "Lei Penal (Conceito, Classificação, Características, Interpretação)": [
+      "cp"
+    ],
+    "Conflitos de Leis Penais no Tempo (arts. 1º e 2º do CP)": [
+      "cp"
+    ],
+    "Lei Excepcional ou Temporária (art. 3º do CP)": [
+      "cp"
+    ],
+    "Tempo do Crime (art. 4º do CP)": [
+      "cp"
+    ],
+    "Da Contagem dos Prazos (arts. 10 e 11 do CP)": [
+      "cp"
+    ],
+    "Conflito Aparente de Normas Penais (art. 12 do CP)": [
+      "cp"
+    ],
+    "Lugar do Crime (art. 6 do CP)": [
+      "cp"
+    ],
+    "Princípio da Territorialidade (art. 5º do CP)": [
+      "cp"
+    ],
+    "Princípio da Extraterritorialidade (art. 7º do CP)": [
+      "cp"
+    ],
+    "Pena Cumprida no Estrangeiro (art. 8º do CP)": [
+      "cp"
+    ],
+    "Eficácia de Sentença Penal Estrangeira (art. 9º do CP)": [
+      "cp"
+    ],
+    "Conceito de Crime": [
+      "cp"
+    ],
+    "Elementos do Fato Típico": [
+      "cp"
+    ],
+    "Ação e Omissão (art. 13, § 2º, do CP)": [
+      "cp"
+    ],
+    "Dolo, Culpa e Preterdolo (arts. 18 e 19 do CP)": [
+      "cp"
+    ],
+    "Erro de Tipo (art. 20 do CP)": [
+      "cp"
+    ],
+    "Tipicidade e Resultado": [
+      "cp"
+    ],
+    "Nexo de Causalidade: Teorias (art. 13, caput, do CP)": [
+      "cp"
+    ],
+    "Nexo de Causalidade: Concausas (art. 13, § 1º, do CP)": [
+      "cp"
+    ],
+    "Fases do Delito": [
+      "cp"
+    ],
+    "Crime Impossível (art. 17 do CP)": [
+      "cp"
+    ],
+    "Desistência Voluntária (art. 15 do CP)": [
+      "cp"
+    ],
+    "Arrependimento Eficaz (art. 15 do CP)": [
+      "cp"
+    ],
+    "Tentativa (Crime) (art. 14, inciso II e parágrafo único, do CP)": [
+      "cp"
+    ],
+    "Consumação (art. 14, inciso I, do CP)": [
+      "cp"
+    ],
+    "Arrependimento Posterior (art. 16 do CP)": [
+      "cp"
+    ],
+    "Considerações Gerais sobre a Ilicitude e suas Excludentes (art. 23 do CP)": [
+      "cp"
+    ],
+    "Estado de Necessidade (art. 24 do CP)": [
+      "cp"
+    ],
+    "Legítima Defesa (art. 25 do CP)": [
+      "cp"
+    ],
+    "Estrito Cumprimento do Dever Legal (art. 23, inciso III, do CP)": [
+      "cp"
+    ],
+    "Exercício Regular de Direito (art. 23, inciso III, do CP)": [
+      "cp"
+    ],
+    "Conceitos Gerais da Culpabilidade": [
+      "cp"
+    ],
+    "Imputabilidade Penal (arts. 26 a 28 do CP)": [
+      "cp"
+    ],
+    "Potencial Consciência da Ilicitude: Erro de Proibição e Descriminantes Putativas (arts. 20, §1º, e 21 do CP)": [
+      "cp"
+    ],
+    "Exigibilidade de Conduta Diversa (art. 22 do CP)": [
+      "cp"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Lei Penal": [
+      "stf"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Teoria do Crime": [
+      "stf"
+    ],
+    "Lei nº 9.099/1995 - Juizados Especiais Cíveis": [
+      "jec"
+    ],
+    "Lei nº 10.259/2001 - Juizados Especiais Cíveis e Criminais no âmbito da Justiça Federal": [
+      "jef"
+    ],
+    "Jurisprudência sobre Juizados Especiais Cíveis (Lei nº 9.099/1995)": [
+      "stj"
+    ],
+    "Jurisprudência sobre Juizados Especiais Cíveis e Criminais na Justiça Federal (Lei nº 10.259/2001)": [
+      "stj"
+    ],
+    "Disposições Preliminares (arts. 1º a 4º da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Do Sistema Nacional de Trânsito (arts. 5º a 25 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Das Normas Gerais de Circulação e Conduta (arts. 26 a 67 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Da Condução de Veículos por Motoristas Profissionais (arts. 67-A a 67-E da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Dos Pedestres e Veículos Não-Motorizados (arts. 68 a 71 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Do Cidadão e Educação para o Trânsito (arts 72 a 79 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Da Sinalização de Trânsito (arts. 80 a 90 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Engenharia de Tráfego, Operação, Fiscalização e Policiamento Ostensivo de Trânsito (arts. 91 a 95)": [
+      "ctb"
+    ],
+    "Dos Veículos (arts. 96 a 117 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Dos Veículos em Circulação Internacional (arts. 118 e 119 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Do Registro de Veículos (arts. 120 e 129-B da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Do Licenciamento (arts. 130 e 135 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Da Condução de Escolares e de Moto-Frete (arts. 136 a 139-B da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Da Habilitação (arts. 140 a 160 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Das Infrações (arts. 161 a 255 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Das Penalidades (arts. 256 a 268-A da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Das Medidas Administrativas (arts. 269 a 279 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Do Processo Administrativo (arts. 280 a 290 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Disposições Finais e Transitórias do CTB (arts. 313 a 341 da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Dos Conceitos e Definições (Anexo I da Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Tópicos Mesclados do CTB (Lei nº 9.503/1997)": [
+      "ctb"
+    ],
+    "Lei nº 14.751/2023 - Lei Orgânica Nacional das PMs e CBMs dos Estados, Distrito Federal e dos Territórios": [
+      "pm"
+    ],
+    "Lei Estadual nº 5.346/1992 - Estatuto dos Policiais Militares do Estado de Alagoas": [
+      "estatuto"
+    ],
+    "Decreto Estadual nº 37.042/1996 - Regulamento Disciplinar da PM Alagoas": [
+      "rd"
+    ],
+    "Lei nº 7.716/1989 - Crimes de Preconceito de Raça ou Cor": [
+      "racismo"
+    ],
+    "Lei nº 7.960/1989 - Prisão Temporária": [
+      "temp"
+    ],
+    "Lei nº 8.069/1990 - (Dos Crimes - ECA, arts. 225 ao 244-B)": [
+      "eca"
+    ],
+    "Lei nº 8.072/1990 - Crimes Hediondos": [
+      "hed"
+    ],
+    "Disposições Gerais (arts. 60 a 62 da Lei nº 9.099/1995)": [
+      "jec"
+    ],
+    "Da Competência e dos Atos Processuais (arts. 63 a 68 da Lei nº 9.099/1995)": [
+      "jec"
+    ],
+    "Da Fase Preliminar (arts. 69 a 76 da Lei nº 9.099/1995)": [
+      "jec"
+    ],
+    "Do Procedimento Sumaríssimo (arts. 77 a 83 da Lei nº 9.099/1995)": [
+      "jec"
+    ],
+    "Da Execução, das Despesas Processuais e Disposições Finais (arts. 84 a 92 da Lei nº 9.099/1995)": [
+      "jec"
+    ],
+    "Lei nº 9.455/1997 - Crimes de Tortura": [
+      "tortura"
+    ],
+    "Lei nº 9.503/1997 - Crimes no Código de Trânsito Brasileiro (arts. 291 a 312-B)": [
+      "ctb"
+    ],
+    "Disposições Gerais (arts. 1º a 5º da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Da Aplicação da Pena (arts. 6º a 24 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Da Apreensão do Produto e do Instrumento de Infração Administrativa ou de Crime (art. 25 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Da Ação e do Processo Penal (arts. 26 a 28 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Dos Crimes contra a Fauna (arts. 29 a 37 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Dos Crimes contra a Flora (arts. 38 a 53 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Da Poluição e outros Crimes Ambientais (arts. 54 a 61 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Dos Crimes contra o Ordenamento Urbano e o Patrimônio Cultural (arts. 62 a 65 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Dos Crimes contra a Administração Ambiental (arts. 66 a 69-A da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Da Cooperação Internacional para a Preservação do Meio Ambiente (arts. 77 e 78 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Disposições Finais (arts. 79 a 82 da Lei nº 9.605/1998)": [
+      "ambiental"
+    ],
+    "Do Sistema Nacional de Armas (arts 1º ao 2º da Lei nº 10.826/2003)": [
+      "armas"
+    ],
+    "Do Registro (arts 3º ao 5º da Lei nº 10.826/2003)": [
+      "armas"
+    ],
+    "Do Porte (arts 6º ao 11 da Lei nº 10.826/2003)": [
+      "armas"
+    ],
+    "Dos Crimes e das Penas (arts. 12 ao 21 da Lei nº 10.826/2003)": [
+      "armas"
+    ],
+    "Disposições Gerais e Finais (arts 22 ao 34 da Lei nº 10.826/2003)": [
+      "armas"
+    ],
+    "Decreto nº 9.847/2019 - Regulamenta o Estatuto do Desarmamento": [
+      "d9847",
+      "d11615"
+    ],
+    "Decreto nº 11.615/2023 - Regulamenta o Estatuto do Desarmamento": [
+      "d11615"
+    ],
+    "Disposições Preliminares (arts. 1º a 4º da Lei nº 11.340/2006)": [
+      "lmp"
+    ],
+    "Da Violência Doméstica e Familiar Contra a Mulher (arts. 5º a 7º da Lei nº 11.340/2006)": [
+      "lmp"
+    ],
+    "Da Assistência à Mulher em Situação de Violência Doméstica e Familiar (arts. 8º a 12-C da Lei nº 11.340/2006)": [
+      "lmp"
+    ],
+    "Disposições Gerais (arts. 13 a 17 da Lei nº 11.340/2006)": [
+      "lmp"
+    ],
+    "Das Medidas Protetivas de Urgência (arts. 18 a 24-A da Lei nº 11.340/2006)": [
+      "lmp"
+    ],
+    "Da Atuação do Ministério Público e da Assistência Jurídica (arts. 25 a 28 da Lei nº 11.340/2006)": [
+      "lmp"
+    ],
+    "Da Equipe de Atendimento Multidisciplinar (arts. 29 a 32 da Lei nº 11.340/2006)": [
+      "lmp"
+    ],
+    "Disposições Transitórias e Finais (arts. 33 a 46 da Lei nº 11.340/2006)": [
+      "lmp"
+    ],
+    "Tópicos Mesclados da Lei nº 11.340/2006": [
+      "lmp"
+    ],
+    "Disposições Preliminares (arts. 1º e 2º da Lei nº 11.343/2006)": [
+      "drogas"
+    ],
+    "Do Sistema Nacional de Políticas Públicas sobre Drogas - SISNAD (art. 3º a 17 da Lei nº 11.343/2006)": [
+      "drogas"
+    ],
+    "Da Prevenção do Uso Indevido, Atenção e Reinserção Social (arts. 18 a 30 da Lei nº 11.343/2006)": [
+      "drogas",
+      "t506"
+    ],
+    "Disposições Gerais e Dos Crimes (arts. 31 a 47 da Lei nº 11.343/2006)": [
+      "drogas"
+    ],
+    "Do Procedimento Penal e da Apreensão, Arrecadação e Destinação de Bens do Acusado (arts. 48 a 64 da Lei nº 11.343/2006)": [
+      "drogas"
+    ],
+    "Da Cooperação Internacional, Disposições Finais e Transitórias (arts. 65 a 75 da Lei nº 11.343/2006)": [
+      "drogas"
+    ],
+    "Tópicos Mesclados da Lei nº 11.343/2006": [
+      "drogas"
+    ],
+    "Lei nº 12.850/2013 - Crime Organizado (Antiga Lei nº 9.034/1995)": [
+      "org"
+    ],
+    "Lei nº 13.869/2019 - Lei de Abuso de Autoridade (antiga Lei nº 4.898/1965)": [
+      "abuso"
+    ],
+    "Jurisprudência sobre a Lei nº 8.069/1990 (Crimes do Estatuto da Criança e do Adolescente)": [
+      "stj"
+    ],
+    "Jurisprudência sobre a Lei nº 8.072/1990 (Crimes Hediondos)": [
+      "sv"
+    ],
+    "Jurisprudência sobre a Lei nº 9.099/1995 (Juizados Especiais Criminais)": [
+      "sv"
+    ],
+    "Jurisprudência sobre a Lei nº 9.503/1997 (Crimes no Código de Trânsito Brasileiro - CTB)": [
+      "ctbjur"
+    ],
+    "Jurisprudência sobre a Lei nº 9.605/1998 (Crimes do Meio Ambiente)": [
+      "ambjur"
+    ],
+    "Jurisprudência sobre o Estatuto do Desarmamento (Lei nº 10.826/2003, Decreto nº 9.847/2019 e Decreto nº 11.615/2023)": [
+      "armasjur"
+    ],
+    "Jurisprudência sobre a Lei nº 11.340/2006 (Violência Doméstica)": [
+      "stj"
+    ],
+    "Jurisprudência sobre a Lei nº 11.343/2006 (Lei de Drogas)": [
+      "t506"
+    ],
+    "Jurisprudência sobre Tópicos Mesclados ou Outros Assuntos de Leg. Penal e Processual Penal Especial": [
+      "sv"
+    ],
+    "Regime Jurídico da Administração e Regime Jurídico Administrativo": [
+      "cf",
+      "pa"
+    ],
+    "Princípios Expressos, Explícitos ou Constitucionais": [
+      "cf"
+    ],
+    "Princípios Implícitos, Reconhecidos e Infraconstitucionais": [
+      "cf",
+      "pa"
+    ],
+    "Conceito de Atos Administrativos": [
+      "cf"
+    ],
+    "Mérito Administrativo": [
+      "cf"
+    ],
+    "Elementos, Requisitos e Pressupostos (Atos Administrativos)": [
+      "cf",
+      "pa"
+    ],
+    "Atributos ou Características dos Atos Administrativos": [
+      "cf"
+    ],
+    "Atos Administrativos: Espécies, Classificação, Fases de Constituição": [
+      "cf"
+    ],
+    "Desfazimento do Ato Administrativo (Anulação, Revogação, Cassação, Caducidade, Contraposição)": [
+      "cf",
+      "pa"
+    ],
+    "Convalidação e Conversão dos Atos Administrativos": [
+      "cf",
+      "pa"
+    ],
+    "Teoria dos Motivos Determinantes": [
+      "cf",
+      "pa"
+    ],
+    "Tópicos Mesclados de Atos Administrativos": [
+      "cf"
+    ],
+    "Poder Vinculado e Discricionário": [
+      "cf"
+    ],
+    "Poder Regulamentar": [
+      "cf"
+    ],
+    "Poder Hierárquico": [
+      "cf",
+      "pa"
+    ],
+    "Poder Disciplinar": [
+      "cf"
+    ],
+    "Poder de Polícia": [
+      "cf"
+    ],
+    "Abuso de Poder: Excesso de Poder e Desvio de Finalidade (Poderes da Administração)": [
+      "cf"
+    ],
+    "Tópicos Mesclados de Poderes da Administração": [
+      "cf"
+    ],
+    "Administração Direta (Órgãos Públicos)": [
+      "cf"
+    ],
+    "Administração Indireta": [
+      "cf"
+    ],
+    "Desconcentração e Descentralização": [
+      "cf"
+    ],
+    "Agências Reguladoras e Executivas": [
+      "cf"
+    ],
+    "Conceitos Iniciais e Teorias da Responsabilidade": [
+      "cf"
+    ],
+    "Responsabilidade Objetiva das Empresas Estatais e das Prestadoras de Serviços Públicos": [
+      "cf"
+    ],
+    "Responsabilidade dos Agentes Públicos e Direito de Regresso": [
+      "cf"
+    ],
+    "Excludentes e Atenuantes de Responsabilidade": [
+      "cf"
+    ],
+    "Responsabilidade Civil por Atos Omissivos": [
+      "cf"
+    ],
+    "Responsabilidade por Atos Legislativos e Judiciais": [
+      "cf"
+    ],
+    "Casos Especiais (Danos decorrentes de Obra Pública, Responsabilidade dos Tabeliães, etc.)": [
+      "cf"
+    ],
+    "Tópicos Mesclados de Responsabilidade Civil do Estado": [
+      "cf"
+    ],
+    "Conceitos (Serviços Públicos - Lei nº 8.987/1995)": [
+      "concess"
+    ],
+    "Classificação de Serviços Públicos": [
+      "concess"
+    ],
+    "Princípios (Serviços Públicos - Lei nº 8.987/1995)": [
+      "concess"
+    ],
+    "Repartição de Competências (Serviços Públicos)": [
+      "concess"
+    ],
+    "Deveres e Direitos (Usuários, Concedente, Concessionária, Licitações - Lei nº 8.987/1995)": [
+      "concess"
+    ],
+    "Autorização, Permissão e Concessão (Serviços Públicos - Lei nº 8.987/1995)": [
+      "concess"
+    ],
+    "Formas de Extinção (Serviços Públicos - Lei nº 8.987/1995)": [
+      "concess"
+    ],
+    "Intervenção (Serviços Públicos - Lei nº 8.987/1995)": [
+      "concess"
+    ],
+    "Subconcessão (Serviços Públicos - Lei nº 8.987/1995)": [
+      "concess"
+    ],
+    "Convênios Administrativos": [
+      "cf"
+    ],
+    "Lei nº 13.460/2017 - Direitos Básicos do Usuário do Serviço Público": [
+      "usuario"
+    ],
+    "Decreto nº 9.094/2017 - Simplificação e Racionalização de Serviços Públicos": [
+      "simplifica"
+    ],
+    "Tópicos Mesclados de Serviços Públicos": [
+      "cf"
+    ],
+    "Controle da Administração: Conceitos, Princípios, Abrangência e Classificações": [
+      "cf",
+      "pa"
+    ],
+    "Controle Administrativo (Direito Administrativo)": [
+      "cf",
+      "pa"
+    ],
+    "Parlamentar Direto (Controle Político)": [
+      "cf"
+    ],
+    "Parlamentar Indireto (Tribunais de Contas e Controle Técnico-Financeiro)": [
+      "cf"
+    ],
+    "Controle Popular ou Social": [
+      "cf"
+    ],
+    "Controle Jurisdicional": [
+      "cf"
+    ],
+    "Domínio Público e Bens Públicos: Conceito": [
+      "cf",
+      "cc"
+    ],
+    "Classificação dos Bens Públicos": [
+      "cf",
+      "cc"
+    ],
+    "Características dos Bens Públicos": [
+      "cf",
+      "cc"
+    ],
+    "Afetação e Desafetação (Bens Públicos)": [
+      "cf",
+      "cc"
+    ],
+    "Bens Públicos em Espécie (Domínio Terrestre, Hídrico e Aéreo)": [
+      "cf",
+      "cc"
+    ],
+    "Formas de Utilização de Bens Públicos": [
+      "cf",
+      "cc"
+    ],
+    "Aquisição de Bens pelo Estado": [
+      "cf",
+      "cc"
+    ],
+    "Tópicos Mesclados de Bens Públicos (Direito Administrativo)": [
+      "cf",
+      "cc"
+    ],
+    "Do Âmbito de Aplicação, Definições e Agentes Públicos (arts. 1º a 4º, 6º a 10 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Princípios (art. 5º da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Objetivos, Fases e Formalidades (arts. 11 a 17 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Instrução do Processo Licitatório (arts. 18 a 27 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Modalidades de Licitação (arts. 28 a 32 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Critérios de Julgamento (arts. 33 a 39 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Disposições Setoriais, Compras, Serviços (arts. 40 a 52 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Divulgação do Edital de Licitação (arts. 53 a 54 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Fases da Licitação - Julgamento, Habilitação e Encerramento (arts. 55 a 71 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Contratação Direta, Inexigibilidade e Dispensa (arts. 72 a 75 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Alienações (arts. 76 e 77 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Instrumentos Auxiliares (arts. 78 a 88 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Conceitos e Características dos Contratos Administrativos. Formalização dos Contratos (arts. 89 a 95 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Garantias (arts. 96 a 102 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Alocação de Riscos (art. 103 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Prerrogativas da Administração (art. 104 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Duração dos Contratos (arts. 105 a 114 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Execução dos Contratos (arts. 115 a art. 123 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Alteração dos Contratos e dos Preços (art. 124 a 136 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Hipóteses de Extinção dos Contratos (arts. 137 a 139 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Recebimento do Objeto do Contrato (art. 140 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Pagamentos (arts. 141 a 146 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Nulidade dos Contratos (arts. 147 a 150 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Meios Alternativos de Resolução de Controvérsias (arts. 151 a 154 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Infrações e Sanções Administrativas (arts. 155 a 163 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Impugnações, Pedidos de Esclarecimento e Recursos (arts. 164 a 168 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Controle das Contratações (arts. 169 a 173 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Portal Nacional de Contratações Públicas - PNCP (arts. 174 a 176 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Disposições Transitórias e Finais (arts. 181 a 194 da Lei nº 14.133/2021)": [
+      "licit"
+    ],
+    "Tópicos Mesclados da Lei nº 14.133/2021": [
+      "licit"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Administração Indireta": [
+      "t532"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Atos Administrativos": [
+      "stf"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Bens Públicos": [
+      "stj"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Controle da Administração Pública": [
+      "sv"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Licitações e Contratos Administrativos": [
+      "t1118"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Poderes da Administração": [
+      "t532"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Princípios da Administração": [
+      "sv"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Responsabilidade Civil do Estado": [
+      "t940"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Serviços Públicos": [
+      "t130"
+    ],
+    "Características (Direitos Fundamentais)": [
+      "cf"
+    ],
+    "Gerações de Direitos Fundamentais": [
+      "cf"
+    ],
+    "Dos Direitos e Deveres Individuais e Coletivos (art. 5º da CF/1988)": [
+      "cf"
+    ],
+    "Habeas Corpus": [
+      "cf"
+    ],
+    "Mandado de Segurança": [
+      "cf"
+    ],
+    "Mandado de Injunção": [
+      "cf"
+    ],
+    "Habeas Data": [
+      "cf"
+    ],
+    "Ação Popular": [
+      "cf"
+    ],
+    "Questões Mescladas de Remédios Constitucionais": [
+      "cf"
+    ],
+    "Direitos Sociais e dos Trabalhadores (arts. 6º e 7º da CF/1988)": [
+      "cf"
+    ],
+    "Direitos Coletivos dos Trabalhadores (arts. 8º a 11 da CF/1988)": [
+      "cf"
+    ],
+    "Espécies de Nacionalidade (Brasileiros Natos e Naturalizados)": [
+      "cf"
+    ],
+    "Distinções Constitucionais entre Brasileiros Natos e Naturalizados": [
+      "cf"
+    ],
+    "Perda da Nacionalidade": [
+      "cf"
+    ],
+    "Extradição, Deportação, Expulsão e Banimento (da Nacionalidade)": [
+      "cf"
+    ],
+    "Dos Símbolos e Idioma da República (art. 13 da CF/1988)": [
+      "cf"
+    ],
+    "Soberania Popular (Voto, Plebiscito, Referendo, Iniciativa popular), Alistamento e Elegibilidade": [
+      "cf"
+    ],
+    "Inelegibilidades (Direitos Políticos)": [
+      "cf"
+    ],
+    "Perda e Suspensão dos Direitos Políticos": [
+      "cf"
+    ],
+    "Partidos Políticos (art. 17 da CF/1988)": [
+      "cf"
+    ],
+    "Da Organização Político-Administrativa (arts. 18 e 19 da CF/1988)": [
+      "cf"
+    ],
+    "União: Bens e Competências Exclusivas, Privativas, Comuns e Concorrentes (arts. 20 a 24 da CF/1988)": [
+      "cf"
+    ],
+    "Estados Federados - Organização, Competências, Bens (arts. 25 a 28 da CF/1988)": [
+      "cf"
+    ],
+    "Municípios - Organização e Competências (arts. 29 a 31 da CF/1988)": [
+      "cf"
+    ],
+    "Do Distrito Federal e dos Territórios (arts. 32 e 33 da CF/1988)": [
+      "cf"
+    ],
+    "Intervenção Federal e Estadual (arts. 34 a 36 da CF/1988)": [
+      "cf"
+    ],
+    "Disposições Gerais (Administração Pública - arts. 37 e 38 da CF/1988)": [
+      "cf"
+    ],
+    "Dos Servidores Públicos (arts. 39 a 41 da CF/1988)": [
+      "cf"
+    ],
+    "Dos Militares dos Estados, do Distrito Federal e dos Territórios (art. 42 da CF/1988)": [
+      "cf"
+    ],
+    "Das Regiões (Administração Pública, art. 43 da CF/1988)": [
+      "cf"
+    ],
+    "Questões Mescladas de Organização do Estado (arts. 18 a 43 da CF/1988)": [
+      "cf"
+    ],
+    "Estado de Defesa e de Sítio (arts. 136 a 141 da CF/1988)": [
+      "cf"
+    ],
+    "Forças Armadas (arts. 142 e 143 da CF/1988)": [
+      "cf"
+    ],
+    "Segurança Pública (art. 144 da CF/1988)": [
+      "cf"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Direitos e Deveres Individuais e Coletivos": [
+      "t280"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Remédios Constitucionais": [
+      "stf"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Direitos Sociais e dos Trabalhadores": [
+      "t541"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Nacionalidade": [
+      "stf",
+      "cf"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Direitos Políticos": [
+      "t678",
+      "sv"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Partidos Políticos": [
+      "adi4650"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Organização Político-Administrativa": [
+      "cf"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Organização, Competências e Bens dos Entes Federativos": [
+      "sv"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Intervenção Federal e Estadual": [
+      "stf"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Administração Pública": [
+      "sv"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Segurança Pública": [
+      "t656"
+    ],
+    "Inquérito Policial (arts. 4º a 23 do CPP)": [
+      "cpp"
+    ],
+    "Da Ação Penal (arts. 24 a 62 do CPP)": [
+      "cpp"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Inquérito Policial": [
+      "sv"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Ação Penal": [
+      "stj"
+    ],
+    "Aplicação da Lei Penal Militar (arts. 1º a 28 do CPM)": [
+      "cpm"
+    ],
+    "Do Crime (arts. 29 a 47 do CPM)": [
+      "cpm"
+    ],
+    "Da Imputabilidade Penal Militar (arts. 48 a 52 do CPM)": [
+      "cpm"
+    ],
+    "Do Concurso de Agentes (arts. 53 a 54 do CPM)": [
+      "cpm"
+    ],
+    "Das Penas Principais (arts. 55 a 68 do CPM)": [
+      "cpm"
+    ],
+    "Da Aplicação da Pena (arts. 69 a 83 do CPM)": [
+      "cpm"
+    ],
+    "Penas Acessórias (arts. 98 a 109 do CPM)": [
+      "cpm"
+    ],
+    "Dos Efeitos da Condenação (art. 109 do CPM)": [
+      "cpm"
+    ],
+    "Medidas de Segurança (arts. 110 a 120 do CPM)": [
+      "cpm"
+    ],
+    "Da Ação Penal Militar (arts. 121 a 122 do CPM)": [
+      "cpm"
+    ],
+    "Da Extinção da Punibilidade (arts. 123 a 135 do CPM)": [
+      "cpm"
+    ],
+    "Dos Crimes Contra a Segurança Externa do País (arts. 136 a 148 do CPM)": [
+      "cpm"
+    ],
+    "Do Motim e da Revolta (arts. 149 a 153 do CPM)": [
+      "cpm"
+    ],
+    "Da Aliciação e do Incitamento (arts. 154 a 156 do CPM)": [
+      "cpm"
+    ],
+    "Da Violência Contra Superior ou Militar de Serviço (arts. 157 a 159 do CPM)": [
+      "cpm"
+    ],
+    "Do Desrespeito a Superior e a Símbolo Nacional ou a Farda (arts. 160 a 162 do CPM)": [
+      "cpm"
+    ],
+    "Da Insubordinação (arts. 163 a 166 do CPM)": [
+      "cpm"
+    ],
+    "Da Usurpação e do Excesso ou Abuso de Autoridade (arts. 167 a 176 do CPM)": [
+      "cpm"
+    ],
+    "Da Resistência (art. 177 do CPM)": [
+      "cpm"
+    ],
+    "Da Fuga, Evasão, Arrebatamento e Amotinamento de Presos (arts. 178 e 182 do CPM)": [
+      "cpm"
+    ],
+    "Questões Mescladas de Crimes contra a Autoridade": [
+      "cpm"
+    ],
+    "Da Insubmissão (arts. 183 a 186 do CPM)": [
+      "cpm"
+    ],
+    "Da Deserção (arts. 187 a 194 do CPM)": [
+      "cpm"
+    ],
+    "Do Abandono de Posto e de Outros Crimes em Serviço (arts. 195 a 203 do CPM)": [
+      "cpm"
+    ],
+    "Do Exercício de Comércio (art. 204 do CPM)": [
+      "cpm"
+    ],
+    "Questões Mescladas de Crimes contra o Serviço e Dever Militar": [
+      "cpm"
+    ],
+    "Dos Crimes Contra a Pessoa (arts. 205 a 239 do CPM)": [
+      "cpm"
+    ],
+    "Dos Crimes contra o Patrimônio (arts. 240 a 267 do CPM)": [
+      "cpm"
+    ],
+    "Dos Crimes contra a Incolumidade Pública (268 a 297 do CPM)": [
+      "cpm"
+    ],
+    "Do Desacato e da Desobediência (arts. 298 a 302 do CPM)": [
+      "cpm"
+    ],
+    "Peculato (arts. 303 e 304 do CPM)": [
+      "cpm"
+    ],
+    "Da Concussão, Excesso de Exação e Desvio (arts. 305 e 307 do CPM)": [
+      "cpm"
+    ],
+    "Da Corrupção (arts. 308 a 310 do CPM)": [
+      "cpm"
+    ],
+    "Da Falsidade (arts. 311 a 318 do CPM)": [
+      "cpm"
+    ],
+    "Dos Crimes contra o Dever Funcional (arts. 319 a 334 do CPM)": [
+      "cpm"
+    ],
+    "Dos Crimes Praticados Por Particular contra a Administração Militar (arts. 335 a 339 do CPM)": [
+      "cpm"
+    ],
+    "Questões Mescladas de Crimes contra a Administração Militar": [
+      "cpm"
+    ],
+    "Dos Crimes contra a Administração da Justiça Militar (arts. 340 a 354 do CPM)": [
+      "cpm"
+    ],
+    "Da Lei Processual Penal Militar e sua Aplicação (arts. 1º a 6º do CPPM)": [
+      "cppm",
+      "cf"
+    ],
+    "Da Polícia Judiciária Militar (arts. 7º a 8º do CPPM)": [
+      "cppm",
+      "cf"
+    ],
+    "Do Inquérito Policial Militar (arts. 9º a 28 do CPPM)": [
+      "cppm",
+      "cf"
+    ],
+    "Da Ação Penal Militar e da Denúncia (arts. 29 a 33 e 77 a 81 do CPPM)": [
+      "cppm",
+      "cf"
+    ],
+    "Do Foro e da Competência da Justiça Militar (arts. 82 a 121 do CPPM)": [
+      "cppm",
+      "cf"
+    ],
+    "Das Medidas Preventivas e Assecuratórias (arts. 170 a 219 do CPPM)": [
+      "cppm",
+      "cf"
+    ],
+    "Da Prisão e da Liberdade Provisória (arts. 220 a 276 do CPPM)": [
+      "cppm",
+      "cf"
+    ],
+    "Dos Processos Especiais (arts. 451 a 498 do CPPM)": [
+      "cppm",
+      "cf"
+    ],
+    "Jurisprudência dos Tribunais Superiores em Matéria Processual Penal Militar": [
+      "militar"
+    ],
+    "Lei nº 8.457/1992 - Organiza a Justiça Militar da União": [
+      "jmu"
+    ],
+    "Conceitos, Histórico e Gerações dos Direitos Humanos": [
+      "cadh"
+    ],
+    "Sistema Interamericano de Direitos Humanos": [
+      "cadh"
+    ],
+    "Sistema Europeu de Direitos Humanos": [
+      "europa"
+    ],
+    "Sistema Africano de Direitos Humanos": [
+      "africa"
+    ],
+    "Outros Temas e Tópicos Mesclados de Proteção dos Direitos Humanos": [
+      "cadh"
+    ],
+    "Fontes, Classificação e Princípios dos Direitos Humanos Internacionais": [
+      "cadh"
+    ],
+    "Titulares e Obrigados dos Direitos Humanos. Obrigações Positivas e Negativas": [
+      "cadh"
+    ],
+    "Deveres dos Estados e Direitos Protegidos (arts. 1º a 32 da CADH-OAS)": [
+      "cadh"
+    ],
+    "Meios de Proteção (arts. 33 a 73 da CADH-OAS)": [
+      "cadh"
+    ],
+    "Disposições Gerais e Transitórias (arts. 74 a 82 da CADH-OAS)": [
+      "cadh"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Sistema Interamericano de Direitos Humanos": [
+      "re466343",
+      "sv"
+    ],
+    "Jurisprudência dos Tribunais Superiores sobre Convenção Americana sobre Direitos Humanos (CADH-OAS)": [
+      "re466343",
+      "sv"
+    ]
+  }
+}
