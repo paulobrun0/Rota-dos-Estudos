@@ -66,6 +66,7 @@ function validateMaterias(materias) {
 
       if (topic.status !== undefined) requireValue(["pendente", "estudado"].includes(topic.status), "status do assunto inválido");
       if (topic.tecSubjectTitle !== undefined) requireValue(typeof topic.tecSubjectTitle === "string" && topic.tecSubjectTitle.length <= 1500, "correspondência TEC inválida");
+      if (topic.bizu !== undefined) requireValue(typeof topic.bizu === "string" && topic.bizu.length <= 1200, "bizu inválido");
       if (topic.notes !== undefined) requireValue(typeof topic.notes === "string", "anotação inválida");
       if (topic.link !== undefined) requireValue(isSafeStudyLink(topic.link), "link precisa começar com http ou https");
       if (topic.links !== undefined) {

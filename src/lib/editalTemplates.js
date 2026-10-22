@@ -15,12 +15,12 @@ export function prepareEditalTemplate(raw) {
     if(!m || typeof m.name !== 'string' || !Array.isArray(m.topics) || m.topics.length>1000)throw new Error('Cada matéria precisa de name e topics (até 1.000 assuntos).');
     return {id:uid(),name:m.name.trim(),color:PALETTE[i%PALETTE.length],topics:m.topics.map(t=>{
       if(!t || typeof t.name !== 'string')throw new Error('Cada assunto precisa de name.');
-      return {id:uid(),name:t.name.trim(),...(t.groupPath!==undefined?{groupPath:t.groupPath}:{}),status:'pendente',mastered:false,questionsTotal:0,questionsCorrect:0,reviewStep:0,nextReviewDate:null,notes:typeof t.notes==='string'?t.notes:'',...(t.link!==undefined?{link:t.link}:{}),...(t.links!==undefined?{links:t.links}:{}),...(t.materials!==undefined?{materials:Array.isArray(t.materials)?t.materials.map(a=>({...a,id:uid()})):t.materials}:{})};
+      return {id:uid(),name:t.name.trim(),...(t.groupPath!==undefined?{groupPath:t.groupPath}:{}),status:'pendente',mastered:false,questionsTotal:0,questionsCorrect:0,reviewStep:0,nextReviewDate:null,...(typeof t.bizu==='string'?{bizu:t.bizu}:{}),notes:typeof t.notes==='string'?t.notes:'',...(t.link!==undefined?{link:t.link}:{}),...(t.links!==undefined?{links:t.links}:{}),...(t.materials!==undefined?{materials:Array.isArray(t.materials)?t.materials.map(a=>({...a,id:uid()})):t.materials}:{})};
     })};
   });
   validatePlanData({concursos:[c],activeConcursoId:c.id});
   return c;
 }
 export function exportEditalTemplate(c) {
-  return {name:c.name,banca:c.banca || '',cargo:c.cargo || '',stage:c.stage || 'pre',examDate:c.examDate || null,editalUrl:c.editalUrl || '',materias:c.materias.map(m=>({name:m.name,topics:m.topics.map(t=>({name:t.name,...(t.groupPath?{groupPath:[...t.groupPath]}:{}),notes:t.notes || '',...(t.links?{links:t.links}:{}),...(t.link?{link:t.link}:{}),materials:(t.materials || []).map(({name,url,type})=>({name,url,type}))}))}))};
+  return {name:c.name,banca:c.banca || '',cargo:c.cargo || '',stage:c.stage || 'pre',examDate:c.examDate || null,editalUrl:c.editalUrl || '',materias:c.materias.map(m=>({name:m.name,topics:m.topics.map(t=>({name:t.name,...(t.groupPath?{groupPath:[...t.groupPath]}:{}),...(typeof t.bizu==='string'?{bizu:t.bizu}:{}),notes:t.notes || '',...(t.links?{links:t.links}:{}),...(t.link?{link:t.link}:{}),materials:(t.materials || []).map(({name,url,type})=>({name,url,type}))}))}))};
 }

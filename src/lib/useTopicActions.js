@@ -16,6 +16,10 @@ export function useTopicActions({ updateActive, setData, activeConcurso }) {
     changeTopic(materiaId, topicId, (topic) => { topic.notes = notes; });
   }
 
+  function updateTopicBizu(materiaId, topicId, bizu) {
+    changeTopic(materiaId, topicId, topic => { topic.bizu = bizu; });
+  }
+
   function updateTopicLink(materiaId, topicId, links) {
     changeTopic(materiaId, topicId, (topic) => { topic.links = links; delete topic.link; });
   }
@@ -54,5 +58,5 @@ export function useTopicActions({ updateActive, setData, activeConcurso }) {
     });
   }
 
-  return { updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, addTopicQuestions };
+  return { updateTopicBizu, updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, addTopicQuestions };
 }

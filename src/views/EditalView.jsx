@@ -1,3 +1,4 @@
+import { TopicBizu } from "../components/TopicBizu.jsx";
 import {TecNotebookButton} from '../components/TecNotebookBuilder.jsx';
 import { SharedPractice } from "../components/SharedPractice.jsx";
 import { buildTopicTree, filterHierarchyTopics, topicsInGroup } from "../lib/topicHierarchy.js";
@@ -8,7 +9,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, GripVertical, Library, L
 import { colors } from "../styles/colors.js";
 import { iconBtnStyle, inputStyle, primaryBtnStyle, secondaryBtnStyle } from "../styles/shared.js";
 
-export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, reorderMaterias, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
+export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, bulkHintMatches, useContentBankTopicsFor, newMateriaName, setNewMateriaName, addMateria, addTopics, removeMateria, removeTopic, moveMateria, reorderMaterias, updateTopicNotes, updateTopicLink, updateTopicMaterials, updateTopicBizu, skipShared, undoShared, topicDrafts, setTopicDrafts, contentBank, importFromBank }) {
   // Drag state lives here (not in each card) since a drag needs to know
   // about every OTHER card too — which one the pointer is currently over,
   // to highlight it as the drop target. `dragState` also drives the little
@@ -189,7 +190,7 @@ export function EditalView({ concurso, bulkText, setBulkText, parseBulk, error, 
           removeMateria={removeMateria}
           removeTopic={removeTopic}
           moveMateria={moveMateria}
-          skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
+          skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicBizu={updateTopicBizu} updateTopicNotes={updateTopicNotes}
           updateTopicLink={updateTopicLink}
           onDragHandlePointerDown={(e) => startDrag(m, e)}
           isDragging={dragState?.id === m.id}
@@ -393,7 +394,7 @@ function ContentBankImporter({ concurso, contentBank, importFromBank }) {
   );
 }
 
-function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, onDragHandlePointerDown, isDragging, isDropTarget, isExpanded, onToggleExpanded }) {
+function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraft, setTopicDraft, addTopics, removeMateria, removeTopic, moveMateria, updateTopicNotes, updateTopicLink, updateTopicMaterials, updateTopicBizu, skipShared, undoShared, onDragHandlePointerDown, isDragging, isDropTarget, isExpanded, onToggleExpanded }) {
   const collapsed = !isExpanded;
   const visibleTopics = filterHierarchyTopics(m.topics, topicFilter);
   const topicTree = buildTopicTree(visibleTopics);
@@ -474,7 +475,7 @@ function MateriaEditalCard({ materia: m, topicFilter, isFirst, isLast, topicDraf
         <>
           {m.topics.length > 0 && (
             <div className="topic-table-wrap" tabIndex={0} role="region" aria-label={`Tabela de assuntos de ${m.name}`}><table className="topic-table edital-topics-table" aria-label={`Assuntos de ${m.name}`}><thead><tr><th scope="col">Assunto</th><th scope="col">Situação</th><th scope="col">Questões</th><th scope="col">Cadernos</th><th scope="col">Ações</th></tr></thead><tbody>
-              <HierarchyRows tree={topicTree} forceOpen={Boolean(topicFilter.query) || topicFilter.status !== 'all'} rowProps={{materiaId:m.id, removeTopic, skipShared, undoShared, updateTopicMaterials, updateTopicNotes, updateTopicLink}} />
+              <HierarchyRows tree={topicTree} forceOpen={Boolean(topicFilter.query) || topicFilter.status !== 'all'} rowProps={{materiaId:m.id, removeTopic, skipShared, undoShared, updateTopicMaterials, updateTopicBizu: /matem[aá]tica/i.test(m.name) ? undefined : updateTopicBizu, updateTopicNotes, updateTopicLink}} />
             </tbody></table>{!visibleTopics.length && <p className="muted" style={{padding:12}}>Nenhum assunto neste filtro.</p>}</div>
           )}
 
@@ -518,8 +519,9 @@ function TopicGroup({group, rowProps, forceOpen, depth}) {
   </>;
 }
 
-function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, depth=0 }) {
+function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, updateTopicLink, updateTopicMaterials, updateTopicBizu, skipShared, undoShared, depth=0 }) {
   const [notesOpen, setNotesOpen] = useState(false);
+  const [bizuOpen, setBizuOpen] = useState(false);
   const [draft, setDraft] = useState(t.notes || "");
   const hasNotes = (t.notes || "").trim().length > 0;
 
@@ -538,10 +540,11 @@ function TopicEditalRow({ materiaId, topic: t, removeTopic, updateTopicNotes, up
       <td data-label="Situação"><span className="topic-status" style={{ color: t.mastered ? colors.success : t.status === "estudado" ? colors.accent : colors.textMuted, background: t.status === "estudado" ? colors.accentSoft : colors.surface2 }}>{t.mastered ? "dominado" : t.status === "estudado" ? "estudado" : "pendente"}</span></td>
       <td data-label="Questões"><span className="mono">{(t.crossStudy?.total ?? t.questionsTotal) > 0 ? `${t.crossStudy?.correct ?? t.questionsCorrect}/${t.crossStudy?.total ?? t.questionsTotal}` : "—"}</span>{(t.crossStudy?.total ?? t.questionsTotal) > 0 && <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 3 }}>{Math.round((t.crossStudy?.correct ?? t.questionsCorrect) / (t.crossStudy?.total ?? t.questionsTotal) * 100)}% de acertos</div>}</td>
       <td data-label="Cadernos"><div className="topic-actions"><TopicLinkButtons topic={t} /><TecNotebookButton materiaId={materiaId} topicId={t.id}/><button type="button" onClick={() => setLinkOpen(o => !o)} aria-label={`buscar questões de ${t.name}`} style={{ ...secondaryBtnStyle, marginTop: 0, padding: "4px 8px", fontSize: 11 }}>Buscar questões</button><button onClick={() => setLinkOpen(o => !o)} aria-label="link do caderno de questões" aria-expanded={linkOpen} title="Editar links dos cadernos" style={{ ...iconBtnStyle, color: hasLink ? colors.success : colors.textFaint }}><Link2 size={16} /></button></div></td>
-      <td data-label="Ações"><div className="topic-actions"><button onClick={() => setNotesOpen(o => !o)} aria-label="anotações do assunto" aria-expanded={notesOpen} title="Anotações" style={{ ...iconBtnStyle, color: hasNotes ? colors.accent : colors.textFaint }}><StickyNote size={16} /></button><button onClick={() => removeTopic(materiaId, t.id)} aria-label={`excluir assunto ${t.name}`} title="Excluir assunto" style={iconBtnStyle}><X size={16} /></button></div></td>
+      <td data-label="Ações"><div className="topic-actions">{updateTopicBizu && <button type="button" onClick={() => setBizuOpen(o => !o)} aria-expanded={bizuOpen} aria-label={`Bizu de ${t.name}`} style={{...secondaryBtnStyle, marginTop:0, padding:"4px 8px", fontSize:12}}>Bizu</button>}<button onClick={() => setNotesOpen(o => !o)} aria-label="anotações do assunto" aria-expanded={notesOpen} title="Anotações" style={{ ...iconBtnStyle, color: hasNotes ? colors.accent : colors.textFaint }}><StickyNote size={16} /></button><button onClick={() => removeTopic(materiaId, t.id)} aria-label={`excluir assunto ${t.name}`} title="Excluir assunto" style={iconBtnStyle}><X size={16} /></button></div></td>
     </tr>
-    {(linkOpen || notesOpen) && <tr className="topic-detail"><td colSpan={5}>
+    {(linkOpen || notesOpen || bizuOpen) && <tr className="topic-detail"><td colSpan={5}>
       {linkOpen && <TopicLinksEditor topic={t} onSaveMaterials={(materials) => updateTopicMaterials(materiaId, t.id, materials)} onSave={(links) => updateTopicLink(materiaId, t.id, links)} onClose={() => setLinkOpen(false)} />}
+      {bizuOpen && <TopicBizu topic={t} onSave={value => updateTopicBizu(materiaId, t.id, value)} />}
       {notesOpen && <label style={{ display: "grid", gap: 6, fontSize: 12, color: colors.textMuted }}>Anotações — {t.name}<textarea value={draft} onChange={e => setDraft(e.target.value)} onBlur={saveIfChanged} placeholder="observações, pegadinhas, pontos de atenção..." rows={3} style={{ ...inputStyle, width: "100%", resize: "vertical" }} /></label>}
     </td></tr>}
   </>;
