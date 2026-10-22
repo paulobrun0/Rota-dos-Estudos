@@ -1,3 +1,4 @@
+import { TopicBizu } from "../components/TopicBizu.jsx";
 import {TecNotebookButton} from '../components/TecNotebookBuilder.jsx';
 import { studyPriority } from "../lib/studyPriorities.js";
 import { SharedPractice } from "../components/SharedPractice.jsx";
@@ -41,7 +42,7 @@ function StatTile({ icon, label, value, sub }) {
   );
 }
 
-export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
+export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneCount, totalCount, pct, materiaById, topicById, materiasOrder, minutesPerMateria, toggleCard, streak, studyMinutesToday, questionActivityToday, examDate, sessionTimers, restTimers, pendingQuestions, updateTopicNotes, updateTopicLink, updateTopicMaterials, updateTopicBizu, skipShared, undoShared, setTopicQuestions, questionCounts, addTopicQuestions, pullNextMateria, canPullMore }) {
   const isToday = selectedDate === todayISO();
   const exam = examCountdownInfo(examDate);
   const examStyle = exam ? EXAM_BADGE_STYLE[exam.level] : null;
@@ -176,7 +177,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
                   sessionTimers={sessionTimers}
                   restTimers={restTimers}
                   pendingCardId={pendingQuestions[materiaId]}
-                  skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
+                  skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicBizu={updateTopicBizu} updateTopicNotes={updateTopicNotes}
                   updateTopicLink={updateTopicLink}
                   setTopicQuestions={setTopicQuestions}
                   questionCounts={questionCounts}
@@ -202,7 +203,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
                   sessionTimers={sessionTimers}
                   restTimers={restTimers}
                   pendingCardId={pendingQuestions[materiaId]}
-                  skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
+                  skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicBizu={updateTopicBizu} updateTopicNotes={updateTopicNotes}
                   updateTopicLink={updateTopicLink}
                   setTopicQuestions={setTopicQuestions}
                   questionCounts={questionCounts}
@@ -217,7 +218,7 @@ export function DiaView({ concursoId, selectedDate, setSelectedDate, plan, doneC
   );
 }
 
-function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
+function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCards, topicById, onToggle, sessionTimers, restTimers, pendingCardId, updateTopicNotes, updateTopicLink, updateTopicMaterials, updateTopicBizu, skipShared, undoShared, setTopicQuestions, questionCounts, addTopicQuestions, timed = true }) {
   if (!materia) return null;
   // dailyPlans keeps history and isn't pruned when a topic is later deleted
   // from the matéria (see computeMateriaStats), so an old day's cards can
@@ -264,7 +265,7 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
               topic={topic}
               forcedOpen={card.id === pendingCardId}
               onToggle={(questions) => onToggle(card.id, questions)}
-              skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicNotes={updateTopicNotes}
+              skipShared={skipShared} undoShared={undoShared} updateTopicMaterials={updateTopicMaterials} updateTopicBizu={updateTopicBizu} updateTopicNotes={updateTopicNotes}
               updateTopicLink={updateTopicLink}
               setTopicQuestions={setTopicQuestions}
               materiaId={materia.id}
@@ -289,7 +290,7 @@ function MateriaGroupCard({ concursoId, materia, minutesPerMateria, cards: rawCa
   );
 }
 
-function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, updateTopicMaterials, skipShared, undoShared, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
+function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, updateTopicNotes, updateTopicLink, updateTopicMaterials, updateTopicBizu, skipShared, undoShared, setTopicQuestions, materiaId, questionsAvailable, addTopicQuestions }) {
   const [asking, setAsking] = useState(false);
   const [practicing, setPracticing] = useState(false);
   const [feitas, setFeitas] = useState("");
@@ -300,6 +301,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
   const [editTotal, setEditTotal] = useState(String(topic.questionsTotal || ""));
   const [editCorrect, setEditCorrect] = useState(String(topic.questionsCorrect || ""));
   const [linkOpen, setLinkOpen] = useState(false);
+  const [bizuOpen, setBizuOpen] = useState(false);
   // A review card with a saved note becomes a flashcard: the note stays
   // hidden until the user actively asks to see it, so there's a real moment
   // of trying to recall first — a review that shows the answer immediately
@@ -438,7 +440,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
             <span className="mono" style={{ fontSize: 10.5, color: colors.success }}>praticar ({questionsAvailable})</span>
           </button>
         )}
-          <TopicLinkButtons topic={topic} /><TecNotebookButton concursoId={concursoId} materiaId={materiaId} topicId={topic.id}/><button type="button" onClick={() => setLinkOpen(o => !o)} aria-label={`buscar questões de ${topic.name}`} style={{ ...secondaryBtnStyle, marginTop: 0, padding: "4px 8px", fontSize: 11 }}>Buscar questões</button>
+          {updateTopicBizu && !/matem[aá]tica/i.test(materiaName) && <button type="button" onClick={() => setBizuOpen(o => !o)} aria-expanded={bizuOpen} aria-label={`Bizu de ${topic.name}`} style={{...secondaryBtnStyle, marginTop:0, padding:"4px 8px", fontSize:12}}>Bizu</button>}<TopicLinkButtons topic={topic} /><TecNotebookButton concursoId={concursoId} materiaId={materiaId} topicId={topic.id}/><button type="button" onClick={() => setLinkOpen(o => !o)} aria-label={`buscar questões de ${topic.name}`} style={{ ...secondaryBtnStyle, marginTop: 0, padding: "4px 8px", fontSize: 11 }}>Buscar questões</button>
         <button
           onClick={() => setLinkOpen((o) => !o)}
           aria-label="link do caderno de questões"
@@ -478,6 +480,7 @@ function TopicRow({ concursoId, materiaName, card, topic, onToggle, forcedOpen, 
         </div>
       )}
 
+      {bizuOpen && <TopicBizu topic={topic} onSave={value => updateTopicBizu(materiaId, topic.id, value)} />}
       {linkOpen && <TopicLinksEditor topic={topic} onSaveMaterials={(materials) => updateTopicMaterials(materiaId, topic.id, materials)} onSave={(links) => updateTopicLink(materiaId, topic.id, links)} onClose={() => setLinkOpen(false)} />}
       {notesOpen && (
         <textarea

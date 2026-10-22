@@ -1,3 +1,4 @@
+import {TopicBizu} from "./TopicBizu.jsx";
 import {TecNotebookButton} from './TecNotebookBuilder.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -7,7 +8,7 @@ import {isSafeStudyLink} from '../lib/planValidation.js';
 import {fmtClock} from '../lib/date.js';
 import './studySession.css';
 
-export function StudySessionDialog({row,topic,bank,elapsed,running,reviews,onToggle,onComplete,onClose,onAddReview,onManageNotebooks}) {
+export function StudySessionDialog({row,topic,bank,elapsed,running,reviews,onToggle,onComplete,onClose,onAddReview,onManageNotebooks,onBizu}) {
   const [total,setTotal]=useState(''),[correct,setCorrect]=useState(''),[minutes,setMinutes]=useState('');
   const [error,setError]=useState(''),[question,setQuestion]=useState(''),[note,setNote]=useState(''),[reviewError,setReviewError]=useState(''),[reviewStatus,setReviewStatus]=useState(''),[guide,setGuide]=useState(false),[saving,setSaving]=useState(false);
   const dialog=useRef(null),close=useRef(onClose),busy=useRef(false);close.current=onClose;
@@ -43,7 +44,7 @@ export function StudySessionDialog({row,topic,bank,elapsed,running,reviews,onTog
   const provider=n=>n.provider==='tec'?'TEC':n.provider==='qconcursos'?'Qconcursos':'Caderno';
   return createPortal(<div className="study-session-overlay"><section ref={dialog} className="study-session-dialog" role="dialog" aria-modal="true" aria-label="Sessão de estudo" tabIndex={-1}>
     <header className="study-session-header"><div><span className="eyebrow">SESSÃO DE ESTUDO · {theory?'TEORIA':row.kind==='review'?'REVISÃO':'QUESTÕES'}</span><h2>{row.materiaName}</h2><p>{row.topicName}</p></div><button type="button" className="session-close" aria-label="Fechar sessão sem salvar" disabled={saving} onClick={onClose}><X size={22}/></button></header>
-    <div className="study-session-columns"><div className="study-session-resources"><section aria-label="Cadernos do assunto"><TecNotebookButton materiaId={row.materiaId} topicId={row.topicId} beforeOpen={onClose}/><div className="session-section-heading"><BookOpen size={18}/><h3>Cadernos de questões</h3></div>
+    <div className="study-session-columns"><div className="study-session-resources">{onBizu && <details><summary>Bizu · revisão rápida</summary><TopicBizu topic={topic} onSave={onBizu}/></details>}<section aria-label="Cadernos do assunto"><TecNotebookButton materiaId={row.materiaId} topicId={row.topicId} beforeOpen={onClose}/><div className="session-section-heading"><BookOpen size={18}/><h3>Cadernos de questões</h3></div>
       {[...groups].map(([group,links])=><div className="session-bank" key={group}><h4>{group}</h4><div className="session-book-links">{links.map(book=><a key={book.id} aria-label={`abrir caderno ${book.title}`} href={book.url} target="_blank" rel="noopener noreferrer" title={book.shared?`Vinculado a ${book.sourceConcursoName}`:undefined}><BookOpen size={16}/><span>{book.title}<small>{provider(book)}{book.shared?' · assunto equivalente':''}</small></span><span aria-hidden="true">↗</span></a>)}</div></div>)}
       {!books.length&&<p className="session-muted">Ainda não há cadernos vinculados a este assunto. Cadastre seus links do TEC ou Qconcursos em Questões avulsas.</p>}
       {onManageNotebooks&&<button type="button" className="session-text-button" disabled={saving} onClick={onManageNotebooks}>Gerenciar meus cadernos ↗</button>}

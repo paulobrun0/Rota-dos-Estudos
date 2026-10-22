@@ -513,7 +513,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
     });
   }
 
-  const { updateTopicNotes, updateTopicLink, updateTopicMaterials, setTopicQuestions, addTopicQuestions } = useTopicActions({ updateActive, setData, activeConcurso });
+  const { updateTopicNotes, updateTopicLink, updateTopicMaterials, updateTopicBizu, setTopicQuestions, addTopicQuestions } = useTopicActions({ updateActive, setData, activeConcurso });
 
   function updateSettings(field, value) {
     updateActive((c) => ({ ...c, settings: { ...c.settings, [field]: value } }));
@@ -950,7 +950,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           onWeight={(concursoId, materiaId, weight) => setData(d => ({ ...d, concursos: d.concursos.map(c => c.id !== concursoId ? c : ({ ...c, materias: c.materias.map(m => m.id !== materiaId ? m : ({ ...m, weight })) })) }))}
           onLink={(left, right) => setData(d => linkEquivalentTopics(d, left, right, `shared:${uid()}`))}
           onUnlink={ref => setData(d => removeManualEquivalence(d, ref))} onSkip={skipShared} onUndo={undoShared} />}
-        {tab === "painel" && activeConcurso && <LearningDashboard data={data} concurso={activeConcurso} user={user} onNavigate={goTab} onSkip={skipActiveShared} onUndo={undoActiveShared}
+        {tab === "painel" && activeConcurso && <LearningDashboard onBizu={/\bpm\b|pol[ií]cia militar/i.test(activeConcurso.name) ? updateTopicBizu : undefined} data={data} concurso={activeConcurso} user={user} onNavigate={goTab} onSkip={skipActiveShared} onUndo={undoActiveShared}
           onAddReview={(ref,url,note)=>{const iso=todayISO();const next=addSessionReview(data,activeConcurso.id,ref,url,note,iso);setData(d=>d===data?next:addSessionReview(d,activeConcurso.id,ref,url,note,iso));}}
           onGoal={goal => setData(d => ({...d,studyPreferences:{...d.studyPreferences,weeklyQuestionsGoal:goal}}))}
           onComplete={(ref,result) => { const iso=todayISO(); const next=completeLearningSession(data,activeConcurso.id,ref,iso,result); setData(d=>d===data?next:completeLearningSession(d,activeConcurso.id,ref,iso,result)); }} />}
@@ -1002,7 +1002,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             pendingQuestions={pendingQuestions}
             updateTopicNotes={updateTopicNotes}
             updateTopicLink={updateTopicLink}
-            updateTopicMaterials={updateTopicMaterials}
+            updateTopicMaterials={updateTopicMaterials} updateTopicBizu={/\bpm\b|pol[ií]cia militar/i.test(activeConcurso.name) ? updateTopicBizu : undefined}
             skipShared={skipActiveShared} undoShared={undoActiveShared}
             setTopicQuestions={setTopicQuestions}
             questionCounts={questionCounts}
@@ -1045,7 +1045,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
             reorderMaterias={reorderMaterias}
             updateTopicNotes={updateTopicNotes}
             updateTopicLink={updateTopicLink}
-            updateTopicMaterials={updateTopicMaterials}
+            updateTopicMaterials={updateTopicMaterials} updateTopicBizu={/\bpm\b|pol[ií]cia militar/i.test(activeConcurso.name) ? updateTopicBizu : undefined}
             skipShared={skipActiveShared} undoShared={undoActiveShared}
             topicDrafts={topicDrafts}
             setTopicDrafts={setTopicDrafts}

@@ -377,3 +377,22 @@ test('catalog paginates long lists, searches accent-insensitively and resets pag
 test('plan recovery uses account identity and remains stable across an email change',async()=>{
  const {makeConcurso}=await import('../src/data/model.js');const c=makeConcurso('Conta estável',0);c.id='stable';c.materias=[{id:'m',name:'Português',topics:[{id:'t',name:'Crase',status:'pendente'}]}];const saved={concursos:[c],activeConcursoId:'stable',activity:{}},pending=structuredClone(saved);pending.concursos[0].name='Alteração pendente da conta';localStorage.setItem('rota-plan-pending:account:42',JSON.stringify({value:JSON.stringify(pending),revision:1}));localStorage.setItem('rota-plan-pending:new@example.com',JSON.stringify({value:JSON.stringify({...saved,concursos:[]}),revision:1}));globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT')return response({error:'Offline'},503);if(path==='/api/data')return response({value:JSON.stringify(saved),revision:1});return response(path.includes('counts')?{counts:[]}:{materias:[]});};const props={user:{id:42,email:'old@example.com'},onLogout(){},onUserUpdate(){}};const view=render(React.createElement(App,props));await screen.findAllByText('Alteração pendente da conta');view.rerender(React.createElement(App,{...props,user:{id:42,email:'new@example.com'}}));assert.ok(screen.getAllByText('Alteração pendente da conta').length>0);assert.ok(localStorage.getItem('rota-plan-pending:account:42'));
 });
+
+test('PM bizu renders emphasis safely and saves independently from study notes', async () => {
+  const {TopicBizu} = await vite.ssrLoadModule('/src/components/TopicBizu.jsx');
+  const saved=[];
+  const topic={id:'acentuacao',name:'Acentuação',notes:'minha anotação',questionsTotal:12};
+  const view=render(React.createElement(TopicBizu,{topic,onSave:value=>saved.push(value)}));
+  assert.ok(screen.getByRole('tabpanel').querySelector('strong'));
+  assert.ok(screen.getByRole('tabpanel').querySelector('mark'));
+  assert.equal(saved.length,0);
+  fireEvent.click(screen.getByRole('button',{name:'Editar bizu'}));
+  fireEvent.change(screen.getByLabelText('Editar bizu de Acentuação'),{target:{value:'**Regra**\n__atenção__ <img src=x onerror=alert(1)>'}});
+  fireEvent.click(screen.getByRole('button',{name:'Salvar bizu'}));
+  assert.equal(saved.length,1);
+  view.rerender(React.createElement(TopicBizu,{topic:{...topic,bizu:saved[0]},onSave:value=>saved.push(value)}));
+  assert.equal(screen.getByRole('tabpanel').querySelector('u').textContent,'atenção');
+  assert.equal(screen.getByRole('tabpanel').querySelector('img'),null);
+  assert.equal(topic.notes,'minha anotação');
+  assert.equal(topic.questionsTotal,12);
+});
