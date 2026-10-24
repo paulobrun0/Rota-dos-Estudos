@@ -10,7 +10,7 @@ Referência observada com acesso fornecido pelo usuário: painel, desempenho, pl
 | Calendário | Semana, navegação e distribuição conforme horas | Histórico de sessões passadas e simulação futura sequencial, respeitando horas, dependências e revisões estimadas |
 | Desempenho | Períodos, volume, aproveitamento, matéria, tópico, registros externos | Períodos globais, filtros de matéria/assunto nos registros datados, barras diárias, acumulado compartilhado por assunto, últimas sessões e registro externo |
 | Planejamento | Modo por matéria, frequência, ativação, teoria, prioridade, duração e dependência | Configuração por matéria e assunto, horas por dia, frequência relativa com turnos adicionais, validação de dependências e reserva para revisão |
-| Revisões | Intervalos dependem do desempenho, amostra, peso, importância e prova | Algoritmo próprio e explícito; não é uma reprodução do algoritmo interno da referência |
+| Revisões | Intervalos dependem do desempenho, amostra, peso, importância e prova | Ciclo de 1/7/30 dias após concluir; abaixo de 70% na sessão, reforço no dia seguinte; pendências permanecem na fila. Agenda antiga migrada sem apagar datas ou histórico |
 | Alertas | Acumulado e prática recente abaixo de corte por importância | Cortes 80/70/60, amostra mínima de 10, média recente disponível e revisões atrasadas |
 | Caderno externo | Links de questões, notas e agenda por avaliação | URLs fornecidas pelo usuário, avaliações, agenda separada, arquivamento e restauração |
 | Marcações | Trechos, notas, fonte e busca | Registro por assunto, busca, cores, arquivamento, revisão ativa com agenda, exportação Markdown e importação de extensão própria |

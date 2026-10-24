@@ -16,7 +16,7 @@ export function reviewRows(concurso, today = todayISO()) {
   return (concurso?.materias || []).flatMap(m => m.topics.filter(t => t.status === 'estudado' && !t.mastered).map(t => {
     const questions = t.crossStudy?.total ?? t.questionsTotal;
     const accuracy = questions ? Math.round((t.crossStudy?.correct ?? t.questionsCorrect ?? 0) / questions * 100) : null;
-    const due = t.nextReviewDate && t.nextReviewDate <= today;
+    const due = t.nextReviewDate === undefined || (t.nextReviewDate !== null && t.nextReviewDate <= today);
     const weak = accuracy !== null && accuracy < 70;
     return { ...t, materiaId: m.id, materiaName: m.name, accuracy, due: Boolean(due), weak,
       planned: plan.some(card => card.topicId === t.id), completedToday: plan.some(card => card.topicId === t.id && card.feito),

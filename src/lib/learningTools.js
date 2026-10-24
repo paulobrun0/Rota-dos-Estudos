@@ -1,6 +1,6 @@
 import { addDaysISO, weekStart } from './date.js';
 import { buildPracticeIndex, decorateConcurso } from './editalCompatibility.js';
-import { WEEKDAY_KEYS, weekdayKey } from './planner.js';
+import { WEEKDAY_KEYS, weekdayKey, scheduleFirstReview, advanceReview } from './planner.js';
 export const CRITICALITY = { critical:80, normal:70, low:60 };
 export const topicRef = (materiaId,topicId) => JSON.stringify([materiaId,topicId]);
 export function dailyCapacity(data,concurso,date) {
@@ -97,8 +97,8 @@ export function completeLearningSession(data,concursoId,ref,today,result) {
   const interval=adaptiveInterval({total,correct,criticality:t.criticality,weight:m.weight,step:t.reviewStep || 0,examDate:c.examDate,today});
   if(current.kind==='theory')t.theoryDone=true;
   else {
-    t.status='estudado';t.mastered=false;delete t.skippedFromShared;t.reviewStep=current.kind==='review'?(t.reviewStep || 0)+1:0;
-    t.nextReviewDate=addDaysISO(today,interval.days);
+    t.status='estudado';t.mastered=false;delete t.skippedFromShared;
+    if(current.kind==='review')advanceReview(t,today,{total,correct});else scheduleFirstReview(t,today);
     t.history ||= [];t.history.push({date:today,tipo:current.kind==='review'?'revisao':'novo',questionsTotal:total,questionsCorrect:correct});
     if(total){t.questionsTotal=(t.questionsTotal || 0)+total;t.questionsCorrect=(t.questionsCorrect || 0)+correct;t.lastPracticeDate=today;
       clone.questionActivity ||= {};const b=clone.questionActivity[today] || {total:0,correct:0};clone.questionActivity[today]={total:b.total+total,correct:b.correct+correct};}
@@ -137,7 +137,7 @@ export function learningForecast(data,concursoId,today,end){
   const queue=learningQueue(simulated,concursoId,date);days[date]=queue;
   for(const row of queue){const m=c.materias.find(m=>m.id===row.materiaId),t=m.topics.find(t=>t.id===row.topicId);
    if(row.kind==='theory')t.theoryDone=true;
-   else{const interval=adaptiveInterval({total:row.topic.crossStudy?.total??t.questionsTotal??0,correct:row.topic.crossStudy?.correct??t.questionsCorrect??0,criticality:t.criticality,weight:m.weight,step:t.reviewStep||0,examDate:c.examDate,today:date});t.status='estudado';t.nextReviewDate=addDaysISO(date,interval.days);t.reviewStep=row.kind==='review'?(t.reviewStep||0)+1:0;}
+   else{t.status='estudado';if(row.kind==='review')advanceReview(t,date,{total:row.topic.crossStudy?.total??t.questionsTotal??0,correct:row.topic.crossStudy?.correct??t.questionsCorrect??0});else scheduleFirstReview(t,date);}
   }
  }
  return days;

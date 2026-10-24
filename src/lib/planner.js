@@ -1,6 +1,6 @@
 import { studyPriority } from "./studyPriorities.js";
 import { uid } from "./id.js";
-import { addDaysISO, fromISO, todayISO } from "./date.js";
+import { fromISO, todayISO } from "./date.js";
 
 // Sunday-first, matching Date#getDay() — used to key a concurso's
 // cronograma (see makeEmptyCronograma in data/model.js) and to look up
@@ -11,39 +11,7 @@ export function weekdayKey(iso) {
   return WEEKDAY_KEYS[fromISO(iso).getDay()];
 }
 
-// Days-after-completion before a topic comes back for review, doubling
-// roughly every step (the spacing effect: each successful recall of the
-// same material pushes the next one further out, since it's stuck better
-// than last time). After the last step, a topic stops coming back on its
-// own — five clean passes spread over a month is the point where it's
-// counted as retained, not a schedule bug.
-export const REVIEW_INTERVALS_DAYS = [1, 7, 30];
-
-// Called the first time a topic is completed ("novo"): puts it on the
-// schedule above, due tomorrow.
-export function scheduleFirstReview(topic, today) {
-  topic.reviewStep = 0;
-  topic.nextReviewDate = addDaysISO(today, REVIEW_INTERVALS_DAYS[0]);
-}
-
-// Called when a scheduled review card (tipo "revisao") is completed:
-// advances to the next, longer interval, or — past the last step — takes
-// the topic off the schedule (nextReviewDate null) since it's considered
-// retained at that point.
-export function advanceReview(topic, today, session = null) {
-  // A weak review needs another short retrieval attempt instead of advancing.
-  // Use this session, never the historical cumulative percentage.
-  const total = Number(session?.total);
-  const correct = Number(session?.correct);
-  if (session && Number.isFinite(total) && total > 0 && Number.isFinite(correct) && correct / total < 0.7) {
-    topic.reviewStep = 0;
-    topic.nextReviewDate = addDaysISO(today, 1);
-    return;
-  }
-  const nextStep = (topic.reviewStep ?? 0) + 1;
-  topic.reviewStep = nextStep;
-  topic.nextReviewDate = nextStep < REVIEW_INTERVALS_DAYS.length ? addDaysISO(today, REVIEW_INTERVALS_DAYS[nextStep]) : null;
-}
+export { REVIEW_INTERVALS_DAYS, scheduleFirstReview, advanceReview } from './reviewSchedule.js';
 
 // Reviews are a rolling cycle, not calendar deadlines. An unfinished topic
 // keeps its original due date and remains eligible until it is actually done.

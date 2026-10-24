@@ -9,6 +9,7 @@ import { StudyToolsView } from "./views/StudyToolsView.jsx";
 import { LearningDashboard } from "./views/LearningDashboard.jsx";
 import { PerformanceView, AlertsView, PlanningView, ExternalReviewView, MarksView, QuestionHubView, LearningHelp } from "./views/LearningViews.jsx";
 import { completeLearningSession, reviewExternalEntry } from "./lib/learningTools.js";
+import { OPTIONAL_FEATURES, featureEnabled, optionalTabEnabled, setOptionalFeature, resetOptionalFeatures } from "./lib/optionalFeatures.js";
 import { validatePlanData } from "./lib/planValidation.js";
 import { UnifiedPlanView } from "./views/UnifiedPlanView.jsx";
 import { saveUnifiedPlan, completeUnifiedCard } from "./lib/unifiedPlan.js";
@@ -20,7 +21,7 @@ import { RevisoesView } from "./views/RevisoesView.jsx";
 import { SimuladosView } from "./views/SimuladosView.jsx";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, NotebookText, Settings, ShieldCheck, Sparkles, Target, Trophy, UserCircle, X,
+  BookOpen, CalendarDays, ChevronRight, Flame, GraduationCap, ListChecks, Menu, NotebookText, Settings, Sparkles, Target, Trophy, X,
 } from "./components/Icons.jsx";
 import { Brand } from "./components/Brand.jsx";
 import { colors } from "./styles/colors.js";
@@ -44,7 +45,6 @@ import { fetchQuestionCounts } from "./api/questions.js";
 import { looksLikeNumberedEdital, normalizeMateriaName, parseRawEdital } from "./lib/rawEditalParser.js";
 import { NavItem } from "./components/NavItem.jsx";
 import { EmptyConcursoState } from "./components/EmptyConcursoState.jsx";
-import { StudyDaysBanner } from "./components/StudyDaysBanner.jsx";
 import { DiaView } from "./views/DiaView.jsx";
 import { SemanaView } from "./views/SemanaView.jsx";
 import { EditalView } from "./views/EditalView.jsx";
@@ -65,7 +65,7 @@ const REVIEW_CARD_MINUTES = 3;
 
 const TAB_TITLES = {
   pdf: "leitor de PDF",
-  painel: "painel",
+  painel: "estudar hoje",
   desempenho: "desempenho",
   planejamento: "planejamento",
   alertas: "alertas",
@@ -90,10 +90,29 @@ const TAB_TITLES = {
   admin: "admin",
 };
 
+const EXTRA_NAVIGATION = [
+  { tab: "semana", label: "semana", Icon: ListChecks },
+  { tab: "metas", label: "metas", Icon: Target },
+  { tab: "alertas", label: "alertas", Icon: Flame },
+  { tab: "revisaoexterna", label: "caderno de revisão", Icon: NotebookText },
+  { tab: "marcacoes", label: "minhas marcações", Icon: BookOpen },
+  { tab: "pdf", label: "leitor PDF", Icon: BookOpen },
+  { tab: "avulsas", label: "questões avulsas", Icon: Target },
+  { tab: "caderno", label: "caderno", Icon: NotebookText },
+  { tab: "simulados", label: "simulados", Icon: Target },
+  { tab: "integrado", label: "plano integrado", Icon: ListChecks },
+  { tab: "conciliar", label: "conciliar editais", Icon: BookOpen },
+  { tab: "dia", label: "hoje", Icon: CalendarDays },
+  { tab: "progresso", label: "progresso", Icon: Flame },
+  { tab: "ranking", label: "ranking", Icon: Trophy },
+  { tab: "ferramentas", label: "ferramentas", Icon: Settings },
+];
+
 export default function App({ user, onLogout, onUserUpdate }) {
   const { data, setData, sync, retry, flush } = usePlanData(user.id ? `account:${user.id}` : user.email);
   const tecNotebooks = useTecNotebooks(data,setData,user.id ? `account:${user.id}` : null);
-  const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get("tool") === "pdf" ? "pdf" : "painel");
+  const [requestedTab, setTab] = useState(() => new URLSearchParams(window.location.search).get("tool") === "pdf" ? "pdf" : "painel");
+  const tab = optionalTabEnabled(data, requestedTab) ? requestedTab : "ajustes";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("ritmo-nav-collapsed") === "true"; }
@@ -671,7 +690,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
   function selectConcurso(id) {
     setData((d) => ({ ...d, activeConcursoId: id }));
     setSelectedDate(todayISO());
-    setTab("dia");
+    setTab("painel");
   }
 
   function removeConcurso(id) {
@@ -728,7 +747,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
   function importData(imported) {
     setData(imported);
     setSelectedDate(todayISO());
-    setTab("dia");
+    setTab("painel");
   }
 
   // Switches tabs and, on mobile, closes the slide-out nav drawer — used by
@@ -747,6 +766,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
     );
   }
 
+  const extraNavigation = EXTRA_NAVIGATION.filter(item => OPTIONAL_FEATURES.some(feature => feature.tabs.includes(item.tab) && featureEnabled(data, feature.id)));
   const plan = (activeConcurso && activeConcurso.dailyPlans[selectedDate]) || [];
   const doneCount = plan.filter((c) => c.feito).length;
   const totalCount = plan.length;
@@ -810,33 +830,16 @@ export default function App({ user, onLogout, onUserUpdate }) {
           <ChevronRight size={14} color={colors.textFaint} />
         </button>
 
-        <NavItem icon={<GraduationCap size={20} />} label="painel" active={tab === "painel"} onClick={() => goTab("painel")} />
-        <NavItem icon={<Target size={20} />} label="desempenho" active={tab === "desempenho"} onClick={() => goTab("desempenho")} />
-        <NavItem icon={<ListChecks size={20} />} label="planejamento" active={tab === "planejamento"} onClick={() => goTab("planejamento")} />
-        <NavItem icon={<Flame size={20} />} label="alertas" active={tab === "alertas"} onClick={() => goTab("alertas")} />
-        <NavItem icon={<NotebookText size={20} />} label="caderno de revisão" active={tab === "revisaoexterna"} onClick={() => goTab("revisaoexterna")} />
-        <NavItem icon={<BookOpen size={20} />} label="minhas marcações" active={tab === "marcacoes"} onClick={() => goTab("marcacoes")} />
-        <NavItem icon={<Target size={20} />} label="questões avulsas" active={tab === "avulsas"} onClick={() => goTab("avulsas")} />
-        <NavItem icon={<BookOpen size={20} />} label="leitor PDF" active={tab === "pdf"} onClick={() => goTab("pdf")} />
-        <NavItem icon={<Settings size={20} />} label="ferramentas" active={tab === "ferramentas"} onClick={() => goTab("ferramentas")} />
-        <NavItem icon={<CalendarDays size={20} />} label="hoje" active={tab === "dia"} onClick={() => { setSelectedDate(todayISO()); goTab("dia"); }} />
-        <NavItem icon={<ListChecks size={20} />} label="semana" active={tab === "semana"} onClick={() => goTab("semana")} />
+        <NavItem icon={<GraduationCap size={20} />} label="estudar hoje" active={tab === "painel"} onClick={() => goTab("painel")} />
         <NavItem icon={<BookOpen size={20} />} label="edital" active={tab === "edital"} onClick={() => goTab("edital")} />
         <NavItem icon={<CalendarDays size={20} />} label="revisões" active={tab === "revisoes"} onClick={() => goTab("revisoes")} />
-        <NavItem icon={<Target size={20} />} label="simulados" active={tab === "simulados"} onClick={() => goTab("simulados")} />
-        <NavItem icon={<NotebookText size={20} />} label="caderno" active={tab === "caderno"} onClick={() => goTab("caderno")} />
-        <NavItem icon={<Target size={20} />} label="metas" active={tab === "metas"} onClick={() => goTab("metas")} />
-        <NavItem icon={<Flame size={20} />} label="progresso" active={tab === "progresso"} onClick={() => goTab("progresso")} />
-        <NavItem icon={<Trophy size={20} />} label="ranking" active={tab === "ranking"} onClick={() => goTab("ranking")} />
+        <NavItem icon={<Target size={20} />} label="desempenho" active={tab === "desempenho"} onClick={() => goTab("desempenho")} />
+        {extraNavigation.length > 0 && <details className="nav-extras" open><summary style={{padding:'12px',fontSize:12,color:colors.textMuted}}>Extras</summary>
+          {extraNavigation.map(({tab:destination,label,Icon})=><NavItem key={destination} icon={<Icon size={20}/>} label={label} active={tab===destination} onClick={()=>{if(destination==='dia')setSelectedDate(todayISO());goTab(destination);}}/>)}
+        </details>}
         <div style={{ height: 1, background: colors.border, margin: "8px 6px" }} />
-        <NavItem icon={<ListChecks size={20} />} label="plano integrado" active={tab === "integrado"} onClick={() => goTab("integrado")} />
-        <NavItem icon={<BookOpen size={20} />} label="conciliar editais" active={tab === "conciliar"} onClick={() => goTab("conciliar")} />
-        <NavItem icon={<GraduationCap size={20} />} label="concursos" active={tab === "concursos"} onClick={() => goTab("concursos")} />
-        <NavItem icon={<UserCircle size={20} />} label="perfil" active={tab === "perfil"} onClick={() => goTab("perfil")} />
+        <NavItem icon={<ListChecks size={20} />} label="planejamento" active={tab === "planejamento"} onClick={() => goTab("planejamento")} />
         <NavItem icon={<Settings size={20} />} label="ajustes" active={tab === "ajustes"} onClick={() => goTab("ajustes")} />
-        {user?.isAdmin && (
-          <NavItem icon={<ShieldCheck size={20} />} label="admin" active={tab === "admin"} onClick={() => goTab("admin")} />
-        )}
 
         <div style={{ flex: 1 }} />
 
@@ -883,7 +886,6 @@ export default function App({ user, onLogout, onUserUpdate }) {
           <span className="heading-label" style={{ background: colors.accentSoft, color: colors.accent, borderRadius: 12, padding: "10px 14px", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}><GraduationCap size={20} />{activeConcurso?.name || "Sua próxima conquista"}</span>
         </header>
         <SaveStatus sync={sync} data={data} onRetry={retry} />
-        {!data.studyDays && <StudyDaysBanner setStudyDays={setStudyDays} />}
         {tab === "concursos" && (
           <ConcursosView
             concursos={data.concursos}
@@ -913,6 +915,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
           />
         )}
 
+        {tab !== requestedTab && <p role="status" className="muted">Este recurso está desativado. Você pode ativá-lo em Recursos extras abaixo.</p>}
         {tab === "ajustes" && (
           <AjustesView
             theme={theme}
@@ -921,6 +924,9 @@ export default function App({ user, onLogout, onUserUpdate }) {
             setSoundEnabled={setSoundEnabled}
             data={data}
             onImport={importData}
+            onFeature={(id,enabled)=>setData(d=>setOptionalFeature(d,id,enabled))}
+            onResetFeatures={()=>setData(resetOptionalFeatures)}
+            onNavigate={goTab}
             user={user}
             onUserUpdate={onUserUpdate}
             studyDays={data.studyDays}

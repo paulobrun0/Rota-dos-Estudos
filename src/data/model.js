@@ -1,4 +1,5 @@
 import { uid } from "../lib/id.js";
+import { migrateReviewSchedule } from "../lib/reviewSchedule.js";
 
 export const PALETTE = ["#5865D9", "#25806B", "#C85472", "#4382B9", "#9461BB", "#568237", "#B35791", "#AF791B", "#347E91", "#BA6842"];
 
@@ -52,6 +53,7 @@ export function migrate(raw) {
       if (c.examDate === undefined) c.examDate = null;
       if (!c.planMode) c.planMode = "ciclo";
       c.cronograma = { ...makeEmptyCronograma(), ...(c.cronograma || {}) };
+      for (const m of c.materias || []) for (const t of m.topics || []) migrateReviewSchedule(t);
     });
     if (!raw.activity) raw.activity = {};
     if (!raw.questionActivity) raw.questionActivity = {};
@@ -71,7 +73,7 @@ export function migrate(raw) {
       planMode: raw.planMode || "ciclo",
       cronograma: { ...makeEmptyCronograma(), ...(raw.cronograma || {}) },
     };
-    return { concursos: [c], activeConcursoId: c.id, activity: {}, questionActivity: {}, studyMinutes: {}, studyDays: null };
+    return migrate({ concursos: [c], activeConcursoId: c.id, activity: {}, questionActivity: {}, studyMinutes: {}, studyDays: null });
   }
   return defaultData();
 }
