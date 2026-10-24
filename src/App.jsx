@@ -315,7 +315,7 @@ export default function App({ user, onLogout, onUserUpdate }) {
         // retroactively editing a past day schedules from that day, not from
         // whenever the edit happens to be made.
         if (item.tipo === "novo") scheduleFirstReview(topic, iso);
-        else advanceReview(topic, iso);
+        else advanceReview(topic, iso, questions);
         if (questions) {
           topic.lastPracticeDate = [topic.lastPracticeDate || "", iso].sort().at(-1);
           topic.questionsTotal = (topic.questionsTotal || 0) + questions.total;
