@@ -45,6 +45,9 @@ export function advanceReview(topic, today, session = null) {
   topic.nextReviewDate = nextStep < REVIEW_INTERVALS_DAYS.length ? addDaysISO(today, REVIEW_INTERVALS_DAYS[nextStep]) : null;
 }
 
+// Reviews are a rolling cycle, not calendar deadlines. An unfinished topic
+// keeps its original due date and remains eligible until it is actually done.
+// Only completion advances its next interval; missed days never duplicate it.
 // Due reviews are capped at reviewsPerDay. Their priority combines performance,
 // materia weight and overdue days; shared counts are used when supplied by the
 // caller. Unselected reviews remain due. Legacy studied topics without a date
