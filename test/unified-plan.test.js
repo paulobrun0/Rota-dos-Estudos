@@ -34,13 +34,26 @@ test('review completion advances each due selected topic once, without changing 
  d.concursos[2].materias[0].topics[0].nextReviewDate='2026-10-20';
  const saved=saveUnifiedPlan(d,{...settings,concursoIds:['a','b','c']},today);const card=saved.unifiedPlans[today].cards[0];assert.equal(card.tipo,'revisao');assert.equal(card.minutes,3);assert.equal(card.refs.length,2);
  const completed=completeUnifiedCard(saved,today,card.id);assert.equal(completed.activity[today],1);assert.equal(completed.studyMinutes[today],3);assert.deepEqual(completed.questionActivity,{});
- assert.equal(completed.concursos[0].materias[0].topics[0].nextReviewDate,'2026-10-08');assert.equal(completed.concursos[1].materias[0].topics[0].reviewStep,1);assert.equal(completed.concursos[2].materias[0].topics[0].nextReviewDate,'2026-10-20');
+ assert.equal(completed.concursos[0].materias[0].topics[0].nextReviewDate,'2026-10-12');assert.equal(completed.concursos[1].materias[0].topics[0].reviewStep,1);assert.equal(completed.concursos[2].materias[0].topics[0].nextReviewDate,'2026-10-20');
 });
 test('daily budget respects rest days, insufficient time and preserves completed cards when reduced',()=>{
  const d=fixture();assert.equal(buildUnifiedPlan(d,settings,'2026-10-06').cards.length,0);
  d.availableHoursPerWeek=0.1;assert.equal(buildUnifiedPlan(d,settings,today).cards.length,0);d.studyDays=[];assert.equal(buildUnifiedPlan(d,settings,today).minutesBudget,0);
  d.availableHoursPerWeek=3;d.studyDays=['seg'];let saved=saveUnifiedPlan(d,settings,today);saved=completeUnifiedCard(saved,today,saved.unifiedPlans[today].cards[0].id);saved.studyDays=[];
  assert.equal(saveUnifiedPlan(saved,settings,today).unifiedPlans[today].cards.length,1);
+});
+
+test('weak unified reviews retry every selected due topic using the session result only',()=>{
+ const d=fixture();
+ for(const c of d.concursos.slice(0,2)){
+  const t=c.materias[0].topics[0];Object.assign(t,{status:'estudado',reviewStep:1,reviewScheduleVersion:2,nextReviewDate:'2026-10-01',questionsTotal:100,questionsCorrect:100});
+ }
+ const saved=saveUnifiedPlan(d,settings,today),card=saved.unifiedPlans[today].cards.find(c=>c.refs.length===2);
+ const next=completeUnifiedCard(saved,today,card.id,{total:10,correct:6});
+ for(const c of next.concursos.slice(0,2)){const t=c.materias[0].topics[0];assert.equal(t.reviewStep,0);assert.equal(t.nextReviewDate,'2026-10-06');}
+ assert.deepEqual(next.questionActivity[today],{total:10,correct:6});
+ assert.equal(next.concursos[2].materias[0].topics[0].status,'pendente');
+ validatePlanData(next);
 });
 test('review priority, weights, deadlines and carryover guide selection',()=>{
  const d=fixture();d.availableHoursPerWeek=1.5;d.concursos[1].materias[0].topics[1].status='estudado';d.concursos[1].materias[0].topics[1].nextReviewDate='2026-10-01';
@@ -67,7 +80,7 @@ test('malformed integrated plans cannot be imported or stored',()=>{
 test('a mixed group receives review priority and stale closed editais cannot be completed',()=>{
  const d=fixture();d.concursos[1].materias[0].topics[0].status='estudado';d.concursos[1].materias[0].topics[0].nextReviewDate=today;d.availableHoursPerWeek=1.5;
  const saved=saveUnifiedPlan(d,settings,today),card=saved.unifiedPlans[today].cards[0];assert.equal(card.topicName,'Crase');assert.equal(card.hasDueReview,true);assert.equal(card.tipo,'novo');
- const completed=completeUnifiedCard(saved,today,card.id);assert.equal(completed.concursos[0].materias[0].topics[0].nextReviewDate,'2026-10-06');assert.equal(completed.concursos[1].materias[0].topics[0].nextReviewDate,'2026-10-08');
+ const completed=completeUnifiedCard(saved,today,card.id);assert.equal(completed.concursos[0].materias[0].topics[0].nextReviewDate,'2026-10-06');assert.equal(completed.concursos[1].materias[0].topics[0].nextReviewDate,'2026-10-12');
  saved.concursos[1].stage='completed';assert.throws(()=>completeUnifiedCard(saved,today,card.id),/encerrado/);
  const excessive=fixture();excessive.availableHoursPerWeek=100;assert.throws(()=>buildUnifiedPlan(excessive,settings,today),/excedem/);
 });

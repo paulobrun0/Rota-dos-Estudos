@@ -1,8 +1,8 @@
 import {buildPracticeIndex,flattenEdital,topicIdentity,normalizeStudyName,decorateConcurso} from './editalCompatibility.js';
 import {getTopicLinks} from './topicLinks.js';
 import {isSafeStudyLink} from './planValidation.js';
-import {topicDiagnostics,adaptiveInterval} from './learningTools.js';
-import {addDaysISO} from './date.js';
+import {topicDiagnostics} from './learningTools.js';
+import {rescheduleReviewPractice} from './reviewSchedule.js';
 export function notebookProvider(url){try{const host=new URL(url).hostname;return /(^|\.)tecconcursos\.com\.br$/.test(host)?'tec':/(^|\.)qconcursos\.com$/.test(host)?'qconcursos':'other';}catch{return 'other';}}
 const canonical=url=>{const value=new URL(url);value.searchParams.sort();return value.href;};
 export const notebookKey=n=>JSON.stringify([n.concursoId,n.materiaId,n.topicId,canonical(n.url)]);
@@ -40,6 +40,6 @@ export function recordNotebookPractice(data,concursoId,ref,result,today){
  if(data.questionEvents?.some(e=>e.id===id))return data;
  if(!notebookRows(data,concursoId).some(n=>n.id===notebookId&&n.targetMateriaId===ref.materiaId&&n.targetTopicId===ref.topicId))throw Error('Este caderno não está disponível para o assunto.');
  const next=structuredClone(data),c=next.concursos.find(c=>c.id===concursoId),m=c?.materias.find(m=>m.id===ref.materiaId),t=m?.topics.find(t=>t.id===ref.topicId);if(!t)throw Error('Assunto removido.');t.questionsTotal=(t.questionsTotal||0)+total;t.questionsCorrect=(t.questionsCorrect||0)+correct;t.lastPracticeDate=today;
- if(t.status==='estudado'&&!t.mastered){const interval=adaptiveInterval({total,correct,criticality:t.criticality,weight:m.weight,step:t.reviewStep||0,examDate:c.examDate,today});t.nextReviewDate=addDaysISO(today,interval.days);}
+ if(t.status==='estudado'&&!t.mastered)rescheduleReviewPractice(t,today,{total,correct});
  next.questionEvents||=[];next.questionEvents.push({id,date:today,concursoId,materiaId:m.id,topicId:t.id,notebookId,total,correct,minutes,createdAt:Date.now()});next.questionActivity||={};const b=next.questionActivity[today]||{total:0,correct:0};next.questionActivity[today]={total:b.total+total,correct:b.correct+correct};if(minutes){next.studyMinutes||={};next.studyMinutes[today]=(next.studyMinutes[today]||0)+minutes;}return next;
 }

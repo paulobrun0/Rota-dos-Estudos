@@ -86,7 +86,7 @@ export function MetasView({ concurso, updateSettings, setPlanMode, updateCronogr
         <GlobalGoalRow
           icon={<RotateCw size={15} color={colors.accent} />}
           label="revisões por dia"
-          hint={reviewsPerDay === 0 ? "revisão espaçada desligada — assuntos já estudados não voltam sozinhos" : `até ${reviewsPerDay} assuntos já estudados voltam por dia, no intervalo certo (1/3/7/15/30 dias) — vindos de qualquer matéria, não só as do dia`}
+          hint={reviewsPerDay === 0 ? "revisão espaçada desligada — assuntos já estudados não voltam sozinhos" : `até ${reviewsPerDay} assuntos já estudados voltam por dia, no intervalo certo (1/7/30 dias após cada conclusão) — vindos de qualquer matéria, não só as do dia`}
           value={reviewsPerDay}
           onChange={(v) => updateSettings("reviewsPerDay", v)}
         />

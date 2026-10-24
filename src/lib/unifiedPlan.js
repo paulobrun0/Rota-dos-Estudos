@@ -94,7 +94,7 @@ export function completeUnifiedCard(data, today, cardId, questions = { total: 0,
       if (!affected.has(refId(row))) continue;
       const topic = row.topic, wasPending = topic.status === 'pendente';
       topic.status = 'estudado'; topic.mastered = false;
-      if (wasPending) scheduleFirstReview(topic, today); else { advanceReview(topic, today); delete topic.skippedFromShared; }
+      if (wasPending) scheduleFirstReview(topic, today); else { advanceReview(topic, today, questions); delete topic.skippedFromShared; }
       if (refId(row) === sourceId) {
         delete topic.skippedFromShared;
         topic.history ||= [];

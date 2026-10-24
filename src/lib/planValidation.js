@@ -87,6 +87,7 @@ function validateMaterias(materias) {
       optionalCount(topic, "questionsCorrect");
       requireValue((topic.questionsCorrect || 0) <= (topic.questionsTotal || 0), "acertos excedem o total de questões");
       optionalCount(topic, "reviewStep");
+      optionalCount(topic, "reviewScheduleVersion");
       if (topic.nextReviewDate != null) date(topic.nextReviewDate);
       if (topic.lastPracticeDate != null) date(topic.lastPracticeDate);
       if (topic.history !== undefined) {
@@ -171,6 +172,10 @@ export function validatePlanData(raw) {
   }
   if (raw.studyPreferences !== undefined) {
     requireValue(object(raw.studyPreferences), "preferências de estudo inválidas");
+    if (raw.studyPreferences.optionalFeatures !== undefined) {
+      requireValue(object(raw.studyPreferences.optionalFeatures), "recursos extras inválidos");
+      for (const enabled of Object.values(raw.studyPreferences.optionalFeatures)) requireValue(typeof enabled === 'boolean', "ativação de recurso inválida");
+    }
     if (raw.studyPreferences.studyArea !== undefined) requireValue(["", "policial", "tribunais", "fiscal", "administrativa", "educacao", "saude", "outras"].includes(raw.studyPreferences.studyArea), "área de estudo inválida");
     if (raw.studyPreferences.communityUrl !== undefined) requireValue(isSafeStudyLink(raw.studyPreferences.communityUrl), "convite da comunidade inválido");
     if (raw.studyPreferences.weeklyQuestionsGoal !== undefined) { count(raw.studyPreferences.weeklyQuestionsGoal, "meta semanal"); requireValue(raw.studyPreferences.weeklyQuestionsGoal <= 20000, "meta semanal muito alta"); }

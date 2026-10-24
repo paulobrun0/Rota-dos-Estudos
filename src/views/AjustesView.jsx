@@ -11,11 +11,12 @@ import { updateProfile } from "../api/profile.js";
 import { getExistingSubscription, pushSupported, subscribeToPush, unsubscribeFromPush } from "../api/push.js";
 import { WeekdayToggle } from "../components/WeekdayToggle.jsx";
 import { WEEKDAY_KEYS } from "../lib/planner.js";
+import { OPTIONAL_FEATURES, featureEnabled } from "../lib/optionalFeatures.js";
 
 const REMINDER_HOURS = Array.from({ length: 24 }, (_, h) => h);
 const ALL_DAYS = [...WEEKDAY_KEYS];
 
-export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport, user, onUserUpdate, studyDays, setStudyDays }) {
+export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, data, onImport, user, onUserUpdate, studyDays, setStudyDays, onFeature, onResetFeatures, onNavigate }) {
   const fileInputRef = useRef(null);
   const [importError, setImportError] = useState("");
   const [importOk, setImportOk] = useState(false);
@@ -115,8 +116,22 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
     <div>
       <div className="sg" style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>ajustes</div>
       <div style={{ fontSize: 13.5, color: colors.textMuted, marginBottom: 20 }}>
-        aparência e backup dos seus dados.
+        escolha o que aparece na sua rotina, ajuste a aparência e cuide dos seus dados.
       </div>
+
+      <section aria-label="Recursos da plataforma" style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+        <h2 style={{fontSize:16,marginTop:0}}>Só o necessário para estudar</h2>
+        <p style={{fontSize:13,color:colors.textMuted}}>Estudo de hoje, edital, revisões e desempenho ficam sempre disponíveis. Ative um extra quando sentir falta dele. Desativar preserva seus cadernos, registros e configurações.</p>
+        <details>
+          <summary>Ativar recursos extras ({OPTIONAL_FEATURES.filter(feature=>featureEnabled(data,feature.id)).length} ativos)</summary>
+          <div style={{display:'grid',gap:14,marginTop:16}}>{OPTIONAL_FEATURES.map(feature=><label key={feature.id} style={{display:'flex',gap:10,alignItems:'flex-start',fontSize:13}}>
+            <input type="checkbox" checked={featureEnabled(data,feature.id)} onChange={e=>onFeature(feature.id,e.target.checked)} />
+            <span><strong>{feature.name}</strong><small style={{display:'block',color:colors.textMuted,marginTop:3}}>{feature.description}</small></span>
+          </label>)}</div>
+          <button type="button" onClick={onResetFeatures} style={{...secondaryBtnStyle,marginTop:18}}>Voltar ao essencial</button>
+        </details>
+        {user?.isAdmin&&onNavigate&&<button type="button" style={{...secondaryBtnStyle,marginTop:14}} onClick={()=>onNavigate('admin')}>Administração</button>}
+      </section>
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>aparência</div>
@@ -214,7 +229,7 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
         <WeekdayToggle value={studyDays || ALL_DAYS} onChange={setStudyDays} />
       </div>
 
-      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+      {featureEnabled(data,'ranking')&&<div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>ranking</div>
         <div style={{ fontSize: 12.5, color: colors.textMuted, marginBottom: 12 }}>
           controla se outras pessoas te veem no ranking de assuntos estudados. seus assuntos, anotações e planos nunca ficam visíveis — só a contagem.
@@ -235,7 +250,7 @@ export function AjustesView({ theme, setTheme, soundEnabled, setSoundEnabled, da
             <EyeOff size={14} /> fico de fora
           </button>
         </div>
-      </div>
+      </div>}
 
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>backup dos dados</div>

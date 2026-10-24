@@ -27,8 +27,86 @@ before(async () => {
   ConciliacaoView = (await vite.ssrLoadModule("/src/views/ConciliacaoView.jsx")).ConciliacaoView;
   CadernoView = (await vite.ssrLoadModule("/src/views/CadernoView.jsx")).CadernoView;
 });
-afterEach(() => { cleanup(); localStorage.clear(); globalThis.fetch = originalFetch; });
+afterEach(() => { cleanup(); localStorage.clear(); window.history.replaceState(null, '', '/'); globalThis.fetch = originalFetch; });
 after(async () => { await vite.close(); dom.window.close(); });
+
+test('focused account hides distractions throughout study and restores an extra with its saved records after reload', async () => {
+  const { makeConcurso } = await import('../src/data/model.js');
+  const c = makeConcurso('PM', 0); c.id = 'c';
+  c.materias = [{id:'m',name:'Direito',topics:[{id:'t',name:'Atos',status:'pendente',links:{tec:'https://www.tecconcursos.com.br/cadernos/1'}}]}];
+  const reviews = [{id:'r',concursoId:'c',materiaId:'m',topicId:'t',url:'https://www.tecconcursos.com.br/questoes/1',note:'Rever motivo',nextReviewDate:'2020-01-01',interval:1,reviews:[]}];
+  let stored = {concursos:[c],activeConcursoId:'c',activity:{},questionActivity:{},studyMinutes:{},externalReviews:reviews}, revision = 1;
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === '/api/data' && options.method === 'PUT') { const body = JSON.parse(options.body); stored = JSON.parse(body.value); return response({revision:++revision}); }
+    if (path === '/api/data') return response({value:JSON.stringify(stored),revision});
+    return response(path.includes('counts')?{counts:[]}:{materias:[]});
+  };
+  const props = {user:{email:'focused@example.com'},onLogout(){},onUserUpdate(){}};
+  render(React.createElement(App, props));
+  await screen.findByRole('button',{name:'estudar hoje',exact:true});
+  assert.deepEqual([...document.querySelectorAll('.nav-item')].map(button=>button.textContent),['estudar hoje','edital','revisões','desempenho','planejamento','ajustes']);
+  for (const name of ['ranking','simulados','caderno de revisão','minhas marcações','plano integrado','leitor PDF']) assert.equal(screen.queryByRole('button',{name,exact:true}),null);
+  assert.equal(screen.queryByRole('tab',{name:'Calendário de estudo'}),null);
+  assert.equal(screen.queryByText('Meta semanal de questões'),null);
+  assert.equal(screen.queryByText('Outros modos de estudo'),null);
+  fireEvent.click(screen.getByRole('button',{name:'Iniciar sessão de estudo'}));
+  assert.equal(screen.getByRole('link',{name:'abrir caderno Atos'}).href,'https://www.tecconcursos.com.br/cadernos/1');
+  assert.equal(screen.queryByLabelText('Questão TEC para revisão'),null);
+  assert.ok(screen.getByRole('button',{name:'Vincular cadernos no edital ↗'}));
+  fireEvent.click(screen.getByRole('button',{name:'Fechar sem salvar'}));
+  fireEvent.click(screen.getByRole('button',{name:'ajustes',exact:true}));
+  fireEvent.click(screen.getByText(/Ativar recursos extras/));
+  fireEvent.click(screen.getByLabelText(/^Caderno de questões para revisão/));
+  await waitFor(()=>assert.equal(stored.studyPreferences.optionalFeatures.externalReviews,true));
+  cleanup(); render(React.createElement(App,props));
+  fireEvent.click(await screen.findByRole('button',{name:'caderno de revisão',exact:true}));
+  assert.equal((await screen.findByRole('link',{name:'Abrir questão'})).href,reviews[0].url);
+  fireEvent.click(screen.getByRole('button',{name:'ajustes',exact:true}));
+  fireEvent.click(screen.getByText(/Ativar recursos extras/));
+  fireEvent.click(screen.getByRole('button',{name:'Voltar ao essencial'}));
+  await waitFor(()=>assert.deepEqual(stored.studyPreferences.optionalFeatures,{}));
+  assert.equal(screen.queryByRole('button',{name:'caderno de revisão',exact:true}),null);
+  assert.deepEqual(stored.externalReviews,reviews);
+  assert.deepEqual(stored.activity,{});
+  assert.deepEqual(stored.questionActivity,{});
+  cleanup(); render(React.createElement(App,props));
+  await screen.findByRole('button',{name:'estudar hoje',exact:true});
+  assert.equal(screen.queryByRole('button',{name:'caderno de revisão',exact:true}),null);
+  assert.deepEqual(stored.externalReviews,reviews);
+});
+
+test('a disabled PDF deep link opens settings without opening the reader or enabling anything', async () => {
+  window.history.replaceState(null,'','/?tool=pdf');
+  globalThis.fetch = async (path, options = {}) => response(path === '/api/data'
+    ? options.method === 'PUT' ? {revision:1} : {value:'{"concursos":[],"activity":{}}',revision:0}
+    : path.includes('counts') ? {counts:[]} : {materias:[]});
+  render(React.createElement(App,{user:{email:'disabled-tool@example.com'},onLogout(){},onUserUpdate(){}}));
+  assert.ok(await screen.findByText(/Este recurso está desativado/));
+  assert.equal(screen.queryByRole('button',{name:'leitor PDF',exact:true}),null);
+  assert.equal(screen.getByLabelText(/^Leitor PDF/).checked,false);
+});
+
+test('quick review shows three priority subjects, keeps the rest pending and only adds on request', async () => {
+  const { RevisoesView } = await vite.ssrLoadModule('/src/views/RevisoesView.jsx');
+  const topics = Array.from({length: 5}, (_, i) => ({id:`t${i}`, name:`Assunto ${i}`, status:'estudado', nextReviewDate:`2020-01-0${i+1}`}));
+  topics.push({id:'legacy',name:'Assunto sem data',status:'estudado'});
+  const concurso = {materias:[{id:'m',name:'Direito',topics}],dailyPlans:{}};
+  const before = JSON.stringify(concurso), added = [], navigated = [];
+  render(React.createElement(RevisoesView, {concurso,addTopicToToday:(...args)=>added.push(args),onNavigate:tab=>navigated.push(tab)}));
+  assert.equal(screen.getAllByRole('button',{name:'Revisar hoje'}).length,6);
+  fireEvent.click(screen.getByRole('button',{name:'Tenho só 10 minutos'}));
+  assert.equal(screen.getAllByRole('button',{name:'Revisar hoje'}).length,3);
+  assert.ok(screen.getByText('Assunto 0'));
+  assert.equal(screen.queryByText('Assunto 3'),null);
+  assert.deepEqual(added,[]);
+  fireEvent.click(screen.getAllByRole('button',{name:'Revisar hoje'})[0]);
+  assert.deepEqual(added,[['m','t0']]);
+  fireEvent.click(screen.getByRole('button',{name:'Abrir hoje'}));
+  assert.deepEqual(navigated,['dia']);
+  fireEvent.click(screen.getByRole('button',{name:'Mostrar fila completa'}));
+  assert.equal(screen.getAllByRole('button',{name:'Revisar hoje'}).length,6);
+  assert.equal(JSON.stringify(concurso),before);
+});
 
 test('edital groups expand into linked subtópicos and parent searches expose descendants', async () => {
   const {EditalView} = await vite.ssrLoadModule('/src/views/EditalView.jsx');
@@ -185,6 +263,7 @@ test('question completion in one edital is visible in another, saves once and pe
  const {makeConcurso}=await import('../src/data/model.js');const a=makeConcurso('Tribunal',0),b=makeConcurso('Prefeitura',1);a.id='a';b.id='b';a.settings.materiasPerDay=1;b.settings.materiasPerDay=1;a.settings.minutesPerMateria=0;b.settings.minutesPerMateria=0;
  a.materias=[{id:'am',name:'Português',topics:[{id:'at',name:'Crase',status:'pendente',questionsTotal:20,questionsCorrect:16}]}];b.materias=[{id:'bm',name:'Língua Portuguesa',topics:[{id:'bt',name:'1. Crase',status:'pendente'}]}];
  let stored={concursos:[a,b],activeConcursoId:'b',activity:{},questionActivity:{},studyMinutes:{},studyDays:['dom','seg','ter','qua','qui','sex','sab']};let revision=1;
+ stored.studyPreferences={...stored.studyPreferences,optionalFeatures:{legacyPlan:true,multiExam:true}};
  globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);assert.equal(body.revision,revision);stored=JSON.parse(body.value);revision++;return response({revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};
  render(React.createElement(App,{user:{email:'shared@example.com'},onLogout(){},onUserUpdate(){}}));fireEvent.click(await screen.findByRole('button',{name:'hoje',exact:true}));fireEvent.click(await screen.findByRole('button',{name:'marcar como estudado',exact:true}));fireEvent.change(screen.getByPlaceholderText('feitas'),{target:{value:'5'}});fireEvent.change(screen.getByPlaceholderText('acertos'),{target:{value:'3'}});fireEvent.click(screen.getByRole('button',{name:'concluir',exact:true}));
  await waitFor(()=>assert.equal(stored.concursos[1].materias[0].topics[0].questionsTotal,5));fireEvent.click(screen.getByRole('button',{name:'conciliar editais',exact:true}));assert.ok(await screen.findByText('19/25',{exact:true}));assert.ok(screen.getByText('5 questões em outros editais · 60% de acertos',{exact:true}));
@@ -205,9 +284,10 @@ test('deleting a source edital preserves practice in the account and after reloa
  a.materias=[{id:'am',name:'Português',topics:[{id:'at',name:'Crase',status:'pendente',questionsTotal:80,questionsCorrect:64,lastPracticeDate:'2026-10-03'}]}];
  b.materias=[{id:'bm',name:'Português',topics:[{id:'bt',name:'Crase',status:'pendente'}]}];
  let stored={concursos:[a,b],activeConcursoId:'b',activity:{},questionActivity:{},studyMinutes:{}};let revision=1;
+ stored.studyPreferences={...stored.studyPreferences,optionalFeatures:{legacyPlan:true,multiExam:true}};
  globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);assert.equal(body.revision,revision);stored=JSON.parse(body.value);return response({revision:++revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};
  const props={user:{email:'archive@example.com'},onLogout(){},onUserUpdate(){}};
- render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'concursos',exact:true}));fireEvent.click(screen.getAllByRole('button',{name:'excluir concurso'})[0]);
+ render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:/Concurso ativo:/}));fireEvent.click(screen.getAllByRole('button',{name:'excluir concurso'})[0]);
  await waitFor(()=>assert.equal(stored.practiceArchive?.length,1));assert.equal(stored.concursos.length,1);assert.equal(stored.practiceArchive[0].topic.questionsTotal,80);assert.deepEqual(stored.activity,{});assert.ok(screen.getByText('Histórico preservado'));
  cleanup();render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'hoje',exact:true}));assert.ok(await screen.findByText('80 questões em outros editais · 80% de acertos',{exact:true}));assert.ok(screen.getByRole('button',{name:'Pular assunto já praticado',exact:true}));
 });
@@ -216,6 +296,7 @@ test('integrated plan generates one shared row and saves one completion across e
  const {makeConcurso}=await import('../src/data/model.js');const a=makeConcurso('Integrado A',0),b=makeConcurso('Integrado B',1);a.id='a';b.id='b';
  a.materias=[{id:'am',name:'Português',topics:[{id:'at',name:'Crase',status:'pendente'}]}];b.materias=[{id:'bm',name:'Língua Portuguesa',topics:[{id:'bt',name:'Crase',status:'pendente'}]}];
  let stored={concursos:[a,b],activeConcursoId:'a',availableHoursPerWeek:7,activity:{},questionActivity:{},studyMinutes:{}};let revision=1;
+ stored.studyPreferences={...stored.studyPreferences,optionalFeatures:{multiExam:true}};
  globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);assert.equal(body.revision,revision);stored=JSON.parse(body.value);return response({revision:++revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};
  const props={user:{email:'unified@example.com'},onLogout(){},onUserUpdate(){}};render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'plano integrado',exact:true}));
  fireEvent.click(screen.getByRole('button',{name:'Gerar plano de hoje'}));await waitFor(()=>assert.ok(stored.unifiedPlans));assert.equal(screen.getAllByRole('button',{name:'Concluir Crase'}).length,1);assert.ok(screen.getByText('Conteúdo comum'));
@@ -271,6 +352,7 @@ test('theory sessions do not request question counts and failed submissions reta
 
 test('TEC review added in a session survives closing and reloading without concluding or duplicating practice',async()=>{
  const {makeConcurso}=await import('../src/data/model.js');const c=makeConcurso('Sessão',0);c.id='c';c.materias=[{id:'m',name:'Português',topics:[{id:'t',name:'Crase',status:'pendente'}]}];let stored={concursos:[c],activeConcursoId:'c',activity:{},questionActivity:{},studyMinutes:{}};let revision=1;
+ stored.studyPreferences={...stored.studyPreferences,optionalFeatures:{externalReviews:true}};
  globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);stored=JSON.parse(body.value);return response({revision:++revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};
  const props={user:{email:'session-review@example.com'},onLogout(){},onUserUpdate(){}};render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'Iniciar sessão de estudo'}));
  fireEvent.change(screen.getByLabelText('Questão TEC para revisão'),{target:{value:'1234567'}});fireEvent.change(screen.getByLabelText('Nota da questão para revisão'),{target:{value:'Regra para revisar'}});fireEvent.click(screen.getByRole('button',{name:'Adicionar ao caderno de revisão'}));await waitFor(()=>assert.equal(stored.externalReviews?.length,1));
@@ -319,6 +401,7 @@ test('planning displays legacy theory correctly and clears dependencies when pre
 
 test('external review and study marks persist, archive reversibly and do not add question activity',async()=>{
  const {makeConcurso}=await import('../src/data/model.js');const c=makeConcurso('Anotações',0);c.id='c';c.materias=[{id:'m',name:'Português',topics:[{id:'t',name:'Crase',status:'pendente'}]}];let stored={concursos:[c],activeConcursoId:'c',activity:{},questionActivity:{},studyMinutes:{}};let revision=1;
+ stored.studyPreferences={...stored.studyPreferences,optionalFeatures:{externalReviews:true,marks:true}};
  globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);stored=JSON.parse(body.value);return response({revision:++revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};
  render(React.createElement(App,{user:{email:'notes@example.com'},onLogout(){},onUserUpdate(){}}));fireEvent.click(await screen.findByRole('button',{name:'caderno de revisão',exact:true}));fireEvent.click(screen.getByRole('button',{name:'Nova questão externa'}));fireEvent.change(screen.getByLabelText('Matéria e assunto'),{target:{value:JSON.stringify(['m','t'])}});fireEvent.change(screen.getByLabelText('Link da questão externa'),{target:{value:'https://example.com/questao'}});fireEvent.click(screen.getByRole('button',{name:'Adicionar questão externa'}));await waitFor(()=>assert.equal(stored.externalReviews?.length,1));fireEvent.click(screen.getByRole('button',{name:'Acertei',exact:true}));await waitFor(()=>assert.equal(stored.externalReviews[0].reviews.length,1));assert.deepEqual(stored.questionActivity,{});
  fireEvent.click(screen.getByRole('button',{name:'minhas marcações',exact:true}));fireEvent.change(screen.getByLabelText('Matéria e assunto'),{target:{value:JSON.stringify(['m','t'])}});fireEvent.change(screen.getByLabelText('Trecho da marcação'),{target:{value:'Trecho de exemplo próprio'}});fireEvent.click(screen.getByRole('button',{name:'Salvar marcação'}));await waitFor(()=>assert.equal(stored.studyMarks?.length,1));fireEvent.click(screen.getByRole('button',{name:'Arquivar marcação'}));await waitFor(()=>assert.equal(stored.studyMarks[0].archived,true));fireEvent.click(screen.getByLabelText('Mostrar marcações arquivadas'));fireEvent.click(screen.getByRole('button',{name:'Restaurar marcação'}));await waitFor(()=>assert.equal(stored.studyMarks[0].archived,false));assert.deepEqual(stored.activity,{});
@@ -362,9 +445,10 @@ test('notebook batch preview requires confirmation and practice captures questio
 
 test('TEC notebook saves to account, appears on topic links after reload, and practice updates totals only once',async()=>{
  const {makeConcurso}=await import('../src/data/model.js');const c=makeConcurso('Edital TEC',0);c.id='c';c.materias=[{id:'m',name:'Português',topics:[{id:'t',name:'Crase',status:'pendente'}]}];let stored={concursos:[c],activeConcursoId:'c',activity:{},questionActivity:{},studyMinutes:{}},revision=1;
+ stored.studyPreferences={...stored.studyPreferences,optionalFeatures:{notebooks:true}};
  globalThis.fetch=async(path,options={})=>{if(path==='/api/data'&&options.method==='PUT'){const body=JSON.parse(options.body);assert.equal(body.revision,revision);stored=JSON.parse(body.value);return response({revision:++revision});}if(path==='/api/data')return response({value:JSON.stringify(stored),revision});return response(path.includes('counts')?{counts:[]}:{materias:[]});};const props={user:{email:'tec-test@example.com'},onLogout(){},onUserUpdate(){}};
  render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'questões avulsas',exact:true}));fireEvent.change(screen.getByLabelText('Assunto',{exact:true}),{target:{value:JSON.stringify(['m','t'])}});fireEvent.change(screen.getByLabelText('Título do caderno'),{target:{value:'TEC pessoal'}});fireEvent.change(screen.getByLabelText('Banca',{exact:true}),{target:{value:'Cebraspe'}});fireEvent.change(screen.getByLabelText('Link do caderno'),{target:{value:'https://www.tecconcursos.com.br/example-notebook'}});fireEvent.click(screen.getByRole('button',{name:'Adicionar caderno por banca'}));await waitFor(()=>assert.equal(stored.questionNotebooks?.length,1));fireEvent.click(screen.getByRole('button',{name:'Registrar prática'}));fireEvent.change(screen.getByLabelText('Questões resolvidas no caderno'),{target:{value:'10'}});fireEvent.change(screen.getByLabelText('Acertos no caderno'),{target:{value:'8'}});fireEvent.click(screen.getByRole('button',{name:'Salvar prática do caderno'}));await waitFor(()=>assert.equal(stored.questionEvents?.length,1));assert.equal(stored.questionActivity[stored.questionEvents[0].date].total,10);assert.equal(stored.concursos[0].materias[0].topics[0].notebookLinks,undefined);
- cleanup();render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'Iniciar sessão de estudo'}));assert.ok(await screen.findByRole('link',{name:'abrir caderno TEC pessoal'}));assert.equal(stored.questionEvents.length,1);
+ cleanup();render(React.createElement(App,props));fireEvent.click(await screen.findByRole('button',{name:'Iniciar sessão de estudo'}));await waitFor(()=>assert.ok(screen.queryByRole('link',{name:'abrir caderno TEC pessoal'}),JSON.stringify({links:[...document.querySelectorAll('.study-session-dialog a')].map(a=>({name:a.getAttribute('aria-label'),href:a.href})),books:stored.questionNotebooks})));assert.equal(stored.questionEvents.length,1);
 });
 
 test('switching dashboard topics preserves each timer and resumes only the selected topic',async()=>{

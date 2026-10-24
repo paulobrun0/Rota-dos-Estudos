@@ -49,7 +49,7 @@ export function PlanningView({data,concurso,onSave,onNavigate}) {
       {!draft.materias.length&&<p className="muted">Cadastre matérias e assuntos no edital para começar.</p>}
     </Panel>
     <Panel title="03 · Prévia da fila" action={<label className="planning-date">Data<input aria-label="Data da prévia do planejamento" type="date" required value={date} onChange={e=>setDate(e.target.value)}/></label>}>
-      <p className="muted">A prévia acompanha seus ajustes antes de salvar. Essas regras organizam a fila do Painel; o ciclo individual e o plano integrado têm suas próprias configurações.</p>
+      <p className="muted">A prévia acompanha seus ajustes antes de salvar. Essas regras organizam a fila de Estudar hoje. Salve para aplicar as mudanças.</p>
       {previewError&&<p className="planning-notice">{previewError}</p>}
       {preview&&<><div className="planning-preview-stats"><span><strong>{preview.queue.length}</strong> tarefas</span><span><strong>{preview.queue.reduce((n,r)=>n+r.minutes,0)} min</strong> planejados</span><span>{preview.completed} min já registrados · {preview.remaining} min disponíveis</span></div>
         {preview.blocked.length>0&&<p className="planning-notice">Aguardando a teoria da matéria anterior: {preview.blocked.join(', ')}.</p>}

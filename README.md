@@ -6,9 +6,11 @@ Planejador de estudos para concursos com fila de sessões, desempenho por assunt
 
 A interface usa identidade própria em azul-petróleo e verde-água, títulos com serifa e ícones de traço simples, nos temas claro e escuro. **Painel** oferece lista e calendário, tarefa em destaque, cronômetro, conclusão manual, meta semanal e atalhos. O calendário combina sessões registradas e uma projeção sequencial dos próximos dias. **Iniciar** abre uma janela de sessão com os cadernos vinculados ao assunto organizados por banca, materiais e anotações, cronômetro, registro de questões/acertos e atalhos de tempo. O tempo informado substitui a medição; sem ambos, usa a estimativa da tarefa. Exercícios exigem ao menos uma questão. **Fechar sem salvar** pausa o cronômetro e mantém a tarefa pendente. Uma questão do TEC pode ser guardada por ID ou link no caderno de revisão, separadamente da conclusão da sessão, sem duplicar registros.
 
+Por padrão, o menu mostra **Estudar hoje**, **Edital**, **Revisões** e **Desempenho**, com **Planejamento** e **Ajustes** para configurar a rotina. Ranking, calendário, metas, alertas detalhados, grifos, PDF, simulados e planos alternativos ficam desativados. Em **Ajustes → Ativar recursos extras**, ative só o que precisar ou use **Voltar ao essencial**. A escolha é salva na conta; desativar não apaga registros, cadernos nem configurações. Cadernos vinculados e Bizus continuam disponíveis na sessão e no edital.
+
 Em **Planejamento**, configure horas por dia, matérias e assuntos ativos, modo só questões ou teoria e questões, frequência relativa, importância, duração e dependências. Ciclos de dependência são rejeitados. A reserva de conteúdo novo pode ceder tempo às revisões quando uma categoria está vazia. A frequência orienta a prioridade; não garante um número fixo de aparições em cada ciclo.
 
-**Desempenho** reúne atividade por período, gráficos diários, filtros por matéria/assunto e registros externos. **Alertas** destaca atrasos e baixo aproveitamento conforme a importância. A fila calcula os intervalos com algoritmo próprio, considerando acertos, amostra, importância, peso e prazo; não comprova domínio.
+**Desempenho** reúne atividade por período, gráficos diários, filtros por matéria/assunto e registros externos. **Alertas** destaca atrasos e baixo aproveitamento conforme a importância. As revisões de assuntos seguem um ciclo de 1, 7 e 30 dias a partir de cada conclusão. Abaixo de 70% de acertos na sessão, o assunto volta à fila no dia seguinte. Revisões não concluídas permanecem pendentes, sem duplicação. O ciclo não comprova domínio.
 
 **Caderno de revisão** aceita links de questões e anotações, com avaliações e agenda separada. **Minhas marcações** guarda trechos, fonte e notas. Ambas oferecem arquivamento reversível. **Questões avulsas** reúne seus links e a prática no banco próprio.
 
@@ -125,7 +127,7 @@ Use o botão de seta no topo do menu para recolher ou expandir. A preferência f
 - **Edital:** cadastro manual, importação de texto numerado ou no formato `Matéria: assunto; assunto`, catálogo compartilhado de matérias, anotações e links por assunto.
 - **Metas:** matérias e assuntos por dia, duração de sessões, descanso e quantidade de revisões.
 - **Planejamento:** ciclo por progresso ou cronograma fixo por dia da semana. Pendências continuam no ciclo até serem concluídas.
-- **Revisões:** fila com filtros por vencimento, baixo desempenho e assunto; botão para incluir no plano de hoje. Intervalos de 1, 3, 7, 15 e 30 dias, com limite diário configurável. As revisões vêm de todas as matérias, independentemente das matérias novas do dia.
+- **Revisões:** fila com filtros por vencimento, baixo desempenho e assunto; botão para incluir no plano de hoje. Intervalos de 1, 7 e 30 dias após cada conclusão, com limite diário configurável. O modo **Tenho só 10 minutos** mostra até três assuntos prioritários. Datas são entradas na fila, sem prazo obrigatório; revisões pendentes continuam disponíveis. Ao concluir a terceira revisão com pelo menos 70%, o assunto sai da agenda automática. As revisões vêm de todas as matérias, independentemente das matérias novas do dia.
 - **Caderno:** erros para refazer, histórico por questão e anotações. Um erro deixa a lista de pendências quando a última resposta passa a ser correta; as tentativas anteriores continuam no histórico.
 - **Questões:** banco extraído de provas, seleção por matéria/assunto/banca, correção no servidor e registro individual de respostas. Cada tentativa tem identificador próprio para impedir duplicação em uma repetição da requisição.
 - **Links:** Qconcursos, Tec Concursos e outro caderno podem coexistir em cada assunto. Links antigos continuam disponíveis.
@@ -237,7 +239,7 @@ Os cadernos aparecem também nos botões dos assuntos e nos editais equivalentes
 
 **Importar cadernos em lote** aceita CSV (vírgula ou ponto e vírgula), TSV e listas JSON, até 500 registros/2 MiB. Colunas: `materia`, `assunto`, `banca`, `titulo`, `url`; opcionais `anoInicial` e `anoFinal`. Use os nomes exatos do edital. A prévia exige confirmação; linhas inválidas impedem toda a importação. Reimportar os mesmos links por assunto não duplica cadastros.
 
-Ao voltar da prática, use **Registrar prática** junto ao caderno para informar questões, acertos e minutos. O lançamento atualiza uma única origem, os totais globais e o tempo. Nos assuntos já estudados, ajusta a próxima revisão. Não conclui tarefas nem copia contagens nos editais equivalentes. O diagnóstico respeita a plataforma filtrada e mostra falta de caderno, baixo aproveitamento e revisão atrasada.
+Ao voltar da prática, use **Registrar prática** junto ao caderno para informar questões, acertos e minutos. O lançamento atualiza uma única origem, os totais globais e o tempo. Nos assuntos já estudados, reinicia o intervalo atual a partir da prática; abaixo de 70%, reinicia o ciclo para o dia seguinte. Não avança a etapa da revisão. Não conclui tarefas nem copia contagens nos editais equivalentes. O diagnóstico respeita a plataforma filtrada e mostra falta de caderno, baixo aproveitamento e revisão atrasada.
 
 ### Revisão de integridade e experiência
 
